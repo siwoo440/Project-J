@@ -1,0 +1,69 @@
+# Unity generated folders
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# Unity temporary files
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.csproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.unityproj
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+*.log
+
+# Crash reports
+sysinfo.txt
+crashlytics-build.properties
+
+# Visual Studio
+.vs/
+.vscode/
+.idea/
+
+# Rider
+.idea/
+*.sln.iml
+
+# Operating system files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Build outputs
+*.apk
+*.aab
+*.app
+*.exe
+*.unitypackage
+
+# Addressables generated data
+/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
+/[Ss]erver[Dd]ata/
+/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/[Aa]ssets/[Ss]treamingAssets/aa/
+
+# Auto-generated test files
+/[Aa]ssets/[Ss]treamingAssets/[Gg]enerated/

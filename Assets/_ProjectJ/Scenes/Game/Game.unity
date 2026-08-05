@@ -131,7 +131,7 @@ GameObject:
   - component: {fileID: 30951785}
   - component: {fileID: 30951786}
   m_Layer: 8
-  m_Name: Dummy_01
+  m_Name: Dummy A
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -193,6 +193,7 @@ MonoBehaviour:
   competitorName: DUMMY A
   heightOrigin: {fileID: 1842750216}
   hitImmunityDuration: 0.8
+  maximumCombinedPushSpeed: 10
   horizontalDeceleration: 8
   gravityAcceleration: -30
   maximumFallSpeed: 25
@@ -841,6 +842,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Player.PlayerExternalForceController
   hitImmunityDuration: 0.8
+  maximumCombinedPushSpeed: 10
   impulseDeceleration: 8
   platformVelocityGraceTime: 0.1
 --- !u!114 &223122791
@@ -1467,7 +1469,7 @@ GameObject:
   - component: {fileID: 471940681}
   - component: {fileID: 471940682}
   m_Layer: 8
-  m_Name: Dummy_02
+  m_Name: Dummy B
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1529,6 +1531,7 @@ MonoBehaviour:
   competitorName: DUMMY B
   heightOrigin: {fileID: 1842750216}
   hitImmunityDuration: 0.8
+  maximumCombinedPushSpeed: 10
   horizontalDeceleration: 8
   gravityAcceleration: -30
   maximumFallSpeed: 25
@@ -1725,6 +1728,7 @@ MonoBehaviour:
   matchController: {fileID: 805130841}
   panelPosition: {x: 20, y: 20}
   panelWidth: 320
+  rankingPanelWidth: 300
   courseProgressColor: {r: 1, g: 0.55, b: 0.1, a: 1}
   staminaColor: {r: 0.2, g: 0.8, b: 0.35, a: 1}
   barBackgroundColor: {r: 0.08, g: 0.08, b: 0.08, a: 0.9}
@@ -2051,6 +2055,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Gameplay.PrototypeMatchController
   matchDurationSeconds: 600
+  sharedRankHeightTolerance: 0.05
   playerDisplayName: PLAYER
   playerStateController: {fileID: 223122789}
   playerRespawnController: {fileID: 223122787}
@@ -3207,6 +3212,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b2d0a30e4f9ca2f499cf2fb419c0c6bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Player.CourseTopTrigger
+  matchController: {fileID: 805130841}
   arrivalRenderers:
   - {fileID: 1251452857}
   waitingColor: {r: 1, g: 0.6, b: 0.1, a: 1}
@@ -4120,7 +4126,7 @@ GameObject:
   - component: {fileID: 1967499720}
   - component: {fileID: 1967499719}
   m_Layer: 8
-  m_Name: Dummy_03
+  m_Name: Dummy C
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4141,6 +4147,7 @@ MonoBehaviour:
   competitorName: DUMMY C
   heightOrigin: {fileID: 1842750216}
   hitImmunityDuration: 0.8
+  maximumCombinedPushSpeed: 10
   horizontalDeceleration: 8
   gravityAcceleration: -30
   maximumFallSpeed: 25

@@ -9,6 +9,7 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
         private const float ExternalForceThreshold = 0.0001f; // 외부 힘 활성 판정 기준
 
         [SerializeField, Min(0f)] private float hitImmunityDuration = 0.8f; // 연속 밀치기 면역 시간
+        [SerializeField, Min(0f)] private float maximumCombinedPushSpeed = 10f; // 동시와 연속 밀치기 최대 합산 속도
         [SerializeField, Min(0f)] private float impulseDeceleration = 8f; // 순간 외부 힘 감속도
         [SerializeField, Min(0.01f)] private float platformVelocityGraceTime = 0.1f; // 발판 속도 갱신 유예 시간
 
@@ -16,18 +17,21 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
         private PlayerRespawnProtectionController respawnProtectionController; // 부활 보호 관리자
         private Vector3 impulseVelocity; // 밀치기와 장애물 순간 속도
         private Vector3 carrierVelocity; // 이동 발판 전달 속도
+        private Vector3 pendingPushVelocity; // 같은 프레임에 모인 밀치기 속도
         private float hitImmunityRemaining; // 남은 밀치기 면역 시간
         private float carrierVelocityRemaining; // 남은 발판 속도 유지 시간
+        private bool hasPendingPush; // 적용 대기 중인 밀치기 존재 여부
 
         public Vector3 Velocity => impulseVelocity + carrierVelocity; // 최종 외부 속도 반환
         public Vector3 HorizontalVelocity => Vector3.ProjectOnPlane(Velocity, Vector3.up); // 최종 외부 수평 속도 반환
         public float VerticalVelocity => Velocity.y; // 최종 외부 수직 속도 반환
         public Vector3 ImpulseVelocity => impulseVelocity; // 현재 순간 외부 속도 반환
         public Vector3 CarrierVelocity => carrierVelocity; // 현재 발판 전달 속도 반환
+        public float HitImmunityRemaining => hitImmunityRemaining; // 남은 밀치기 면역 시간 반환
         public bool IsForceImmune => hitImmunityRemaining > 0f; // 연속 밀치기 면역 여부 반환
         public bool IsReceivingImpulse => impulseVelocity.sqrMagnitude > ExternalForceThreshold; // 순간 외부 힘 적용 여부 반환
         public bool IsReceivingExternalForce => Velocity.sqrMagnitude > ExternalForceThreshold; // 모든 외부 힘 적용 여부 반환
-        public override bool CanReceivePush => enabled && stateController != null && stateController.CanMove && !IsRespawnProtected; // 현재 플레이어 밀치기 가능 여부 반환
+        public override bool CanReceivePush => enabled && stateController != null && stateController.CanMove && !IsRespawnProtected; // 부활 보호가 아닌 현재 플레이어 대상 가능 여부 반환
 
         private bool IsRespawnProtected => respawnProtectionController != null && respawnProtectionController.IsProtected; // 부활 보호 활성 여부 반환
 
@@ -37,10 +41,18 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
             respawnProtectionController = GetComponent<PlayerRespawnProtectionController>(); // 부활 보호 관리자 조회
         } // 외부 힘 참조 준비 종료
 
+        private void OnValidate() // Inspector 외부 힘 수치 보정
+        { // 외부 힘 수치 보정 처리
+            hitImmunityDuration = Mathf.Max(0f, hitImmunityDuration); // 음수가 없는 면역 시간 보장
+            maximumCombinedPushSpeed = Mathf.Max(0f, maximumCombinedPushSpeed); // 음수가 없는 최대 합산 속도 보장
+            impulseDeceleration = Mathf.Max(0f, impulseDeceleration); // 음수가 없는 감속도 보장
+            platformVelocityGraceTime = Mathf.Max(0.01f, platformVelocityGraceTime); // 최소 발판 유예 시간 보장
+        } // 외부 힘 수치 보정 종료
+
         public void Tick(float deltaTime) // 외부 힘 시간 갱신
         { // 외부 힘 프레임 처리
             float safeDeltaTime = Mathf.Max(0f, deltaTime); // 음수가 아닌 프레임 시간 보정
-            hitImmunityRemaining = Mathf.Max(0f, hitImmunityRemaining - safeDeltaTime); // 남은 연속 밀치기 면역 시간 감소
+            hitImmunityRemaining = PushForceRules.CalculateImmunityRemaining(hitImmunityRemaining, safeDeltaTime); // 남은 연속 밀치기 면역 시간 감소
             carrierVelocityRemaining = Mathf.Max(0f, carrierVelocityRemaining - safeDeltaTime); // 남은 발판 속도 유지 시간 감소
 
             if (carrierVelocityRemaining <= 0f) // 발판 속도 갱신 만료 확인
@@ -48,18 +60,21 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
                 carrierVelocity = Vector3.zero; // 오래된 발판 전달 속도 제거
             } // 발판 속도 만료 처리 종료
 
-            if (!stateController.CanMove) // 현재 이동 허용 상태 확인
+            if (stateController == null || !stateController.CanMove) // 현재 이동 허용 상태 확인
             { // 이동 차단 처리
                 ClearVelocity(); // 차단 상태의 모든 외부 속도 제거
                 return; // 외부 힘 갱신 종료
             } // 이동 차단 처리 종료
 
-            impulseVelocity = Vector3.MoveTowards(impulseVelocity, Vector3.zero, impulseDeceleration * safeDeltaTime); // 순간 외부 속도 감속
+            impulseVelocity = Vector3.MoveTowards(impulseVelocity, Vector3.zero, impulseDeceleration * safeDeltaTime); // 기존 순간 외부 속도 감속
+            ApplyPendingPush(); // 이전 프레임에 모인 동시 밀치기 적용
         } // 외부 힘 프레임 처리 종료
 
         public override bool TryReceiveExternalForce(Vector3 direction, float force) // 기존 밀치기 외부 힘 적용 시도
         { // 기존 외부 힘 적용 처리
-            return TryReceiveExternalForce(ExternalForceRequest.CreatePush(direction, force)); // 기존 요청을 밀치기 요청으로 변환
+            Vector3 pushVelocity = PushForceRules.CreateHorizontalVelocity(direction, force); // 방향과 세기 기반 수평 밀치기 속도 생성
+            ExternalForceRequest request = new ExternalForceRequest(pushVelocity, ExternalForceSource.Push, ExternalForceApplication.AddImpulse, true); // 누적형 밀치기 요청 생성
+            return TryReceiveExternalForce(request); // 통합 외부 힘 처리 결과 반환
         } // 기존 외부 힘 적용 종료
 
         public override bool TryReceiveExternalForce(ExternalForceRequest request) // 통합 외부 힘 요청 적용 시도
@@ -74,17 +89,12 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
                 return false; // 외부 힘 적용 실패 반환
             } // 빈 요청 처리 종료
 
-            if (request.Source == ExternalForceSource.Push && IsRespawnProtected) // 부활 보호 중 플레이어 밀치기 요청 확인
-            { // 부활 보호 처리
-                return false; // 보호 중 밀치기 적용 실패 반환
-            } // 부활 보호 처리 종료
+            if (request.Source == ExternalForceSource.Push) // 플레이어 밀치기 요청 확인
+            { // 플레이어 밀치기 처리
+                return TryQueuePush(request.Velocity); // 같은 프레임 밀치기 합산 결과 반환
+            } // 플레이어 밀치기 처리 종료
 
-            if (request.Source == ExternalForceSource.Push && IsForceImmune) // 밀치기 요청의 연속 피격 면역 확인
-            { // 연속 피격 면역 처리
-                return false; // 면역 중 밀치기 적용 실패 반환
-            } // 연속 피격 면역 처리 종료
-
-            ApplyRequestVelocity(request); // 요청 결합 방식에 따른 외부 속도 적용
+            ApplyRequestVelocity(request); // 밀치기 외 요청 결합 방식 적용
 
             if (request.StartsHitImmunity) // 피격 면역 시작 요청 확인
             { // 피격 면역 시작 처리
@@ -108,7 +118,9 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
         { // 외부 속도 제거 처리
             impulseVelocity = Vector3.zero; // 순간 외부 속도 제거
             carrierVelocity = Vector3.zero; // 발판 전달 속도 제거
+            pendingPushVelocity = Vector3.zero; // 적용 대기 밀치기 속도 제거
             carrierVelocityRemaining = 0f; // 발판 속도 유지 시간 제거
+            hasPendingPush = false; // 적용 대기 밀치기 상태 제거
         } // 외부 속도 제거 종료
 
         public void ResetExternalForce() // 외부 힘 전체 상태 초기화
@@ -116,6 +128,31 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
             ClearVelocity(); // 모든 외부 속도 제거
             hitImmunityRemaining = 0f; // 연속 밀치기 면역 시간 제거
         } // 외부 힘 초기화 종료
+
+        private bool TryQueuePush(Vector3 pushVelocity) // 같은 프레임 밀치기 합산 대기열 추가
+        { // 밀치기 대기열 처리
+            if (!PushForceRules.CanAcceptPush(IsRespawnProtected, hitImmunityRemaining)) // 부활 보호와 피격 면역 확인
+            { // 밀치기 수신 차단 처리
+                return false; // 밀치기 적용 실패 반환
+            } // 밀치기 수신 차단 처리 종료
+
+            pendingPushVelocity = PushForceRules.CombineHorizontalVelocity(pendingPushVelocity, pushVelocity, maximumCombinedPushSpeed); // 같은 프레임 밀치기 벡터 합산
+            hasPendingPush = pendingPushVelocity.sqrMagnitude > ExternalForceThreshold; // 유효한 합산 밀치기 존재 여부 저장
+            return hasPendingPush; // 합산 밀치기 등록 결과 반환
+        } // 밀치기 대기열 처리 종료
+
+        private void ApplyPendingPush() // 같은 프레임에 모인 밀치기 일괄 적용
+        { // 대기 밀치기 적용 처리
+            if (!hasPendingPush) // 적용 대기 밀치기 존재 확인
+            { // 대기 밀치기 없음 처리
+                return; // 밀치기 적용 생략
+            } // 대기 밀치기 없음 처리 종료
+
+            impulseVelocity = PushForceRules.CombineHorizontalVelocity(impulseVelocity, pendingPushVelocity, maximumCombinedPushSpeed); // 기존 잔여 힘과 새 합산 힘 누적
+            pendingPushVelocity = Vector3.zero; // 적용한 대기 밀치기 속도 제거
+            hasPendingPush = false; // 대기 밀치기 상태 제거
+            hitImmunityRemaining = hitImmunityDuration; // 일괄 밀치기 적용 뒤 연속 피격 면역 시작
+        } // 대기 밀치기 적용 종료
 
         private void ApplyRequestVelocity(ExternalForceRequest request) // 결합 방식 기반 요청 속도 적용
         { // 요청 속도 적용 처리

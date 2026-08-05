@@ -1,7 +1,9 @@
 {
   "name": "ProjectJ.Runtime",
   "rootNamespace": "ProjectJ",
-  "references": [],
+  "references": [
+    "Unity.InputSystem"
+  ],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

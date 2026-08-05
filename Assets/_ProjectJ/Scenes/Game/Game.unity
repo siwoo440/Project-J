@@ -681,6 +681,7 @@ GameObject:
   - component: {fileID: 223122790}
   - component: {fileID: 223122791}
   - component: {fileID: 223122792}
+  - component: {fileID: 223122793}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -789,7 +790,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Player.PlayerRespawnController
   checkpointCount: 4
-  fallLimitY: -5
+  minimumWorldFallLimitY: -5
+  fallDistanceBelowCheckpoint: 25
   respawnDelay: 0.75
   respawnVerticalOffset: 0.05
 --- !u!114 &223122788
@@ -873,6 +875,22 @@ MonoBehaviour:
   metersPerUnityUnit: 1
   totalCourseHeight: 1000
   sectionCount: 5
+--- !u!114 &223122793
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 223122780}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ccfe00cca60a34443a7e16584b379d08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.UI.PrototypeRespawnMenu
+  respawnController: {fileID: 223122787}
+  inputReader: {fileID: 223122786}
+  menuSize: {x: 420, y: 230}
+  respawnFadeAlpha: 0.65
 --- !u!1 &263454770
 GameObject:
   m_ObjectHideFlags: 0

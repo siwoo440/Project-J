@@ -3,7 +3,7 @@ using ProjectJ.Diagnostics; // 프로젝트 공통 로그 기능 참조
 using UnityEngine; // Unity 이동과 물리 기능 참조
 
 namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
-{ // 플레이어 기능 범위
+{ // 플레이어 이동 범위
     [DisallowMultipleComponent] // 이동 컴포넌트 중복 방지
     [RequireComponent(typeof(CharacterController))] // 캐릭터 충돌 컴포넌트 보장
     [RequireComponent(typeof(PlayerInputReader))] // 입력 컴포넌트 보장
@@ -25,6 +25,15 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
         [SerializeField, Min(0.01f)] private float ledgeForwardDistance = 0.2f; // 충돌체 앞쪽 끝자락 추가 탐지 거리
         [SerializeField, Min(0.01f)] private float ledgeTopSearchHeight = 1.5f; // 끝자락 윗면 아래 방향 검색 시작 높이
         [SerializeField] private bool drawTraversalGizmos = true; // 선택 중 지형 탐지 결과 기즈모 표시 여부
+        [Header("Ledge Climb")] // 끝자락 올라오기 설정 구역 제목 표시
+        [SerializeField, Min(0f)] private float minimumLedgeHeight = 0.35f; // 올라오기 최소 높이 차이
+        [SerializeField, Min(0.01f)] private float maximumLedgeHeight = 2.2f; // 올라오기 최대 높이 차이
+        [SerializeField, Range(-1f, 1f)] private float minimumLedgeApproachDot = 0.5f; // 벽을 향하는 최소 입력 일치도
+        [SerializeField, Min(0f)] private float ledgeWallGap = 0.05f; // 몸 올리기 중 벽과 충돌체 사이 여유
+        [SerializeField, Min(0f)] private float ledgeLandingDepth = 0.55f; // 끝자락 안쪽 착지 거리
+        [SerializeField, Min(0f)] private float ledgeFootClearance = 0.05f; // 윗면과 발 사이 높이 여유
+        [SerializeField, Min(0.01f)] private float ledgeLiftDuration = 0.3f; // 몸 올리기 단계 시간
+        [SerializeField, Min(0.01f)] private float ledgeForwardDuration = 0.2f; // 발판 안쪽 이동 단계 시간
 
         private readonly Collider[] standOverlapBuffer = new Collider[StandOverlapCapacity]; // 서기 공간 검사 버퍼
         private CharacterController characterController; // 캐릭터 충돌 제어기
@@ -35,14 +44,16 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
         private PlayerCrouchStateController crouchStateController; // 앉기와 자세 상태 관리자
         private PlayerJumpGravityController jumpGravityController; // 점프와 중력 상태 관리자
         private PlayerTraversalProbe traversalProbe; // 경사와 모서리와 끝자락 탐지기
+        private PlayerLedgeClimbController ledgeClimbController; // 끝자락 올라오기 경로 제어기
         private Vector3 controlledHorizontalVelocity; // 입력 기반 수평 속도
         private Vector3 standingVisualLocalScale; // 서기 외형 크기
         private Vector3 standingVisualLocalPosition; // 서기 외형 위치
         private float groundedStepOffset; // 접지 상태의 기본 계단 오프셋
 
-        public Vector3 HorizontalVelocity => controlledHorizontalVelocity + externalForceController.HorizontalVelocity; // 실제 수평 속도 반환
+        public Vector3 HorizontalVelocity => controlledHorizontalVelocity + (externalForceController == null ? Vector3.zero : externalForceController.HorizontalVelocity); // 실제 수평 속도 반환
         public Vector3 ControlledHorizontalVelocity => controlledHorizontalVelocity; // 입력 기반 수평 속도 반환
-        public float VerticalVelocity => jumpGravityController == null ? 0f : jumpGravityController.VerticalVelocity; // 현재 수직 속도 반환
+        public Vector3 ExternalVelocity => externalForceController == null ? Vector3.zero : externalForceController.Velocity; // 최종 외부 속도 반환
+        public float VerticalVelocity => jumpGravityController == null ? 0f : jumpGravityController.VerticalVelocity; // 현재 점프 수직 속도 반환
         public float CoyoteTimeRemaining => jumpGravityController == null ? 0f : jumpGravityController.CoyoteTimeRemaining; // 남은 코요테 시간 반환
         public float JumpBufferTimeRemaining => jumpGravityController == null ? 0f : jumpGravityController.JumpBufferTimeRemaining; // 남은 점프 입력 보관 시간 반환
         public float CurrentStamina => sprintStaminaController == null ? 0f : sprintStaminaController.CurrentStamina; // 현재 스태미나 반환
@@ -52,6 +63,7 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
         public Vector3 GroundNormal => traversalProbe == null ? Vector3.up : traversalProbe.GroundNormal; // 현재 지면 법선 반환
         public Vector3 DetectedLedgePoint => traversalProbe == null ? Vector3.zero : traversalProbe.LedgePoint; // 감지된 끝자락 윗면 위치 반환
         public Vector3 DetectedLedgeNormal => traversalProbe == null ? Vector3.zero : traversalProbe.LedgeNormal; // 감지된 끝자락 벽 법선 반환
+        public Vector3 LedgeClimbLandingPosition => ledgeClimbController == null ? Vector3.zero : ledgeClimbController.LandingPosition; // 올라오기 최종 착지 위치 반환
         public bool IsGrounded { get; private set; } // 현재 접지 상태
         public bool JumpedThisFrame => jumpGravityController != null && jumpGravityController.JumpedThisTick; // 현재 프레임 점프 실행 여부 반환
         public bool IsSprinting => sprintStaminaController != null && sprintStaminaController.IsSprinting; // 현재 달리기 상태 반환
@@ -61,12 +73,15 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
         public PlayerSprintCancelReason LastSprintCancelReason => sprintStaminaController == null ? PlayerSprintCancelReason.None : sprintStaminaController.LastCancelReason; // 마지막 달리기 취소 원인 반환
         public bool IsCrouching => crouchStateController != null && crouchStateController.IsCrouching; // 현재 앉기 계열 상태 반환
         public bool IsStandingBlocked => crouchStateController != null && crouchStateController.IsStandingBlocked; // 머리 위 장애물로 서기 차단 상태 반환
-        public bool IsReceivingExternalForce => externalForceController != null && externalForceController.IsReceivingExternalForce; // 밀치기와 외부 힘 적용 상태 반환
+        public bool IsReceivingExternalForce => externalForceController != null && externalForceController.IsReceivingExternalForce; // 모든 외부 힘 적용 상태 반환
+        public bool IsReceivingExternalImpulse => externalForceController != null && externalForceController.IsReceivingImpulse; // 밀치기와 장애물 순간 힘 적용 상태 반환
         public bool IsOnWalkableSlope => traversalProbe != null && traversalProbe.IsOnWalkableSlope; // 이동 가능한 경사면 여부 반환
         public bool IsNearCorner => traversalProbe != null && traversalProbe.IsNearCorner; // 이동 방향 모서리 감지 여부 반환
         public bool IsLedgeDetected => traversalProbe != null && traversalProbe.IsLedgeDetected; // 올라올 수 있는 끝자락 감지 여부 반환
+        public bool IsLedgeClimbing => ledgeClimbController != null && ledgeClimbController.IsClimbing; // 끝자락 올라오기 진행 여부 반환
         public PlayerPostureState PostureState => crouchStateController == null ? PlayerPostureState.Standing : crouchStateController.CurrentState; // 현재 자세 상태 반환
         public PlayerJumpState JumpState => jumpGravityController == null ? PlayerJumpState.Grounded : jumpGravityController.CurrentState; // 현재 수직 이동 상태 반환
+        public PlayerLedgeClimbState LedgeClimbState => ledgeClimbController == null ? PlayerLedgeClimbState.Idle : ledgeClimbController.CurrentState; // 현재 올라오기 상태 반환
         public bool IsChangingDirection { get; private set; } // 지상 반대 방향 전환 상태
 
         private void Awake() // 이동 기능 준비
@@ -105,6 +120,7 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
             sprintStaminaController = new PlayerSprintStaminaController(playerData.Stamina); // 데이터 기반 달리기와 스태미나 상태 생성
             crouchStateController = new PlayerCrouchStateController(playerData.Crouch); // 데이터 기반 앉기와 자세 상태 생성
             jumpGravityController = new PlayerJumpGravityController(playerData.Jump.JumpHeight, playerData.Jump.CoyoteTime, playerData.Jump.JumpBufferTime, playerData.Gravity.GravityAcceleration, playerData.Gravity.MaximumFallSpeed, playerData.Gravity.GroundedGravity); // 데이터 기반 점프와 중력 상태 생성
+            ledgeClimbController = new PlayerLedgeClimbController(); // 끝자락 올라오기 경로 제어기 생성
             int effectiveTraversalLayers = traversalLayers.value & ~(1 << gameObject.layer); // 플레이어 자신의 레이어를 제외한 지형 탐지 마스크 계산
             traversalProbe = new PlayerTraversalProbe(transform, characterController, effectiveTraversalLayers, groundProbeDistance, cornerProbeDistance, cornerCorrectionStrength, ledgeForwardDistance, ledgeTopSearchHeight); // Inspector 설정 기반 지형 탐지기 생성
             ApplyControllerHeight(crouchStateController.CurrentHeight); // 초기 서기 충돌체 높이 적용
@@ -123,17 +139,38 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
 
             if (!stateController.CanMove || !characterController.enabled) // 이동 가능 상태 확인
             { // 조작 차단 범위
+                ledgeClimbController.Cancel(); // 조작 차단 시 진행 중인 올라오기 취소
                 sprintStaminaController.Cancel(PlayerSprintCancelReason.ControlDisabled); // 조작 차단 시 진행 중인 달리기 취소
                 return; // 이동 처리 생략
             } // 조작 차단 범위 종료
 
             Vector2 moveInput = Vector2.ClampMagnitude(inputReader.MoveValue, 1f); // 이동 입력 크기 제한
+            Vector3 desiredDirection = CalculateDesiredDirection(moveInput); // 카메라 기준 목표 이동 방향 계산
             IsGrounded = characterController.isGrounded; // 이동 전 접지 상태 갱신
+
+            if (IsLedgeClimbing && IsReceivingExternalImpulse) // 올라오기 중 밀치기 또는 장애물 힘 확인
+            { // 올라오기 외부 힘 취소 범위
+                CancelLedgeClimb(); // 외부 순간 힘에 따른 올라오기 취소
+            } // 올라오기 외부 힘 취소 범위 종료
+
+            if (IsLedgeClimbing) // 끝자락 올라오기 진행 상태 확인
+            { // 올라오기 이동 범위
+                traversalProbe.Tick(desiredDirection); // 진행 중 지형 탐지 상태 갱신
+                TickLedgeClimb(deltaTime); // 올라오기 전용 이동 처리
+                return; // 일반 이동 처리 생략
+            } // 올라오기 이동 범위 종료
+
             UpdateCrouchState(deltaTime); // 앉기와 자세 상태 갱신
             UpdateSprintAndStamina(deltaTime, moveInput); // 달리기와 스태미나 상태 통합 갱신
             UpdateJumpAndGravity(deltaTime); // 점프 판정과 중력 상태 통합 갱신
-            Vector3 desiredDirection = CalculateDesiredDirection(moveInput); // 카메라 기준 목표 이동 방향 계산
             traversalProbe.Tick(desiredDirection); // 경사와 끝자락 탐지 상태 갱신
+
+            if (TryBeginLedgeClimb(desiredDirection)) // 현재 감지 결과 기반 올라오기 시작 확인
+            { // 올라오기 시작 범위
+                TickLedgeClimb(deltaTime); // 시작 프레임 올라오기 이동 처리
+                return; // 일반 이동 처리 생략
+            } // 올라오기 시작 범위 종료
+
             Vector3 cornerCorrectedDirection = traversalProbe.CorrectDirectionAroundCorner(desiredDirection); // 전방 장애물 기반 모서리 보정 방향 계산
             Vector3 effectiveDirection = IsGrounded ? desiredDirection : cornerCorrectedDirection; // 공중 상태에만 모서리 보정 방향 적용
             UpdateControlledHorizontalVelocity(deltaTime, moveInput, effectiveDirection); // 입력과 공중 제어 기반 수평 속도 갱신
@@ -142,12 +179,13 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
             Vector3 horizontalVelocity = controlledHorizontalVelocity + externalForceController.HorizontalVelocity; // 입력 속도와 외부 힘 수평 속도 결합
             bool canAlignToGround = IsGrounded && !JumpedThisFrame; // 점프 시작이 아닌 접지 프레임의 경사 정렬 허용
             Vector3 traversalVelocity = traversalProbe.AlignVelocityToGround(horizontalVelocity, canAlignToGround); // 경사면을 따르는 이동 속도 계산
-            Vector3 frameVelocity = traversalVelocity + Vector3.up * jumpGravityController.VerticalVelocity; // 지형 보정 속도와 수직 속도 결합
+            float totalVerticalVelocity = jumpGravityController.VerticalVelocity + externalForceController.VerticalVelocity; // 점프 중력과 외부 힘 수직 속도 결합
+            Vector3 frameVelocity = traversalVelocity + Vector3.up * totalVerticalVelocity; // 지형 보정 속도와 최종 수직 속도 결합
             CollisionFlags collisionFlags = characterController.Move(frameVelocity * deltaTime); // 캐릭터 이동 실행
 
             if ((collisionFlags & CollisionFlags.Above) != 0) // 천장 상승 충돌 확인
             { // 천장 충돌 범위
-                jumpGravityController.CancelUpwardVelocity(); // 남은 상승 속도 제거
+                jumpGravityController.CancelUpwardVelocity(); // 남은 점프 상승 속도 제거
             } // 천장 충돌 범위 종료
 
             IsGrounded = (collisionFlags & CollisionFlags.Below) != 0 || characterController.isGrounded; // 이동 후 접지 상태 갱신
@@ -158,7 +196,7 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
         { // 자세 갱신 범위
             bool crouchRequested = inputReader.IsCrouchPressed; // 현재 앉기 입력 상태 조회
             bool canStandUp = crouchRequested || CanStandUp(); // 입력 해제 시에만 서기 공간 검사
-            crouchStateController.Tick(deltaTime, crouchRequested, canStandUp, externalForceController.IsReceivingExternalForce); // 입력과 공간과 외부 힘 기반 자세 갱신
+            crouchStateController.Tick(deltaTime, crouchRequested, canStandUp, externalForceController.IsReceivingImpulse); // 입력과 공간과 순간 외부 힘 기반 자세 갱신
             ApplyControllerHeight(crouchStateController.CurrentHeight); // 자세 제어기의 현재 높이 적용
             UpdateVisualHeight(crouchStateController.CurrentHeight); // 외형 높이 갱신
         } // 자세 갱신 범위 종료
@@ -219,6 +257,35 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
             return true; // 서기 공간 확보 반환
         } // 서기 공간 검사 범위 종료
 
+        private bool CanOccupyStandingPosition(Vector3 feetPosition) // 지정 발 위치의 서기 공간 확보 여부 반환
+        { // 지정 위치 공간 검사 범위
+            float radius = Mathf.Max(0.01f, characterController.radius - characterController.skinWidth); // 피부 너비를 제외한 검사 반지름 계산
+            float lowerHeight = radius; // 검사 캡슐 아래 중심 높이 계산
+            float upperHeight = Mathf.Max(lowerHeight, playerData.Crouch.StandingHeight - radius); // 검사 캡슐 위 중심 높이 계산
+            Vector3 lowerPoint = feetPosition + Vector3.up * lowerHeight; // 지정 위치의 검사 캡슐 아래 중심 계산
+            Vector3 upperPoint = feetPosition + Vector3.up * upperHeight; // 지정 위치의 검사 캡슐 위 중심 계산
+            int overlapCount = Physics.OverlapCapsuleNonAlloc(lowerPoint, upperPoint, radius, standOverlapBuffer, ~0, QueryTriggerInteraction.Ignore); // 지정 위치의 서기 공간 충돌 검사
+
+            for (int index = 0; index < overlapCount; index++) // 검사된 충돌체 순회
+            { // 지정 위치 충돌체 순회 범위
+                Collider overlap = standOverlapBuffer[index]; // 현재 충돌체 조회
+
+                if (overlap == null) // 빈 충돌체 확인
+                { // 빈 충돌체 범위
+                    continue; // 빈 항목 건너뛰기
+                } // 빈 충돌체 범위 종료
+
+                if (overlap.transform == transform || overlap.transform.IsChildOf(transform)) // 플레이어 소유 충돌체 확인
+                { // 자기 충돌체 범위
+                    continue; // 자기 충돌체 제외
+                } // 자기 충돌체 범위 종료
+
+                return false; // 지정 위치의 외부 장애물 감지 반환
+            } // 지정 위치 충돌체 순회 범위 종료
+
+            return true; // 지정 위치의 서기 공간 확보 반환
+        } // 지정 위치 공간 검사 범위 종료
+
         private void UpdateSprintAndStamina(float deltaTime, Vector2 moveInput) // 달리기와 스태미나 상태 통합 갱신
         { // 달리기 갱신 범위
             bool hasMoveInput = moveInput.sqrMagnitude > MovementInputThreshold; // 유효 이동 입력 확인
@@ -275,9 +342,84 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
             } // 플레이어 회전 범위 종료
         } // 수평 속도 갱신 범위 종료
 
+        private bool TryBeginLedgeClimb(Vector3 desiredDirection) // 현재 공중 상태와 끝자락 감지 결과 기반 올라오기 시작 시도
+        { // 올라오기 시작 판정 범위
+            if (IsGrounded || IsCrouching || IsReceivingExternalImpulse || !IsLedgeDetected) // 기본 올라오기 제한 조건 확인
+            { // 올라오기 제한 범위
+                return false; // 올라오기 시작 실패 반환
+            } // 올라오기 제한 범위 종료
+
+            if (!PlayerLedgeClimbController.IsHeightReachable(transform.position.y, DetectedLedgePoint.y, minimumLedgeHeight, maximumLedgeHeight)) // 끝자락 높이 범위 확인
+            { // 높이 제한 범위
+                return false; // 올라오기 시작 실패 반환
+            } // 높이 제한 범위 종료
+
+            if (!PlayerLedgeClimbController.IsApproachingWall(desiredDirection, DetectedLedgeNormal, minimumLedgeApproachDot)) // 벽을 향한 이동 입력 확인
+            { // 접근 방향 제한 범위
+                return false; // 올라오기 시작 실패 반환
+            } // 접근 방향 제한 범위 종료
+
+            float wallClearance = characterController.radius * 2f + ledgeWallGap; // 윗면 탐지 안쪽 거리와 충돌체 반지름을 포함한 벽 바깥 여유 계산
+            bool started = ledgeClimbController.TryBegin(transform.position, DetectedLedgePoint, DetectedLedgeNormal, wallClearance, ledgeLandingDepth, ledgeFootClearance, ledgeLiftDuration, ledgeForwardDuration); // 감지 위치 기반 올라오기 경로 생성
+
+            if (!started) // 올라오기 경로 생성 실패 확인
+            { // 경로 생성 실패 범위
+                return false; // 올라오기 시작 실패 반환
+            } // 경로 생성 실패 범위 종료
+
+            if (!CanOccupyStandingPosition(ledgeClimbController.LandingPosition)) // 최종 착지 위치의 서기 공간 확인
+            { // 착지 공간 차단 범위
+                ledgeClimbController.Cancel(); // 사용할 수 없는 올라오기 경로 제거
+                return false; // 올라오기 시작 실패 반환
+            } // 착지 공간 차단 범위 종료
+
+            controlledHorizontalVelocity = Vector3.zero; // 일반 입력 기반 수평 속도 제거
+            externalForceController.ClearVelocity(); // 올라오기 시작 전 남은 외부 속도 제거
+            sprintStaminaController.Cancel(PlayerSprintCancelReason.ControlDisabled); // 올라오기 중 달리기 취소
+            jumpGravityController.Reset(); // 올라오기 전 점프와 중력 상태 초기화
+            characterController.stepOffset = 0f; // 올라오기 중 계단 오프셋 비활성화
+            IsChangingDirection = false; // 지상 방향 전환 상태 제거
+            return true; // 올라오기 시작 성공 반환
+        } // 올라오기 시작 판정 범위 종료
+
+        private void TickLedgeClimb(float deltaTime) // 끝자락 올라오기 전용 이동 처리
+        { // 올라오기 이동 처리 범위
+            characterController.stepOffset = 0f; // 올라오기 중 계단 오프셋 비활성 유지
+            Vector3 movement = ledgeClimbController.Tick(deltaTime, transform.position); // 현재 단계의 월드 이동량 계산
+            CollisionFlags collisionFlags = characterController.Move(movement); // 충돌을 반영한 올라오기 이동 실행
+
+            if ((collisionFlags & CollisionFlags.Above) != 0) // 몸 올리기 중 천장 충돌 확인
+            { // 올라오기 천장 충돌 범위
+                CancelLedgeClimb(); // 막힌 공간의 올라오기 취소
+                IsGrounded = characterController.isGrounded; // 취소 위치의 접지 상태 갱신
+                jumpGravityController.SynchronizeGroundedState(IsGrounded); // 취소 위치의 수직 상태 동기화
+                return; // 올라오기 완료 처리 생략
+            } // 올라오기 천장 충돌 범위 종료
+
+            IsGrounded = (collisionFlags & CollisionFlags.Below) != 0 || characterController.isGrounded; // 올라오기 이동 뒤 접지 상태 갱신
+
+            if (!ledgeClimbController.CompletedThisTick) // 최종 착지 단계 미완료 확인
+            { // 올라오기 진행 유지 범위
+                return; // 완료 초기화 처리 생략
+            } // 올라오기 진행 유지 범위 종료
+
+            jumpGravityController.Reset(); // 착지 뒤 점프와 중력 상태 초기화
+            jumpGravityController.SynchronizeGroundedState(IsGrounded); // 최종 접지 상태와 수직 상태 동기화
+            traversalProbe.Reset(); // 완료 전 감지된 끝자락 상태 제거
+            characterController.stepOffset = groundedStepOffset; // 착지 뒤 기본 계단 오프셋 복원
+        } // 올라오기 이동 처리 범위 종료
+
+        private void CancelLedgeClimb() // 진행 중인 끝자락 올라오기 취소
+        { // 올라오기 취소 처리 범위
+            ledgeClimbController.Cancel(); // 올라오기 경로 상태 초기화
+            jumpGravityController.Reset(); // 점프와 중력 상태 초기화
+            traversalProbe.Reset(); // 끝자락 감지 상태 초기화
+            characterController.stepOffset = 0f; // 공중 취소 상태의 계단 오프셋 비활성화
+        } // 올라오기 취소 처리 범위 종료
+
         private void UpdateStepOffset() // 접지 상태에 따른 CharacterController 계단 이동 설정 갱신
         { // 계단 오프셋 갱신 범위
-            if (!IsGrounded || JumpedThisFrame) // 공중 또는 점프 시작 상태 확인
+            if (!IsGrounded || JumpedThisFrame || IsLedgeClimbing) // 공중 또는 점프 또는 올라오기 상태 확인
             { // 계단 비활성 범위
                 characterController.stepOffset = 0f; // 공중 벽 걸림 방지를 위한 계단 오프셋 제거
                 return; // 접지 계단 설정 생략
@@ -325,6 +467,14 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
                 Gizmos.DrawSphere(DetectedLedgePoint, 0.08f); // 감지된 끝자락 윗면 위치 표시
                 Gizmos.DrawLine(DetectedLedgePoint, DetectedLedgePoint + DetectedLedgeNormal * 0.5f); // 끝자락 벽 법선 표시
             } // 끝자락 기즈모 범위 종료
+
+            if (IsLedgeClimbing) // 올라오기 경로 표시 여부 확인
+            { // 올라오기 경로 기즈모 범위
+                Gizmos.color = Color.blue; // 올라오기 경로 색상 적용
+                Gizmos.DrawLine(feetPosition, ledgeClimbController.LiftPosition); // 현재 위치에서 몸 올리기 목표 선 표시
+                Gizmos.DrawLine(ledgeClimbController.LiftPosition, ledgeClimbController.LandingPosition); // 몸 올리기 목표에서 착지 목표 선 표시
+                Gizmos.DrawWireSphere(ledgeClimbController.LandingPosition, 0.1f); // 최종 착지 위치 표시
+            } // 올라오기 경로 기즈모 범위 종료
         } // 지형 탐지 기즈모 범위 종료
 
         public void ResetAfterRespawn() // 부활 직후 이동과 지형 상태 초기화
@@ -339,6 +489,7 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
             sprintStaminaController.Reset(); // 달리기와 스태미나 상태 초기화
             crouchStateController.Reset(); // 앉기와 자세 상태 초기화
             jumpGravityController.Reset(); // 점프와 중력 상태 초기화
+            ledgeClimbController.Reset(); // 끝자락 올라오기 상태 초기화
             traversalProbe.Reset(); // 경사와 모서리와 끝자락 탐지 상태 초기화
             IsGrounded = false; // 접지 상태 재검사 준비
             IsChangingDirection = false; // 방향 전환 상태 해제
@@ -348,4 +499,4 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
             UpdateVisualHeight(crouchStateController.CurrentHeight); // 외형 서기 높이 복원
         } // 부활 초기화 범위 종료
     } // 이동 제어 범위 종료
-} // 플레이어 기능 범위 종료
+} // 플레이어 이동 범위 종료

@@ -1,11 +1,11 @@
 using UnityEngine; // Unity 충돌과 벡터 기능 참조
 
-namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
+namespace ProjectJ.Player // 플레이어 상호작용 기능 네임스페이스 선언
 { // 플레이어 밀치기 범위
     [DisallowMultipleComponent] // 밀치기 컴포넌트 중복 방지
     [RequireComponent(typeof(PlayerInputReader))] // 입력 컴포넌트 보장
     [RequireComponent(typeof(PlayerStateController))] // 상태 컴포넌트 보장
-    public sealed class PlayerPushController : MonoBehaviour // 플레이어 밀치기 제어 컴포넌트 선언
+    public sealed class PlayerPushController : MonoBehaviour // 밀치기와 현재 대상 선정을 관리하는 컴포넌트 선언
     { // 밀치기 제어 범위
         private const int HitBufferCapacity = 16; // 밀치기 판정 최대 충돌 수
 
@@ -22,8 +22,11 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
         private PlayerInputReader inputReader; // 플레이어 입력 제공자
         private PlayerStateController stateController; // 플레이어 상태 관리자
 
+        public ExternalForceReceiver CurrentTarget { get; private set; } // 현재 밀치기 가능한 가장 가까운 대상
+        public float CurrentTargetDistance { get; private set; } = float.PositiveInfinity; // 현재 대상까지의 판정 거리
         public float CooldownRemaining { get; private set; } // 남은 밀치기 대기시간
         public float CooldownNormalized => cooldownDuration <= 0f ? 0f : Mathf.Clamp01(CooldownRemaining / cooldownDuration); // 대기시간 비율 반환
+        public bool HasCurrentTarget => CurrentTarget != null; // 현재 유효 대상 존재 여부 반환
         public bool IsReady => CooldownRemaining <= 0f; // 밀치기 사용 가능 상태 반환
 
         private void Awake() // 밀치기 기능 준비
@@ -37,14 +40,21 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
             } // 판정 시작점 대체 범위 종료
         } // 밀치기 준비 범위 종료
 
-        private void Update() // 밀치기 입력과 대기시간 갱신
+        private void OnDisable() // 밀치기 기능 비활성화 처리
+        { // 밀치기 비활성화 범위
+            ClearCurrentTarget(); // 비활성 상태의 외곽선 대상 제거
+        } // 밀치기 비활성화 범위 종료
+
+        private void Update() // 대상 선택과 밀치기 입력과 대기시간 갱신
         { // 밀치기 갱신 범위
             if (!stateController.CanUseAction) // 상호작용 가능 상태 확인
             { // 상호작용 차단 범위
+                ClearCurrentTarget(); // 조작 차단 중 현재 대상 제거
                 return; // 밀치기 갱신 생략
             } // 상호작용 차단 범위 종료
 
             CooldownRemaining = Mathf.Max(0f, CooldownRemaining - Time.deltaTime); // 남은 대기시간 감소
+            FindClosestTarget(); // 현재 전방의 밀치기 가능 대상 갱신
 
             if (!IsReady || !inputReader.WasPushPressedThisFrame()) // 사용 가능 상태와 새 입력 확인
             { // 밀치기 입력 없음 범위
@@ -52,7 +62,7 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
             } // 밀치기 입력 없음 범위 종료
 
             CooldownRemaining = cooldownDuration; // 밀치기 대기시간 적용
-            TryPushClosestTarget(); // 가장 가까운 외부 힘 대상 밀치기 시도
+            TryPushCurrentTarget(); // 현재 선택된 대상 밀치기 시도
         } // 밀치기 갱신 범위 종료
 
         private void OnDrawGizmosSelected() // 선택 상태 판정 범위 표시
@@ -64,13 +74,13 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
 
             Vector3 origin = GetPushOriginPosition(); // 판정 시작 위치 계산
             Vector3 direction = GetPushDirection(); // 판정 방향 계산
-            Gizmos.color = Color.yellow; // 판정선 색상 적용
+            Gizmos.color = CurrentTarget == null ? Color.yellow : Color.cyan; // 현재 대상 존재 여부 기반 판정 색상 선택
             Gizmos.DrawWireSphere(origin, pushRadius); // 판정 시작 구체 표시
             Gizmos.DrawLine(origin, origin + direction * pushRange); // 판정 중심선 표시
             Gizmos.DrawWireSphere(origin + direction * pushRange, pushRadius); // 판정 종료 구체 표시
         } // 밀치기 기즈모 범위 종료
 
-        private void TryPushClosestTarget() // 전방에서 가장 가까운 외부 힘 대상 밀치기
+        private void FindClosestTarget() // 전방에서 가장 가까운 외부 힘 대상 검색
         { // 밀치기 대상 검색 범위
             Vector3 origin = GetPushOriginPosition(); // 판정 시작 위치 계산
             Vector3 direction = GetPushDirection(); // 판정 방향 계산
@@ -95,10 +105,22 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
 
             if (closestTarget == null || closestDistance > closestObstacleDistance) // 대상 존재와 중간 장애물 확인
             { // 밀치기 대상 없음 범위
-                return; // 밀치기 적용 생략
+                ClearCurrentTarget(); // 현재 대상과 거리 제거
+                return; // 대상 선택 생략
             } // 밀치기 대상 없음 범위 종료
 
-            Vector3 targetPosition = closestTarget.ForceReceiverTransform.position; // 대상 위치 조회
+            CurrentTarget = closestTarget; // 가장 가까운 유효 대상 저장
+            CurrentTargetDistance = closestDistance; // 현재 대상 판정 거리 저장
+        } // 밀치기 대상 검색 범위 종료
+
+        private void TryPushCurrentTarget() // 현재 선택된 외부 힘 대상 밀치기
+        { // 현재 대상 밀치기 범위
+            if (CurrentTarget == null) // 선택된 대상 존재 확인
+            { // 선택 대상 없음 범위
+                return; // 밀치기 적용 생략
+            } // 선택 대상 없음 범위 종료
+
+            Vector3 targetPosition = CurrentTarget.ForceReceiverTransform.position; // 대상 위치 조회
             Vector3 pushDirection = Vector3.ProjectOnPlane(targetPosition - transform.position, Vector3.up); // 대상 수평 방향 계산
 
             if (pushDirection.sqrMagnitude <= 0.0001f) // 대상 방향 계산 실패 확인
@@ -107,8 +129,8 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
             } // 밀치기 방향 대체 범위 종료
 
             ExternalForceRequest request = ExternalForceRequest.CreatePush(pushDirection, pushForce); // 원인과 결합 방식을 포함한 밀치기 요청 생성
-            closestTarget.TryReceiveExternalForce(request); // 대상에 통합 외부 힘 요청 적용
-        } // 밀치기 대상 검색 범위 종료
+            CurrentTarget.TryReceiveExternalForce(request); // 현재 대상에 통합 외부 힘 요청 적용
+        } // 현재 대상 밀치기 범위 종료
 
         private void EvaluatePushCollider(Collider hitCollider, float hitDistance, ref ExternalForceReceiver closestTarget, ref float closestDistance, ref float closestObstacleDistance) // 밀치기 충돌체 평가
         { // 충돌체 평가 범위
@@ -133,6 +155,12 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
             closestTarget = target; // 가장 가까운 대상 저장
             closestDistance = hitDistance; // 가장 가까운 대상 거리 저장
         } // 충돌체 평가 범위 종료
+
+        private void ClearCurrentTarget() // 현재 외곽선 대상과 거리 제거
+        { // 현재 대상 제거 범위
+            CurrentTarget = null; // 현재 대상 참조 제거
+            CurrentTargetDistance = float.PositiveInfinity; // 현재 대상 거리 초기화
+        } // 현재 대상 제거 범위 종료
 
         private Vector3 GetPushOriginPosition() // 밀치기 판정 시작 위치 반환
         { // 판정 시작점 계산 범위

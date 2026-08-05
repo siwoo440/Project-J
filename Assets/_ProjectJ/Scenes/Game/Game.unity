@@ -421,6 +421,7 @@ GameObject:
   - component: {fileID: 223122789}
   - component: {fileID: 223122790}
   - component: {fileID: 223122791}
+  - component: {fileID: 223122792}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -528,7 +529,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e81f55594000afd4ab488ee171d734fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Player.PlayerRespawnController
-  heightOrigin: {fileID: 1842750216}
   fallLimitY: -5
   respawnDelay: 0.75
   respawnVerticalOffset: 0.05
@@ -597,6 +597,22 @@ MonoBehaviour:
   cooldownColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   lineWidth: 0.035
   boundsPadding: 0.08
+--- !u!114 &223122792
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 223122780}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a39b2acaa8a7d144583dd007926bc2c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Player.PlayerHeightProgressController
+  heightOrigin: {fileID: 1842750216}
+  metersPerUnityUnit: 1
+  totalCourseHeight: 1000
+  sectionCount: 5
 --- !u!1 &296183993
 GameObject:
   m_ObjectHideFlags: 0
@@ -1234,12 +1250,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.UI.MinimalPlayerHud
   respawnController: {fileID: 223122787}
+  heightProgressController: {fileID: 223122792}
   movementController: {fileID: 223122785}
   matchController: {fileID: 805130841}
   panelPosition: {x: 20, y: 20}
   panelWidth: 320
+  courseProgressColor: {r: 1, g: 0.55, b: 0.1, a: 1}
   staminaColor: {r: 0.2, g: 0.8, b: 0.35, a: 1}
-  staminaBackgroundColor: {r: 0.08, g: 0.08, b: 0.08, a: 0.9}
+  barBackgroundColor: {r: 0.08, g: 0.08, b: 0.08, a: 0.9}
 --- !u!4 &652448867
 Transform:
   m_ObjectHideFlags: 0

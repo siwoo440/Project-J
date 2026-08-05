@@ -24,21 +24,26 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
         private PlayerInputReader inputReader; // 플레이어 입력 제공자
         private PlayerStateController stateController; // 플레이어 상태 관리자
         private PlayerExternalForceController externalForceController; // 플레이어 외부 힘 관리자
+        private PlayerSprintStaminaController sprintStaminaController; // 달리기와 스태미나 상태 관리자
         private Vector3 controlledHorizontalVelocity; // 입력 기반 수평 속도
         private Vector3 standingVisualLocalScale; // 서기 외형 크기
         private Vector3 standingVisualLocalPosition; // 서기 외형 위치
         private float verticalVelocity; // 현재 수직 속도
         private float coyoteTimeRemaining; // 남은 코요테 시간
         private float jumpBufferTimeRemaining; // 남은 점프 버퍼 시간
-        private float staminaRecoveryDelayRemaining; // 남은 스태미나 회복 대기 시간
 
         public Vector3 HorizontalVelocity => controlledHorizontalVelocity + externalForceController.HorizontalVelocity; // 실제 수평 속도 반환
         public Vector3 ControlledHorizontalVelocity => controlledHorizontalVelocity; // 입력 기반 수평 속도 반환
         public float VerticalVelocity => verticalVelocity; // 현재 수직 속도 반환
-        public float CurrentStamina { get; private set; } // 현재 스태미나
-        public float StaminaNormalized => playerData == null ? 0f : CurrentStamina / playerData.Stamina.MaximumStamina; // 스태미나 비율 반환
+        public float CurrentStamina => sprintStaminaController == null ? 0f : sprintStaminaController.CurrentStamina; // 현재 스태미나 반환
+        public float StaminaNormalized => sprintStaminaController == null ? 0f : sprintStaminaController.NormalizedStamina; // 스태미나 비율 반환
+        public float StaminaRecoveryDelayRemaining => sprintStaminaController == null ? 0f : sprintStaminaController.RecoveryDelayRemaining; // 남은 회복 대기 시간 반환
         public bool IsGrounded { get; private set; } // 현재 접지 상태
-        public bool IsSprinting { get; private set; } // 현재 달리기 상태
+        public bool IsSprinting => sprintStaminaController != null && sprintStaminaController.IsSprinting; // 현재 달리기 상태 반환
+        public bool IsStaminaRecoveryDelayed => sprintStaminaController != null && sprintStaminaController.IsRecoveryDelayed; // 스태미나 회복 대기 상태 반환
+        public bool IsStaminaRecovering => sprintStaminaController != null && sprintStaminaController.IsRecovering; // 스태미나 회복 상태 반환
+        public bool IsSprintBlockedUntilRelease => sprintStaminaController != null && sprintStaminaController.IsSprintBlockedUntilRelease; // Shift 재입력 대기 상태 반환
+        public PlayerSprintCancelReason LastSprintCancelReason => sprintStaminaController == null ? PlayerSprintCancelReason.None : sprintStaminaController.LastCancelReason; // 마지막 달리기 취소 원인 반환
         public bool IsCrouching { get; private set; } // 현재 앉기 상태
         public bool IsChangingDirection { get; private set; } // 지상 반대 방향 전환 상태
 
@@ -76,7 +81,7 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
             characterController.radius = playerData.Crouch.ControllerRadius; // 데이터 기반 충돌체 반지름 적용
             characterController.height = playerData.Crouch.StandingHeight; // 데이터 기반 서기 높이 적용
             characterController.center = Vector3.up * playerData.Crouch.StandingHeight * 0.5f; // 발 위치 고정 중심 적용
-            CurrentStamina = playerData.Stamina.MaximumStamina; // 초기 스태미나 충전
+            sprintStaminaController = new PlayerSprintStaminaController(playerData.Stamina); // 데이터 기반 달리기와 스태미나 상태 생성
 
             if (visualRoot != null) // 외형 연결 확인
             { // 조건 범위 시작
@@ -92,14 +97,14 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
 
             if (!stateController.CanMove || !characterController.enabled) // 이동 가능 상태 확인
             { // 조건 범위 시작
+                sprintStaminaController.Cancel(PlayerSprintCancelReason.ControlDisabled); // 조작 차단 시 진행 중인 달리기 취소
                 return; // 이동 처리 생략
             } // 조건 범위 종료
 
             Vector2 moveInput = Vector2.ClampMagnitude(inputReader.MoveValue, 1f); // 이동 입력 크기 제한
             IsGrounded = characterController.isGrounded; // 이동 전 접지 상태 갱신
             UpdateCrouchState(deltaTime); // 앉기 상태 갱신
-            UpdateSprintState(moveInput); // 달리기 상태 갱신
-            UpdateStamina(deltaTime); // 스태미나 상태 갱신
+            UpdateSprintAndStamina(deltaTime, moveInput); // 달리기와 스태미나 상태 통합 갱신
             UpdateJumpTimers(deltaTime); // 점프 보조 시간 갱신
             UpdateControlledHorizontalVelocity(deltaTime, moveInput); // 입력 기반 수평 속도 갱신
             UpdateVerticalVelocity(deltaTime); // 수직 속도 갱신
@@ -178,44 +183,10 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
             return true; // 서기 공간 확보 반환
         } // 메서드 범위 종료
 
-        private void UpdateSprintState(Vector2 moveInput) // 달리기 가능 상태 갱신
+        private void UpdateSprintAndStamina(float deltaTime, Vector2 moveInput) // 달리기와 스태미나 상태 통합 갱신
         { // 메서드 범위 시작
             bool hasMoveInput = moveInput.sqrMagnitude > MovementInputThreshold; // 유효 이동 입력 확인
-            bool sprintRequested = inputReader.IsSprintPressed && hasMoveInput; // 달리기 입력 조건 확인
-            bool postureAllowsSprint = IsGrounded && !IsCrouching; // 접지와 자세 조건 확인
-
-            if (!sprintRequested || !postureAllowsSprint) // 달리기 불가 조건 확인
-            { // 조건 범위 시작
-                IsSprinting = false; // 달리기 상태 해제
-                return; // 달리기 판정 종료
-            } // 조건 범위 종료
-
-            float requiredStamina = IsSprinting ? 0f : playerData.Stamina.MinimumStaminaToStartSprint; // 진입 또는 유지 스태미나 계산
-            IsSprinting = CurrentStamina > requiredStamina || Mathf.Approximately(CurrentStamina, requiredStamina); // 현재 달리기 가능 여부 적용
-        } // 메서드 범위 종료
-
-        private void UpdateStamina(float deltaTime) // 달리기 스태미나 갱신
-        { // 메서드 범위 시작
-            if (IsSprinting) // 달리기 상태 확인
-            { // 조건 범위 시작
-                CurrentStamina = Mathf.Max(0f, CurrentStamina - playerData.Stamina.SprintDrainPerSecond * deltaTime); // 달리기 스태미나 소비
-                staminaRecoveryDelayRemaining = playerData.Stamina.RecoveryDelay; // 회복 대기 시간 재설정
-
-                if (CurrentStamina <= 0f) // 스태미나 소진 확인
-                { // 조건 범위 시작
-                    IsSprinting = false; // 강제 달리기 종료
-                } // 조건 범위 종료
-
-                return; // 스태미나 회복 생략
-            } // 조건 범위 종료
-
-            if (staminaRecoveryDelayRemaining > 0f) // 회복 대기 시간 확인
-            { // 조건 범위 시작
-                staminaRecoveryDelayRemaining = Mathf.Max(0f, staminaRecoveryDelayRemaining - deltaTime); // 회복 대기 시간 감소
-                return; // 스태미나 회복 대기
-            } // 조건 범위 종료
-
-            CurrentStamina = Mathf.Min(playerData.Stamina.MaximumStamina, CurrentStamina + playerData.Stamina.RecoveryPerSecond * deltaTime); // 스태미나 회복 적용
+            sprintStaminaController.Tick(deltaTime, inputReader.IsSprintPressed, hasMoveInput, IsGrounded, IsCrouching); // 입력과 자세 기반 달리기와 스태미나 처리
         } // 메서드 범위 종료
 
         private void UpdateJumpTimers(float deltaTime) // 점프 보조 시간 갱신
@@ -336,13 +307,11 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
 
             controlledHorizontalVelocity = Vector3.zero; // 입력 기반 수평 속도 제거
             externalForceController.ResetExternalForce(); // 외부 힘 상태 초기화
+            sprintStaminaController.Reset(); // 달리기와 스태미나 상태 초기화
             verticalVelocity = playerData.Gravity.GroundedGravity; // 접지 유지용 수직 속도 적용
             coyoteTimeRemaining = 0f; // 코요테 시간 초기화
             jumpBufferTimeRemaining = 0f; // 점프 버퍼 초기화
-            staminaRecoveryDelayRemaining = 0f; // 스태미나 회복 대기 초기화
-            CurrentStamina = playerData.Stamina.MaximumStamina; // 스태미나 최대치 복원
             IsGrounded = false; // 접지 상태 재검사 준비
-            IsSprinting = false; // 달리기 상태 해제
             IsCrouching = false; // 앉기 상태 해제
             IsChangingDirection = false; // 방향 전환 상태 해제
             characterController.radius = playerData.Crouch.ControllerRadius; // 충돌체 반지름 복원

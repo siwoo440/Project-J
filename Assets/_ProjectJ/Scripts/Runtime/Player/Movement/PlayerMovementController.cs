@@ -17,6 +17,14 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
         [SerializeField] private PlayerDataDefinition playerData; // 플레이어 설정 에셋
         [SerializeField] private Transform movementCamera; // 이동 방향 기준 카메라
         [SerializeField] private Transform visualRoot; // 플레이어 외형 루트
+        [Header("Traversal Probes")] // 지형 탐지 설정 구역 제목 표시
+        [SerializeField] private LayerMask traversalLayers = ~0; // 경사와 모서리와 끝자락 탐지 대상 레이어
+        [SerializeField, Min(0.01f)] private float groundProbeDistance = 0.35f; // 발 아래 지면 탐지 거리
+        [SerializeField, Min(0.01f)] private float cornerProbeDistance = 0.2f; // 충돌체 앞쪽 모서리 추가 탐지 거리
+        [SerializeField, Range(0f, 1f)] private float cornerCorrectionStrength = 0.75f; // 공중 모서리 방향 보정 강도
+        [SerializeField, Min(0.01f)] private float ledgeForwardDistance = 0.2f; // 충돌체 앞쪽 끝자락 추가 탐지 거리
+        [SerializeField, Min(0.01f)] private float ledgeTopSearchHeight = 1.5f; // 끝자락 윗면 아래 방향 검색 시작 높이
+        [SerializeField] private bool drawTraversalGizmos = true; // 선택 중 지형 탐지 결과 기즈모 표시 여부
 
         private readonly Collider[] standOverlapBuffer = new Collider[StandOverlapCapacity]; // 서기 공간 검사 버퍼
         private CharacterController characterController; // 캐릭터 충돌 제어기
@@ -26,9 +34,11 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
         private PlayerSprintStaminaController sprintStaminaController; // 달리기와 스태미나 상태 관리자
         private PlayerCrouchStateController crouchStateController; // 앉기와 자세 상태 관리자
         private PlayerJumpGravityController jumpGravityController; // 점프와 중력 상태 관리자
+        private PlayerTraversalProbe traversalProbe; // 경사와 모서리와 끝자락 탐지기
         private Vector3 controlledHorizontalVelocity; // 입력 기반 수평 속도
         private Vector3 standingVisualLocalScale; // 서기 외형 크기
         private Vector3 standingVisualLocalPosition; // 서기 외형 위치
+        private float groundedStepOffset; // 접지 상태의 기본 계단 오프셋
 
         public Vector3 HorizontalVelocity => controlledHorizontalVelocity + externalForceController.HorizontalVelocity; // 실제 수평 속도 반환
         public Vector3 ControlledHorizontalVelocity => controlledHorizontalVelocity; // 입력 기반 수평 속도 반환
@@ -38,6 +48,10 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
         public float CurrentStamina => sprintStaminaController == null ? 0f : sprintStaminaController.CurrentStamina; // 현재 스태미나 반환
         public float StaminaNormalized => sprintStaminaController == null ? 0f : sprintStaminaController.NormalizedStamina; // 스태미나 비율 반환
         public float StaminaRecoveryDelayRemaining => sprintStaminaController == null ? 0f : sprintStaminaController.RecoveryDelayRemaining; // 남은 회복 대기 시간 반환
+        public float GroundSlopeAngle => traversalProbe == null ? 0f : traversalProbe.GroundSlopeAngle; // 현재 지면 경사 각도 반환
+        public Vector3 GroundNormal => traversalProbe == null ? Vector3.up : traversalProbe.GroundNormal; // 현재 지면 법선 반환
+        public Vector3 DetectedLedgePoint => traversalProbe == null ? Vector3.zero : traversalProbe.LedgePoint; // 감지된 끝자락 윗면 위치 반환
+        public Vector3 DetectedLedgeNormal => traversalProbe == null ? Vector3.zero : traversalProbe.LedgeNormal; // 감지된 끝자락 벽 법선 반환
         public bool IsGrounded { get; private set; } // 현재 접지 상태
         public bool JumpedThisFrame => jumpGravityController != null && jumpGravityController.JumpedThisTick; // 현재 프레임 점프 실행 여부 반환
         public bool IsSprinting => sprintStaminaController != null && sprintStaminaController.IsSprinting; // 현재 달리기 상태 반환
@@ -48,6 +62,9 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
         public bool IsCrouching => crouchStateController != null && crouchStateController.IsCrouching; // 현재 앉기 계열 상태 반환
         public bool IsStandingBlocked => crouchStateController != null && crouchStateController.IsStandingBlocked; // 머리 위 장애물로 서기 차단 상태 반환
         public bool IsReceivingExternalForce => externalForceController != null && externalForceController.IsReceivingExternalForce; // 밀치기와 외부 힘 적용 상태 반환
+        public bool IsOnWalkableSlope => traversalProbe != null && traversalProbe.IsOnWalkableSlope; // 이동 가능한 경사면 여부 반환
+        public bool IsNearCorner => traversalProbe != null && traversalProbe.IsNearCorner; // 이동 방향 모서리 감지 여부 반환
+        public bool IsLedgeDetected => traversalProbe != null && traversalProbe.IsLedgeDetected; // 올라올 수 있는 끝자락 감지 여부 반환
         public PlayerPostureState PostureState => crouchStateController == null ? PlayerPostureState.Standing : crouchStateController.CurrentState; // 현재 자세 상태 반환
         public PlayerJumpState JumpState => jumpGravityController == null ? PlayerJumpState.Grounded : jumpGravityController.CurrentState; // 현재 수직 이동 상태 반환
         public bool IsChangingDirection { get; private set; } // 지상 반대 방향 전환 상태
@@ -84,9 +101,12 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
             } // 카메라 누락 범위 종료
 
             characterController.radius = playerData.Crouch.ControllerRadius; // 데이터 기반 충돌체 반지름 적용
+            groundedStepOffset = characterController.stepOffset; // Scene에 설정된 접지 계단 높이 저장
             sprintStaminaController = new PlayerSprintStaminaController(playerData.Stamina); // 데이터 기반 달리기와 스태미나 상태 생성
             crouchStateController = new PlayerCrouchStateController(playerData.Crouch); // 데이터 기반 앉기와 자세 상태 생성
             jumpGravityController = new PlayerJumpGravityController(playerData.Jump.JumpHeight, playerData.Jump.CoyoteTime, playerData.Jump.JumpBufferTime, playerData.Gravity.GravityAcceleration, playerData.Gravity.MaximumFallSpeed, playerData.Gravity.GroundedGravity); // 데이터 기반 점프와 중력 상태 생성
+            int effectiveTraversalLayers = traversalLayers.value & ~(1 << gameObject.layer); // 플레이어 자신의 레이어를 제외한 지형 탐지 마스크 계산
+            traversalProbe = new PlayerTraversalProbe(transform, characterController, effectiveTraversalLayers, groundProbeDistance, cornerProbeDistance, cornerCorrectionStrength, ledgeForwardDistance, ledgeTopSearchHeight); // Inspector 설정 기반 지형 탐지기 생성
             ApplyControllerHeight(crouchStateController.CurrentHeight); // 초기 서기 충돌체 높이 적용
 
             if (visualRoot != null) // 외형 연결 확인
@@ -112,9 +132,17 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
             UpdateCrouchState(deltaTime); // 앉기와 자세 상태 갱신
             UpdateSprintAndStamina(deltaTime, moveInput); // 달리기와 스태미나 상태 통합 갱신
             UpdateJumpAndGravity(deltaTime); // 점프 판정과 중력 상태 통합 갱신
-            UpdateControlledHorizontalVelocity(deltaTime, moveInput); // 입력 기반 수평 속도 갱신
+            Vector3 desiredDirection = CalculateDesiredDirection(moveInput); // 카메라 기준 목표 이동 방향 계산
+            traversalProbe.Tick(desiredDirection); // 경사와 끝자락 탐지 상태 갱신
+            Vector3 cornerCorrectedDirection = traversalProbe.CorrectDirectionAroundCorner(desiredDirection); // 전방 장애물 기반 모서리 보정 방향 계산
+            Vector3 effectiveDirection = IsGrounded ? desiredDirection : cornerCorrectedDirection; // 공중 상태에만 모서리 보정 방향 적용
+            UpdateControlledHorizontalVelocity(deltaTime, moveInput, effectiveDirection); // 입력과 공중 제어 기반 수평 속도 갱신
+            UpdateStepOffset(); // 접지와 공중 상태 기반 계단 오프셋 갱신
 
-            Vector3 frameVelocity = controlledHorizontalVelocity + externalForceController.HorizontalVelocity + Vector3.up * jumpGravityController.VerticalVelocity; // 입력과 외부 힘과 수직 속도를 합친 이동 속도 계산
+            Vector3 horizontalVelocity = controlledHorizontalVelocity + externalForceController.HorizontalVelocity; // 입력 속도와 외부 힘 수평 속도 결합
+            bool canAlignToGround = IsGrounded && !JumpedThisFrame; // 점프 시작이 아닌 접지 프레임의 경사 정렬 허용
+            Vector3 traversalVelocity = traversalProbe.AlignVelocityToGround(horizontalVelocity, canAlignToGround); // 경사면을 따르는 이동 속도 계산
+            Vector3 frameVelocity = traversalVelocity + Vector3.up * jumpGravityController.VerticalVelocity; // 지형 보정 속도와 수직 속도 결합
             CollisionFlags collisionFlags = characterController.Move(frameVelocity * deltaTime); // 캐릭터 이동 실행
 
             if ((collisionFlags & CollisionFlags.Above) != 0) // 천장 상승 충돌 확인
@@ -203,8 +231,8 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
             jumpGravityController.Tick(deltaTime, IsGrounded, jumpPressedThisFrame, crouchStateController.CanJump); // 접지와 자세 기반 점프와 중력 처리
         } // 점프 갱신 범위 종료
 
-        private void UpdateControlledHorizontalVelocity(float deltaTime, Vector2 moveInput) // 입력 기반 수평 이동 속도 갱신
-        { // 수평 속도 갱신 범위
+        private Vector3 CalculateDesiredDirection(Vector2 moveInput) // 카메라 기준 목표 이동 방향 반환
+        { // 이동 방향 계산 범위
             Vector3 cameraForward = Vector3.ProjectOnPlane(movementCamera.forward, Vector3.up); // 카메라 수평 전방 계산
 
             if (cameraForward.sqrMagnitude < MovementInputThreshold) // 카메라 전방 유효성 확인
@@ -221,17 +249,24 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
                 desiredDirection.Normalize(); // 대각선 속도 증가 방지
             } // 대각선 보정 범위 종료
 
-            float targetSpeed = GetTargetSpeed() * moveInput.magnitude; // 현재 자세와 달리기 상태의 목표 속도 계산
+            return desiredDirection; // 카메라 기준 목표 방향 반환
+        } // 이동 방향 계산 범위 종료
 
+        private void UpdateControlledHorizontalVelocity(float deltaTime, Vector2 moveInput, Vector3 desiredDirection) // 지상과 공중 수평 이동 속도 갱신
+        { // 수평 속도 갱신 범위
             if (!IsGrounded) // 공중 상태 확인
-            { // 공중 속도 범위
-                targetSpeed *= playerData.AirControl.ControlRatio; // 공중 제어 비율 적용
-            } // 공중 속도 범위 종료
-
-            Vector3 targetVelocity = desiredDirection * targetSpeed; // 목표 수평 속도 계산
-            IsChangingDirection = IsGrounded && PlayerGroundMovementSolver.IsOppositeDirection(controlledHorizontalVelocity, targetVelocity); // 지상 반대 방향 전환 상태 갱신
-            float acceleration = GetHorizontalAcceleration(targetVelocity); // 현재 가속도 조회
-            controlledHorizontalVelocity = Vector3.MoveTowards(controlledHorizontalVelocity, targetVelocity, acceleration * deltaTime); // 선택된 가속도를 이용한 수평 속도 전환
+            { // 공중 제어 범위
+                float airGroundSpeed = playerData.Movement.MoveSpeed * moveInput.magnitude; // 입력 크기를 반영한 공중 기준 지상 속도 계산
+                controlledHorizontalVelocity = PlayerTraversalMath.CalculateAirVelocity(controlledHorizontalVelocity, desiredDirection, airGroundSpeed, playerData.AirControl.ControlRatio, playerData.AirControl.Acceleration, deltaTime); // 관성 보존과 제한 가속도 기반 공중 속도 계산
+                IsChangingDirection = false; // 공중 상태의 지상 방향 전환 표시 제거
+            } // 공중 제어 범위 종료
+            else // 지상 상태 확인
+            { // 지상 제어 범위
+                float targetSpeed = GetTargetSpeed() * moveInput.magnitude; // 현재 자세와 달리기 상태의 목표 속도 계산
+                Vector3 targetVelocity = desiredDirection * targetSpeed; // 지상 목표 수평 속도 계산
+                IsChangingDirection = PlayerGroundMovementSolver.IsOppositeDirection(controlledHorizontalVelocity, targetVelocity); // 지상 반대 방향 전환 상태 갱신
+                controlledHorizontalVelocity = PlayerGroundMovementSolver.CalculateNextVelocity(controlledHorizontalVelocity, targetVelocity, IsSprinting ? playerData.Sprint.SprintAcceleration : playerData.Movement.Acceleration, playerData.Movement.Deceleration, deltaTime); // 지상 가속과 감속 기반 수평 속도 계산
+            } // 지상 제어 범위 종료
 
             if (desiredDirection.sqrMagnitude > MovementInputThreshold) // 회전 가능한 방향 확인
             { // 플레이어 회전 범위
@@ -239,6 +274,18 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, playerData.Movement.RotationSpeed * deltaTime); // 이동 방향 회전 적용
             } // 플레이어 회전 범위 종료
         } // 수평 속도 갱신 범위 종료
+
+        private void UpdateStepOffset() // 접지 상태에 따른 CharacterController 계단 이동 설정 갱신
+        { // 계단 오프셋 갱신 범위
+            if (!IsGrounded || JumpedThisFrame) // 공중 또는 점프 시작 상태 확인
+            { // 계단 비활성 범위
+                characterController.stepOffset = 0f; // 공중 벽 걸림 방지를 위한 계단 오프셋 제거
+                return; // 접지 계단 설정 생략
+            } // 계단 비활성 범위 종료
+
+            float maximumOffsetForHeight = Mathf.Max(0f, characterController.height - characterController.radius * 2f); // 현재 충돌체 높이에 허용되는 최대 계단 높이 계산
+            characterController.stepOffset = Mathf.Min(groundedStepOffset, maximumOffsetForHeight); // Scene 기본값과 현재 자세를 반영한 계단 높이 적용
+        } // 계단 오프셋 갱신 범위 종료
 
         private float GetTargetSpeed() // 현재 이동 상태 목표 속도 반환
         { // 목표 속도 선택 범위
@@ -255,18 +302,32 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
             return playerData.Movement.MoveSpeed; // 기본 이동 속도 반환
         } // 목표 속도 선택 범위 종료
 
-        private float GetHorizontalAcceleration(Vector3 targetVelocity) // 현재 수평 가속도 반환
-        { // 수평 가속도 선택 범위
-            if (!IsGrounded) // 공중 상태 확인
-            { // 공중 가속도 범위
-                return playerData.AirControl.Acceleration; // 공중 가속도 반환
-            } // 공중 가속도 범위 종료
+        private void OnDrawGizmosSelected() // 선택 중 경사와 모서리와 끝자락 탐지 결과 표시
+        { // 지형 탐지 기즈모 범위
+            if (!drawTraversalGizmos || traversalProbe == null) // 기즈모 비활성 또는 탐지기 미준비 확인
+            { // 기즈모 생략 범위
+                return; // 지형 탐지 기즈모 표시 생략
+            } // 기즈모 생략 범위 종료
 
-            float baseAcceleration = IsSprinting ? playerData.Sprint.SprintAcceleration : playerData.Movement.Acceleration; // 걷기 또는 달리기 기본 가속도 선택
-            return PlayerGroundMovementSolver.SelectAcceleration(controlledHorizontalVelocity, targetVelocity, baseAcceleration, playerData.Movement.Deceleration); // 입력 해제와 방향 전환을 반영한 지상 가속도 반환
-        } // 수평 가속도 선택 범위 종료
+            Vector3 feetPosition = transform.position; // 플레이어 발 위치 조회
+            Gizmos.color = IsOnWalkableSlope ? Color.cyan : Color.gray; // 경사 감지 여부 기반 지면 기즈모 색상 선택
+            Gizmos.DrawLine(feetPosition, feetPosition + GroundNormal); // 현재 지면 법선 선 표시
 
-        public void ResetAfterRespawn() // 부활 직후 이동과 자세 상태 초기화
+            if (IsNearCorner) // 공중 모서리 감지 여부 확인
+            { // 모서리 기즈모 범위
+                Gizmos.color = Color.yellow; // 모서리 기즈모 색상 적용
+                Gizmos.DrawWireSphere(feetPosition + Vector3.up * characterController.height * 0.5f, characterController.radius + cornerProbeDistance); // 몸통 중심 모서리 탐지 범위 표시
+            } // 모서리 기즈모 범위 종료
+
+            if (IsLedgeDetected) // 올라올 수 있는 끝자락 감지 여부 확인
+            { // 끝자락 기즈모 범위
+                Gizmos.color = Color.green; // 끝자락 기즈모 색상 적용
+                Gizmos.DrawSphere(DetectedLedgePoint, 0.08f); // 감지된 끝자락 윗면 위치 표시
+                Gizmos.DrawLine(DetectedLedgePoint, DetectedLedgePoint + DetectedLedgeNormal * 0.5f); // 끝자락 벽 법선 표시
+            } // 끝자락 기즈모 범위 종료
+        } // 지형 탐지 기즈모 범위 종료
+
+        public void ResetAfterRespawn() // 부활 직후 이동과 지형 상태 초기화
         { // 부활 초기화 범위
             if (characterController == null || playerData == null) // 필수 참조 준비 여부 확인
             { // 참조 미준비 범위
@@ -278,9 +339,11 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
             sprintStaminaController.Reset(); // 달리기와 스태미나 상태 초기화
             crouchStateController.Reset(); // 앉기와 자세 상태 초기화
             jumpGravityController.Reset(); // 점프와 중력 상태 초기화
+            traversalProbe.Reset(); // 경사와 모서리와 끝자락 탐지 상태 초기화
             IsGrounded = false; // 접지 상태 재검사 준비
             IsChangingDirection = false; // 방향 전환 상태 해제
             characterController.radius = playerData.Crouch.ControllerRadius; // 충돌체 반지름 복원
+            characterController.stepOffset = groundedStepOffset; // 접지 계단 오프셋 복원
             ApplyControllerHeight(crouchStateController.CurrentHeight); // 충돌체 서기 높이 복원
             UpdateVisualHeight(crouchStateController.CurrentHeight); // 외형 서기 높이 복원
         } // 부활 초기화 범위 종료

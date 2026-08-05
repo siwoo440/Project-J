@@ -6,9 +6,9 @@ using UnityEngine; // Unity 화면 UI 기능 참조
 namespace ProjectJ.UI // 사용자 인터페이스 네임스페이스 선언
 { // 최소 플레이어 HUD 범위
     [DisallowMultipleComponent] // HUD 컴포넌트 중복 방지
-    public sealed class MinimalPlayerHud : MonoBehaviour // 높이와 구간과 경기 정보를 표시하는 최소 HUD 선언
+    public sealed class MinimalPlayerHud : MonoBehaviour // 높이와 체크포인트와 경기 정보를 표시하는 최소 HUD 선언
     { // 최소 플레이어 HUD 기능 범위
-        [SerializeField] private PlayerRespawnController respawnController; // 체크포인트와 부활 정보 제공자
+        [SerializeField] private PlayerRespawnController respawnController; // 체크포인트와 정상과 부활 정보 제공자
         [SerializeField] private PlayerHeightProgressController heightProgressController; // 높이와 수직 구간 정보 제공자
         [SerializeField] private PlayerMovementController movementController; // 스태미나 정보 제공자
         [SerializeField] private PrototypeMatchController matchController; // 경기 시간과 순위 제공자
@@ -40,7 +40,7 @@ namespace ProjectJ.UI // 사용자 인터페이스 네임스페이스 선언
         { // HUD 화면 출력 범위
             PrepareStyles(); // GUI 스타일 준비
 
-            Rect panelRect = new Rect(panelPosition.x, panelPosition.y, panelWidth, 232f); // HUD 패널 영역 계산
+            Rect panelRect = new Rect(panelPosition.x, panelPosition.y, panelWidth, 258f); // HUD 패널 영역 계산
             GUI.Box(panelRect, GUIContent.none); // HUD 패널 배경 출력
 
             Rect titleRect = new Rect(panelRect.x + 12f, panelRect.y + 8f, panelRect.width - 24f, 24f); // 제목 영역 계산
@@ -57,20 +57,24 @@ namespace ProjectJ.UI // 사용자 인터페이스 네임스페이스 선언
             DrawProgressBar(courseBarRect, heightProgressController.CourseProgress01, courseProgressColor); // 전체 코스 진행 막대 출력
 
             Rect checkpointRect = new Rect(panelRect.x + 12f, panelRect.y + 110f, panelRect.width - 24f, 22f); // 체크포인트 영역 계산
-            GUI.Label(checkpointRect, $"체크포인트 : {respawnController.CurrentCheckpointId}", labelStyle); // 체크포인트 정보 출력
+            GUI.Label(checkpointRect, $"체크포인트 {respawnController.CurrentCheckpointIndex}/{respawnController.CheckpointCount}  |  {respawnController.CurrentCheckpointId}", labelStyle); // 체크포인트 순서와 식별자 출력
+
+            string courseTopState = respawnController.HasReachedCourseTop ? "도달" : "미도달"; // 정상 지점 도달 표시 문구 선택
+            Rect courseTopRect = new Rect(panelRect.x + 12f, panelRect.y + 136f, panelRect.width - 24f, 22f); // 정상 지점 상태 영역 계산
+            GUI.Label(courseTopRect, $"정상 지점 : {courseTopState}", labelStyle); // 정상 지점 도달 상태 출력
 
             int remainingTotalSeconds = Mathf.CeilToInt(matchController.RemainingTime); // 남은 전체 초 계산
             int remainingMinutes = remainingTotalSeconds / 60; // 남은 분 계산
             int remainingSeconds = remainingTotalSeconds % 60; // 남은 초 계산
             int displayedRank = matchController.IsMatchFinished ? matchController.FinalPlayerRank : matchController.PlayerRank; // 표시할 순위 선택
-            Rect matchRect = new Rect(panelRect.x + 12f, panelRect.y + 136f, panelRect.width - 24f, 22f); // 경기 정보 영역 계산
+            Rect matchRect = new Rect(panelRect.x + 12f, panelRect.y + 162f, panelRect.width - 24f, 22f); // 경기 정보 영역 계산
             GUI.Label(matchRect, $"남은 시간 {remainingMinutes:00}:{remainingSeconds:00}  |  순위 {displayedRank}/{matchController.ParticipantCount}", labelStyle); // 시간과 순위 출력
 
-            Rect staminaLabelRect = new Rect(panelRect.x + 12f, panelRect.y + 162f, panelRect.width - 24f, 22f); // 스태미나 글자 영역 계산
+            Rect staminaLabelRect = new Rect(panelRect.x + 12f, panelRect.y + 188f, panelRect.width - 24f, 22f); // 스태미나 글자 영역 계산
             int staminaPercent = Mathf.RoundToInt(movementController.StaminaNormalized * 100f); // 스태미나 백분율 계산
             GUI.Label(staminaLabelRect, $"스태미나 : {staminaPercent}%", labelStyle); // 스태미나 수치 출력
 
-            Rect staminaBarRect = new Rect(panelRect.x + 12f, panelRect.y + 192f, panelRect.width - 24f, 18f); // 스태미나 막대 영역 계산
+            Rect staminaBarRect = new Rect(panelRect.x + 12f, panelRect.y + 218f, panelRect.width - 24f, 18f); // 스태미나 막대 영역 계산
             DrawProgressBar(staminaBarRect, movementController.StaminaNormalized, staminaColor); // 스태미나 막대 출력
 
             if (respawnController.IsRespawning) // 부활 진행 상태 확인

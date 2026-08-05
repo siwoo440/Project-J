@@ -418,6 +418,8 @@ GameObject:
   - component: {fileID: 223122785}
   - component: {fileID: 223122787}
   - component: {fileID: 223122788}
+  - component: {fileID: 223122789}
+  - component: {fileID: 223122790}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -533,6 +535,32 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   drawDebugRay: 1
+--- !u!114 &223122789
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 223122780}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 992998ea978822b4e8fb541e037b10b0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Player.PlayerStateController
+--- !u!114 &223122790
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 223122780}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34c2ebf74c54f21438c680a331eb53ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Player.PlayerExternalForceController
+  hitImmunityDuration: 0.8
+  horizontalDeceleration: 8
 --- !u!1 &296183993
 GameObject:
   m_ObjectHideFlags: 0
@@ -1267,10 +1295,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Gameplay.PrototypeMatchController
   matchDurationSeconds: 600
   playerDisplayName: PLAYER
-  playerInputReader: {fileID: 223122786}
-  playerMovementController: {fileID: 223122785}
+  playerStateController: {fileID: 223122789}
   playerRespawnController: {fileID: 223122787}
-  playerPushController: {fileID: 223122788}
   dummyOpponents:
   - {fileID: 30951786}
   - {fileID: 471940682}

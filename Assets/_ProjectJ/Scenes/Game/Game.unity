@@ -682,6 +682,7 @@ GameObject:
   - component: {fileID: 223122791}
   - component: {fileID: 223122792}
   - component: {fileID: 223122793}
+  - component: {fileID: 223122794}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -891,6 +892,21 @@ MonoBehaviour:
   inputReader: {fileID: 223122786}
   menuSize: {x: 420, y: 230}
   respawnFadeAlpha: 0.65
+--- !u!114 &223122794
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 223122780}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab6a71486c6f8f24a9057a2eee404d53, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Player.PlayerRespawnProtectionController
+  protectionDuration: 3
+  playerLayerName: Player
+  protectionLayerName: RespawnProtection
 --- !u!1 &263454770
 GameObject:
   m_ObjectHideFlags: 0

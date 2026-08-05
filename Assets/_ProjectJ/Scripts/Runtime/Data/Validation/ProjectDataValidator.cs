@@ -25,14 +25,14 @@ namespace ProjectJ.Data // 프로젝트 데이터 네임스페이스 선언
 
             foreach (ProjectDataAsset asset in assets) // 모든 데이터 에셋 순회
             {
-                ValidateAsset(asset, report, assetsById); // 현재 데이터 에셋의 필수 값과 ID 검사
+                ValidateAsset(asset, report, assetsById); // 현재 데이터 에셋의 공통 값과 분류별 설정 검사
             }
 
             ValidateDuplicateIds(assetsById, report); // 수집된 데이터 ID 중복 여부 검사
             return report; // 전체 데이터 검증 결과 반환
         }
 
-        private static void ValidateAsset(ProjectDataAsset asset, ProjectDataValidationReport report, Dictionary<string, List<ProjectDataAsset>> assetsById) // 단일 데이터 에셋 필수 값 검사
+        private static void ValidateAsset(ProjectDataAsset asset, ProjectDataValidationReport report, Dictionary<string, List<ProjectDataAsset>> assetsById) // 단일 데이터 에셋 공통 값과 분류별 설정 검사
         {
             if (asset == null) // 현재 데이터 에셋의 null 여부 확인
             {
@@ -68,6 +68,16 @@ namespace ProjectJ.Data // 프로젝트 데이터 네임스페이스 선언
             if (!asset.Version.IsValid) // 데이터 버전 유효 여부 확인
             {
                 report.AddError(asset, InvalidVersionCode, $"데이터 버전은 1.0.0 이상이어야 합니다. 현재 값: {asset.Version}"); // 데이터 버전 오류 추가
+            }
+
+            ValidateCategorySpecificSettings(asset, report); // 현재 데이터 분류의 세부 설정 검사
+        }
+
+        private static void ValidateCategorySpecificSettings(ProjectDataAsset asset, ProjectDataValidationReport report) // 데이터 분류별 세부 설정 검사
+        {
+            if (asset is PlayerDataDefinition playerData) // 현재 에셋이 플레이어 데이터인지 확인
+            {
+                PlayerSettingsValidationRules.Validate(playerData, report); // 플레이어 이동 관련 모든 설정 검사
             }
         }
 

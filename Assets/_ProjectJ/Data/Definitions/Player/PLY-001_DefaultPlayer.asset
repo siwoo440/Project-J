@@ -16,5 +16,37 @@ MonoBehaviour:
   displayName: Default Player
   version:
     major: 1
-    minor: 0
+    minor: 1
     patch: 0
+  movement:
+    moveSpeed: 6
+    acceleration: 24
+    deceleration: 30
+    rotationSpeed: 720
+  sprint:
+    sprintSpeed: 8
+    sprintAcceleration: 30
+  crouch:
+    crouchMoveSpeed: 3.5
+    standingHeight: 2
+    crouchingHeight: 1.2
+    controllerRadius: 0.45
+    heightTransitionSpeed: 8
+    standClearancePadding: 0.05
+  jump:
+    jumpHeight: 2.4
+    coyoteTime: 0.12
+    jumpBufferTime: 0.12
+  gravity:
+    gravityAcceleration: -25
+    groundedGravity: -2
+    maximumFallSpeed: 35
+  airControl:
+    controlRatio: 0.65
+    acceleration: 12
+  stamina:
+    maximumStamina: 100
+    sprintDrainPerSecond: 20
+    recoveryPerSecond: 25
+    recoveryDelay: 0.75
+    minimumStaminaToStartSprint: 5

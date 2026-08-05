@@ -2,17 +2,16 @@ using ProjectJ.Data; // 플레이어 설정 데이터 참조
 using ProjectJ.Diagnostics; // 프로젝트 공통 로그 기능 참조
 using UnityEngine; // Unity 이동과 물리 기능 참조
 
-namespace ProjectJ.Player // 플레이어 기능 네임스페이스
+namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
 { // 네임스페이스 범위 시작
     [DisallowMultipleComponent] // 이동 컴포넌트 중복 방지
     [RequireComponent(typeof(CharacterController))] // 캐릭터 충돌 컴포넌트 보장
     [RequireComponent(typeof(PlayerInputReader))] // 입력 컴포넌트 보장
     [RequireComponent(typeof(PlayerStateController))] // 상태 컴포넌트 보장
     [RequireComponent(typeof(PlayerExternalForceController))] // 외부 힘 컴포넌트 보장
-    public sealed class PlayerMovementController : MonoBehaviour // 플레이어 이동 제어 컴포넌트
+    public sealed class PlayerMovementController : MonoBehaviour // 플레이어 이동 제어 컴포넌트 선언
     { // 클래스 범위 시작
         private const float MovementInputThreshold = 0.0001f; // 이동 입력 판정 기준
-        private const float HeightComparisonTolerance = 0.001f; // 높이 비교 오차 기준
         private const int StandOverlapCapacity = 16; // 서기 검사 충돌체 최대 수
 
         [SerializeField] private PlayerDataDefinition playerData; // 플레이어 설정 에셋
@@ -25,6 +24,7 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
         private PlayerStateController stateController; // 플레이어 상태 관리자
         private PlayerExternalForceController externalForceController; // 플레이어 외부 힘 관리자
         private PlayerSprintStaminaController sprintStaminaController; // 달리기와 스태미나 상태 관리자
+        private PlayerCrouchStateController crouchStateController; // 앉기와 자세 상태 관리자
         private Vector3 controlledHorizontalVelocity; // 입력 기반 수평 속도
         private Vector3 standingVisualLocalScale; // 서기 외형 크기
         private Vector3 standingVisualLocalPosition; // 서기 외형 위치
@@ -44,7 +44,10 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
         public bool IsStaminaRecovering => sprintStaminaController != null && sprintStaminaController.IsRecovering; // 스태미나 회복 상태 반환
         public bool IsSprintBlockedUntilRelease => sprintStaminaController != null && sprintStaminaController.IsSprintBlockedUntilRelease; // Shift 재입력 대기 상태 반환
         public PlayerSprintCancelReason LastSprintCancelReason => sprintStaminaController == null ? PlayerSprintCancelReason.None : sprintStaminaController.LastCancelReason; // 마지막 달리기 취소 원인 반환
-        public bool IsCrouching { get; private set; } // 현재 앉기 상태
+        public bool IsCrouching => crouchStateController != null && crouchStateController.IsCrouching; // 현재 앉기 계열 상태 반환
+        public bool IsStandingBlocked => crouchStateController != null && crouchStateController.IsStandingBlocked; // 머리 위 장애물로 서기 차단 상태 반환
+        public bool IsReceivingExternalForce => externalForceController != null && externalForceController.IsReceivingExternalForce; // 밀치기와 외부 힘 적용 상태 반환
+        public PlayerPostureState PostureState => crouchStateController == null ? PlayerPostureState.Standing : crouchStateController.CurrentState; // 현재 자세 상태 반환
         public bool IsChangingDirection { get; private set; } // 지상 반대 방향 전환 상태
 
         private void Awake() // 이동 기능 준비
@@ -54,12 +57,12 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
             stateController = GetComponent<PlayerStateController>(); // 상태 컴포넌트 조회
             externalForceController = GetComponent<PlayerExternalForceController>(); // 외부 힘 컴포넌트 조회
 
-            if (movementCamera == null && Camera.main != null) // 카메라 자동 검색 조건
+            if (movementCamera == null && Camera.main != null) // 카메라 자동 검색 조건 확인
             { // 조건 범위 시작
                 movementCamera = Camera.main.transform; // 메인 카메라 자동 연결
             } // 조건 범위 종료
 
-            if (visualRoot == null) // 외형 자동 검색 조건
+            if (visualRoot == null) // 외형 자동 검색 조건 확인
             { // 조건 범위 시작
                 visualRoot = transform.Find("Visual"); // Visual 자식 자동 연결
             } // 조건 범위 종료
@@ -79,9 +82,9 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
             } // 조건 범위 종료
 
             characterController.radius = playerData.Crouch.ControllerRadius; // 데이터 기반 충돌체 반지름 적용
-            characterController.height = playerData.Crouch.StandingHeight; // 데이터 기반 서기 높이 적용
-            characterController.center = Vector3.up * playerData.Crouch.StandingHeight * 0.5f; // 발 위치 고정 중심 적용
             sprintStaminaController = new PlayerSprintStaminaController(playerData.Stamina); // 데이터 기반 달리기와 스태미나 상태 생성
+            crouchStateController = new PlayerCrouchStateController(playerData.Crouch); // 데이터 기반 앉기와 자세 상태 생성
+            ApplyControllerHeight(crouchStateController.CurrentHeight); // 초기 서기 충돌체 높이 적용
 
             if (visualRoot != null) // 외형 연결 확인
             { // 조건 범위 시작
@@ -92,7 +95,7 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
 
         private void Update() // 매 프레임 이동 처리
         { // 메서드 범위 시작
-            float deltaTime = Time.deltaTime; // 현재 프레임 시간
+            float deltaTime = Time.deltaTime; // 현재 프레임 시간 저장
             externalForceController.Tick(deltaTime); // 외부 힘 시간 갱신
 
             if (!stateController.CanMove || !characterController.enabled) // 이동 가능 상태 확인
@@ -103,14 +106,14 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
 
             Vector2 moveInput = Vector2.ClampMagnitude(inputReader.MoveValue, 1f); // 이동 입력 크기 제한
             IsGrounded = characterController.isGrounded; // 이동 전 접지 상태 갱신
-            UpdateCrouchState(deltaTime); // 앉기 상태 갱신
+            UpdateCrouchState(deltaTime); // 앉기와 자세 상태 갱신
             UpdateSprintAndStamina(deltaTime, moveInput); // 달리기와 스태미나 상태 통합 갱신
             UpdateJumpTimers(deltaTime); // 점프 보조 시간 갱신
             UpdateControlledHorizontalVelocity(deltaTime, moveInput); // 입력 기반 수평 속도 갱신
             UpdateVerticalVelocity(deltaTime); // 수직 속도 갱신
             TryConsumeJump(); // 점프 입력 소비
 
-            Vector3 frameVelocity = controlledHorizontalVelocity + externalForceController.HorizontalVelocity + Vector3.up * verticalVelocity; // 입력과 외부 힘을 합친 이동 속도
+            Vector3 frameVelocity = controlledHorizontalVelocity + externalForceController.HorizontalVelocity + Vector3.up * verticalVelocity; // 입력과 외부 힘을 합친 이동 속도 계산
             CollisionFlags collisionFlags = characterController.Move(frameVelocity * deltaTime); // 캐릭터 이동 실행
 
             if ((collisionFlags & CollisionFlags.Above) != 0 && verticalVelocity > 0f) // 천장 상승 충돌 확인
@@ -121,16 +124,19 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
             IsGrounded = (collisionFlags & CollisionFlags.Below) != 0 || characterController.isGrounded; // 이동 후 접지 상태 갱신
         } // 메서드 범위 종료
 
-        private void UpdateCrouchState(float deltaTime) // 앉기 높이 상태 갱신
+        private void UpdateCrouchState(float deltaTime) // 앉기 충돌체와 자세 상태 갱신
         { // 메서드 범위 시작
-            bool crouchRequested = inputReader.IsCrouchPressed; // 앉기 입력 상태
-            bool standingBlocked = !crouchRequested && !CanStandUp(); // 서기 공간 차단 상태
-            float targetHeight = crouchRequested || standingBlocked ? playerData.Crouch.CrouchingHeight : playerData.Crouch.StandingHeight; // 목표 충돌체 높이
-            float currentHeight = Mathf.MoveTowards(characterController.height, targetHeight, playerData.Crouch.HeightTransitionSpeed * deltaTime); // 부드러운 높이 전환
+            bool crouchRequested = inputReader.IsCrouchPressed; // 현재 앉기 입력 상태 조회
+            bool canStandUp = crouchRequested || CanStandUp(); // 입력 해제 시에만 서기 공간 검사
+            crouchStateController.Tick(deltaTime, crouchRequested, canStandUp, externalForceController.IsReceivingExternalForce); // 입력과 공간과 외부 힘 기반 자세 갱신
+            ApplyControllerHeight(crouchStateController.CurrentHeight); // 자세 제어기의 현재 높이 적용
+            UpdateVisualHeight(crouchStateController.CurrentHeight); // 외형 높이 갱신
+        } // 메서드 범위 종료
+
+        private void ApplyControllerHeight(float currentHeight) // 충돌체 높이와 중심 적용
+        { // 메서드 범위 시작
             characterController.height = currentHeight; // 현재 충돌체 높이 적용
-            characterController.center = Vector3.up * currentHeight * 0.5f; // 발 위치 고정 중심 적용
-            IsCrouching = targetHeight < playerData.Crouch.StandingHeight || currentHeight < playerData.Crouch.StandingHeight - HeightComparisonTolerance; // 현재 앉기 상태 판정
-            UpdateVisualHeight(currentHeight); // 외형 높이 갱신
+            characterController.center = Vector3.up * currentHeight * 0.5f; // 발 위치를 유지하는 충돌체 중심 적용
         } // 메서드 범위 종료
 
         private void UpdateVisualHeight(float currentHeight) // 충돌체 기반 외형 높이 갱신
@@ -140,7 +146,7 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
                 return; // 외형 갱신 생략
             } // 조건 범위 종료
 
-            float heightRatio = currentHeight / playerData.Crouch.StandingHeight; // 서기 높이 대비 현재 비율
+            float heightRatio = currentHeight / playerData.Crouch.StandingHeight; // 서기 높이 대비 현재 비율 계산
             Vector3 targetScale = standingVisualLocalScale; // 목표 외형 크기 생성
             targetScale.y = standingVisualLocalScale.y * heightRatio; // 외형 세로 크기 적용
             Vector3 targetPosition = standingVisualLocalPosition; // 목표 외형 위치 생성
@@ -151,16 +157,16 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
 
         private bool CanStandUp() // 서기 공간 확보 여부 반환
         { // 메서드 범위 시작
-            if (characterController.height >= playerData.Crouch.StandingHeight - HeightComparisonTolerance) // 이미 서기 높이 확인
+            if (!IsCrouching) // 이미 완전히 서 있는 상태 확인
             { // 조건 범위 시작
-                return true; // 서기 가능 반환
+                return true; // 추가 공간 검사 없이 서기 가능 반환
             } // 조건 범위 종료
 
             float radius = playerData.Crouch.ControllerRadius + playerData.Crouch.StandClearancePadding; // 검사 캡슐 반지름 계산
-            float lowerHeight = playerData.Crouch.CrouchingHeight - playerData.Crouch.ControllerRadius; // 검사 캡슐 아래 중심 높이
-            float upperHeight = playerData.Crouch.StandingHeight - playerData.Crouch.ControllerRadius; // 검사 캡슐 위 중심 높이
-            Vector3 lowerPoint = transform.position + Vector3.up * lowerHeight; // 검사 캡슐 아래 중심
-            Vector3 upperPoint = transform.position + Vector3.up * upperHeight; // 검사 캡슐 위 중심
+            float lowerHeight = playerData.Crouch.CrouchingHeight - playerData.Crouch.ControllerRadius; // 검사 캡슐 아래 중심 높이 계산
+            float upperHeight = playerData.Crouch.StandingHeight - playerData.Crouch.ControllerRadius; // 검사 캡슐 위 중심 높이 계산
+            Vector3 lowerPoint = transform.position + Vector3.up * lowerHeight; // 검사 캡슐 아래 중심 계산
+            Vector3 upperPoint = transform.position + Vector3.up * upperHeight; // 검사 캡슐 위 중심 계산
             int overlapCount = Physics.OverlapCapsuleNonAlloc(lowerPoint, upperPoint, radius, standOverlapBuffer, ~0, QueryTriggerInteraction.Ignore); // 서기 공간 충돌 검사
 
             for (int index = 0; index < overlapCount; index++) // 검사된 충돌체 순회
@@ -200,6 +206,12 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
                 coyoteTimeRemaining = Mathf.Max(0f, coyoteTimeRemaining - deltaTime); // 코요테 시간 감소
             } // 분기 범위 종료
 
+            if (!crouchStateController.CanJump) // 앉기 또는 자세 전환 상태 확인
+            { // 조건 범위 시작
+                jumpBufferTimeRemaining = 0f; // 앉은 상태의 점프 입력과 기존 버퍼 제거
+                return; // 새 점프 입력 저장 생략
+            } // 조건 범위 종료
+
             if (inputReader.WasJumpPressedThisFrame()) // 새 점프 입력 확인
             { // 조건 범위 시작
                 jumpBufferTimeRemaining = playerData.Jump.JumpBufferTime; // 점프 버퍼 시간 저장
@@ -228,7 +240,7 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
                 desiredDirection.Normalize(); // 대각선 속도 증가 방지
             } // 조건 범위 종료
 
-            float targetSpeed = GetTargetSpeed() * moveInput.magnitude; // 현재 상태 목표 속도 계산
+            float targetSpeed = GetTargetSpeed() * moveInput.magnitude; // 현재 자세와 달리기 상태의 목표 속도 계산
 
             if (!IsGrounded) // 공중 상태 확인
             { // 조건 범위 시작
@@ -249,7 +261,7 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
 
         private float GetTargetSpeed() // 현재 이동 상태 목표 속도 반환
         { // 메서드 범위 시작
-            if (IsCrouching) // 앉기 상태 확인
+            if (IsCrouching) // 앉기 또는 자세 전환 상태 확인
             { // 조건 범위 시작
                 return playerData.Crouch.CrouchMoveSpeed; // 앉기 이동 속도 반환
             } // 조건 범위 종료
@@ -287,7 +299,13 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
 
         private void TryConsumeJump() // 점프 입력 실행
         { // 메서드 범위 시작
-            if (coyoteTimeRemaining <= 0f || jumpBufferTimeRemaining <= 0f) // 점프 허용 조건 확인
+            if (!crouchStateController.CanJump) // 현재 자세의 점프 허용 여부 확인
+            { // 조건 범위 시작
+                jumpBufferTimeRemaining = 0f; // 자세 제한 중 남은 점프 버퍼 제거
+                return; // 앉은 상태 점프 실행 차단
+            } // 조건 범위 종료
+
+            if (coyoteTimeRemaining <= 0f || jumpBufferTimeRemaining <= 0f) // 점프 시간 허용 조건 확인
             { // 조건 범위 시작
                 return; // 점프 실행 생략
             } // 조건 범위 종료
@@ -308,16 +326,15 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
             controlledHorizontalVelocity = Vector3.zero; // 입력 기반 수평 속도 제거
             externalForceController.ResetExternalForce(); // 외부 힘 상태 초기화
             sprintStaminaController.Reset(); // 달리기와 스태미나 상태 초기화
+            crouchStateController.Reset(); // 앉기와 자세 상태 초기화
             verticalVelocity = playerData.Gravity.GroundedGravity; // 접지 유지용 수직 속도 적용
             coyoteTimeRemaining = 0f; // 코요테 시간 초기화
             jumpBufferTimeRemaining = 0f; // 점프 버퍼 초기화
             IsGrounded = false; // 접지 상태 재검사 준비
-            IsCrouching = false; // 앉기 상태 해제
             IsChangingDirection = false; // 방향 전환 상태 해제
             characterController.radius = playerData.Crouch.ControllerRadius; // 충돌체 반지름 복원
-            characterController.height = playerData.Crouch.StandingHeight; // 충돌체 서기 높이 복원
-            characterController.center = Vector3.up * playerData.Crouch.StandingHeight * 0.5f; // 충돌체 중심 복원
-            UpdateVisualHeight(playerData.Crouch.StandingHeight); // 외형 서기 높이 복원
+            ApplyControllerHeight(crouchStateController.CurrentHeight); // 충돌체 서기 높이 복원
+            UpdateVisualHeight(crouchStateController.CurrentHeight); // 외형 서기 높이 복원
         } // 메서드 범위 종료
     } // 클래스 범위 종료
 } // 네임스페이스 범위 종료

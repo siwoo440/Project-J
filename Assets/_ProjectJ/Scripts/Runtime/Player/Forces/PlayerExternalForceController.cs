@@ -1,11 +1,13 @@
 using UnityEngine; // Unity 벡터와 시간 기능 참조
 
-namespace ProjectJ.Player // 플레이어 기능 네임스페이스
+namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
 { // 네임스페이스 범위 시작
     [DisallowMultipleComponent] // 외부 힘 컴포넌트 중복 방지
     [RequireComponent(typeof(PlayerStateController))] // 플레이어 상태 컴포넌트 보장
     public sealed class PlayerExternalForceController : ExternalForceReceiver // 플레이어 외부 힘 관리 컴포넌트
     { // 클래스 범위 시작
+        private const float ExternalForceThreshold = 0.0001f; // 외부 힘 활성 판정 기준
+
         [SerializeField, Min(0f)] private float hitImmunityDuration = 0.8f; // 연속 피격 면역 시간
         [SerializeField, Min(0f)] private float horizontalDeceleration = 8f; // 수평 외부 힘 감속도
 
@@ -13,8 +15,9 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
         private Vector3 horizontalVelocity; // 현재 수평 외부 속도
         private float hitImmunityRemaining; // 남은 피격 면역 시간
 
-        public Vector3 HorizontalVelocity => horizontalVelocity; // 현재 외부 수평 속도
-        public bool IsForceImmune => hitImmunityRemaining > 0f; // 외부 힘 면역 여부
+        public Vector3 HorizontalVelocity => horizontalVelocity; // 현재 외부 수평 속도 반환
+        public bool IsForceImmune => hitImmunityRemaining > 0f; // 외부 힘 면역 여부 반환
+        public bool IsReceivingExternalForce => horizontalVelocity.sqrMagnitude > ExternalForceThreshold; // 밀치기와 외부 힘 이동 상태 반환
 
         private void Awake() // 외부 힘 기능 준비
         { // 메서드 범위 시작
@@ -43,7 +46,7 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
 
             Vector3 horizontalDirection = Vector3.ProjectOnPlane(direction, Vector3.up); // 수평 힘 방향 계산
 
-            if (horizontalDirection.sqrMagnitude <= 0.0001f) // 힘 방향 유효성 확인
+            if (horizontalDirection.sqrMagnitude <= ExternalForceThreshold) // 힘 방향 유효성 확인
             { // 조건 범위 시작
                 return false; // 외부 힘 적용 실패 반환
             } // 조건 범위 종료

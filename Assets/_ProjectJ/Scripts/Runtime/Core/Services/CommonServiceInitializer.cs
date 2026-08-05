@@ -1,7 +1,8 @@
 using System; // 서비스 생성 함수와 예외 기능 참조
 using ProjectJ.Audio; // 오디오 서비스 형식 참조
 using ProjectJ.Data; // 데이터 검증 서비스 형식 참조
-using UnityEngine; // Unity 컴포넌트와 로그 기능 참조
+using ProjectJ.Diagnostics; // 프로젝트 공통 로그 기능 참조
+using UnityEngine; // Unity 컴포넌트 기능 참조
 
 namespace ProjectJ.Core.Services // 프로젝트 공통 서비스 네임스페이스 선언
 {
@@ -9,12 +10,15 @@ namespace ProjectJ.Core.Services // 프로젝트 공통 서비스 네임스페�
     public sealed class CommonServiceInitializer : MonoBehaviour // 공통 서비스 등록과 초기화 담당 컴포넌트 선언
     {
         public bool IsInitialized => GameServiceRegistry.IsInitialized; // 전체 공통 서비스 초기화 완료 여부 반환
+        public string LastFatalErrorMessage { get; private set; } = string.Empty; // 최근 치명 초기화 오류 안내 내용 저장
 
         public bool InitializeServices() // 필수 공통 서비스를 등록하고 순서대로 초기화
         {
+            LastFatalErrorMessage = string.Empty; // 이전 치명 초기화 오류 내용 제거
+
             if (GameServiceRegistry.IsInitialized) // 공통 서비스가 이미 초기화되었는지 확인
             {
-                Debug.Log("[Services] 공통 서비스가 이미 초기화되어 기존 인스턴스를 사용합니다."); // 기존 서비스 재사용 로그 출력
+                ProjectLog.Info(ProjectLogCategory.Core, "공통 서비스가 이미 초기화되어 기존 인스턴스를 사용합니다.", "SERVICES_ALREADY_READY", this); // 기존 서비스 재사용 로그 출력
                 return true; // 중복 생성 없이 성공 반환
             }
 
@@ -25,13 +29,14 @@ namespace ProjectJ.Core.Services // 프로젝트 공통 서비스 네임스페�
                 EnsureRegistered(() => new AudioService()); // 오디오 서비스가 없을 때만 생성과 등록
                 EnsureRegistered(() => new DataValidationService()); // 데이터 검증 서비스가 없을 때만 생성과 등록
                 GameServiceRegistry.InitializeAll(); // 등록된 서비스를 정해진 순서로 초기화
-                Debug.Log($"[Services] 공통 서비스 {GameServiceRegistry.RegisteredServiceCount}개 초기화를 완료했습니다."); // 전체 초기화 완료 로그 출력
+                ProjectLog.Info(ProjectLogCategory.Core, $"공통 서비스 {GameServiceRegistry.RegisteredServiceCount}개 초기화를 완료했습니다.", "SERVICES_READY", this); // 전체 초기화 완료 로그 출력
                 return true; // 공통 서비스 초기화 성공 반환
             }
             catch (Exception exception) // 공통 서비스 등록 또는 초기화 실패 처리
             {
-                Debug.LogException(exception, this); // 전체 예외 내용과 초기화 컴포넌트 출력
-                Debug.LogError("[Services] 공통 서비스 초기화에 실패하여 MainMenu 전환을 중단합니다.", this); // 게임 시작 중단 원인 로그 출력
+                Exception rootException = exception.GetBaseException(); // 사용자 안내에 사용할 최초 실패 원인 조회
+                LastFatalErrorMessage = $"필수 서비스 또는 데이터 초기화에 실패했습니다.\n\n{rootException.Message}\n\nUnity Console의 오류 코드를 확인하세요."; // 치명 오류 화면 안내 내용 생성
+                ProjectLog.Error(ProjectLogCategory.Core, LastFatalErrorMessage, "SERVICE_INITIALIZATION_FAILED", this); // 공통 서비스 초기화 실패 로그 출력
                 return false; // 공통 서비스 초기화 실패 반환
             }
         }

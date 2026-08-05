@@ -1,4 +1,4 @@
-using System; // 문자열 비교 기능 참조
+using System; // 열거형과 문자열 비교 기능 참조
 using System.Collections.Generic; // 데이터 목록과 사전 기능 참조
 
 namespace ProjectJ.Data // 프로젝트 데이터 네임스페이스 선언
@@ -11,8 +11,9 @@ namespace ProjectJ.Data // 프로젝트 데이터 네임스페이스 선언
         public const string DuplicateIdCode = "DATA_ID_DUPLICATE"; // 데이터 ID 중복 오류 코드 선언
         public const string MissingNameCode = "DATA_NAME_MISSING"; // 데이터 표시 이름 누락 오류 코드 선언
         public const string InvalidVersionCode = "DATA_VERSION_INVALID"; // 데이터 버전 오류 코드 선언
+        public const string MissingCategoryCode = "DATA_CATEGORY_MISSING"; // 필수 데이터 분류 누락 오류 코드 선언
 
-        public static ProjectDataValidationReport Validate(IEnumerable<ProjectDataAsset> assets) // 전달된 모든 데이터 에셋 검증
+        public static ProjectDataValidationReport Validate(IEnumerable<ProjectDataAsset> assets) // 전달된 데이터 에셋 공통 값 검증
         {
             ProjectDataValidationReport report = new ProjectDataValidationReport(); // 전체 검증 결과 생성
             Dictionary<string, List<ProjectDataAsset>> assetsById = new Dictionary<string, List<ProjectDataAsset>>(StringComparer.OrdinalIgnoreCase); // ID별 데이터 에셋 목록 생성
@@ -30,6 +31,36 @@ namespace ProjectJ.Data // 프로젝트 데이터 네임스페이스 선언
 
             ValidateDuplicateIds(assetsById, report); // 수집된 데이터 ID 중복 여부 검사
             return report; // 전체 데이터 검증 결과 반환
+        }
+
+        public static ProjectDataValidationReport ValidateCatalog(IEnumerable<ProjectDataAsset> assets) // 런타임 카탈로그와 필수 분류 전체 검증
+        {
+            if (assets == null) // 원본 데이터 모음 누락 여부 확인
+            {
+                return Validate(null); // 공통 데이터 모음 누락 오류 결과 반환
+            }
+
+            List<ProjectDataAsset> assetList = CopyAssets(assets); // 반복 가능한 데이터 에셋 목록 생성
+            ProjectDataValidationReport report = Validate(assetList); // 기존 공통 데이터 검증 실행
+            ValidateRequiredCategories(assetList, report); // 여섯 필수 데이터 분류 존재 여부 검사
+            return report; // 카탈로그 전체 검증 결과 반환
+        }
+
+        private static List<ProjectDataAsset> CopyAssets(IEnumerable<ProjectDataAsset> assets) // 데이터 에셋 모음을 목록으로 복사
+        {
+            List<ProjectDataAsset> copiedAssets = new List<ProjectDataAsset>(); // 복사 결과 목록 생성
+
+            if (assets == null) // 원본 데이터 모음 누락 여부 확인
+            {
+                return copiedAssets; // 빈 복사 목록 반환
+            }
+
+            foreach (ProjectDataAsset asset in assets) // 원본 데이터 에셋 전체 순회
+            {
+                copiedAssets.Add(asset); // 현재 데이터 에셋 복사 목록 추가
+            }
+
+            return copiedAssets; // 완성된 복사 목록 반환
         }
 
         private static void ValidateAsset(ProjectDataAsset asset, ProjectDataValidationReport report, Dictionary<string, List<ProjectDataAsset>> assetsById) // 단일 데이터 에셋 공통 값과 분류별 설정 검사
@@ -93,6 +124,32 @@ namespace ProjectJ.Data // 프로젝트 데이터 네임스페이스 선언
                 foreach (ProjectDataAsset asset in pair.Value) // 중복 ID를 사용하는 모든 에셋 순회
                 {
                     report.AddError(asset, DuplicateIdCode, $"데이터 ID {pair.Key}가 {pair.Value.Count}개 에셋에서 중복 사용되고 있습니다."); // 현재 에셋에 ID 중복 오류 추가
+                }
+            }
+        }
+
+        private static void ValidateRequiredCategories(IReadOnlyList<ProjectDataAsset> assets, ProjectDataValidationReport report) // 필수 데이터 분류별 최소 한 개 존재 여부 검사
+        {
+            Array categoryValues = Enum.GetValues(typeof(ProjectDataCategory)); // 정의된 데이터 분류 전체 조회
+
+            foreach (ProjectDataCategory category in categoryValues) // 모든 필수 데이터 분류 순회
+            {
+                bool categoryFound = false; // 현재 데이터 분류 발견 여부 초기화
+
+                for (int index = 0; index < assets.Count; index++) // 전체 데이터 에셋 순회
+                {
+                    ProjectDataAsset asset = assets[index]; // 현재 데이터 에셋 조회
+
+                    if (asset != null && asset.Category == category) // 현재 에셋의 목표 분류 일치 여부 확인
+                    {
+                        categoryFound = true; // 필수 데이터 분류 발견 상태 저장
+                        break; // 현재 분류 검색 종료
+                    }
+                }
+
+                if (!categoryFound) // 현재 필수 분류 누락 여부 확인
+                {
+                    report.AddError(null, MissingCategoryCode, $"{category} 데이터가 런타임 카탈로그에 없습니다."); // 필수 분류 누락 오류 추가
                 }
             }
         }

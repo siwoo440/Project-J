@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Default Player
   version:
     major: 1
-    minor: 1
+    minor: 0
     patch: 0
   movement:
     moveSpeed: 6

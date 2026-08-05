@@ -51,10 +51,10 @@ namespace ProjectJ.Editor // 프로젝트 에디터 전용 네임스페이스 �
             }
 
             validationQueued = true; // 데이터 검증 예약 상태 설정
-            EditorApplication.delayCall += ValidateAfterImport; // 현재 에셋 처리 완료 후 검증 메서드 예약
+            EditorApplication.delayCall += RebuildCatalogAfterImport; // 현재 에셋 처리 완료 후 카탈로그 갱신 예약
         }
 
-        private static void ValidateAfterImport() // 에셋 처리 완료 후 전체 데이터 자동 검증
+        private static void RebuildCatalogAfterImport() // 에셋 처리 완료 후 카탈로그 갱신과 전체 검증
         {
             validationQueued = false; // 데이터 검증 예약 상태 초기화
 
@@ -63,10 +63,9 @@ namespace ProjectJ.Editor // 프로젝트 에디터 전용 네임스페이스 �
                 return; // Play Mode 중 자동 데이터 검증 생략
             }
 
-            ProjectDataAssetDatabase.ValidateAll(false); // 성공 로그 없이 전체 데이터 정의 에셋 검사
+            ProjectDataCatalogBuilder.RebuildAndValidate(false); // 런타임 카탈로그 갱신과 전체 데이터 검증 실행
         }
     }
-
 
     internal sealed class ProjectDataAssetSaveProcessor : AssetModificationProcessor // 데이터 에셋 저장 시 자동 검증 처리기 선언
     {
@@ -74,7 +73,7 @@ namespace ProjectJ.Editor // 프로젝트 에디터 전용 네임스페이스 �
         {
             if (ProjectDataAssetPostprocessor.ContainsDataAssetPath(assetPaths)) // 저장 대상에 데이터 정의 에셋이 포함됐는지 확인
             {
-                ProjectDataAssetPostprocessor.QueueValidation(); // 에셋 저장 완료 후 전체 데이터 검증 예약
+                ProjectDataAssetPostprocessor.QueueValidation(); // 에셋 저장 완료 후 카탈로그 갱신 예약
             }
 
             return assetPaths; // Unity가 원래 저장 대상 에셋을 계속 처리하도록 경로 배열 반환

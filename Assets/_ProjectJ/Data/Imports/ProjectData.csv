@@ -1,0 +1,7 @@
+﻿Category,DataId,DisplayName,Version
+Player,PLY-001,Default Player,1.0.0
+Map,MAP-001,Default Map,1.0.0
+Obstacle,OBS-001,Default Obstacle,1.0.0
+Item,ITM-001,Spring Shoes,1.0.0
+Cosmetic,COS-001,Default Costume,1.0.0
+Audio,AUD-001,Default Audio,1.0.0

@@ -66,7 +66,7 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
             characterController.radius = playerData.Crouch.ControllerRadius; // 데이터 기반 충돌체 반지름 적용
             characterController.height = playerData.Crouch.StandingHeight; // 데이터 기반 서기 높이 적용
             characterController.center = Vector3.up * playerData.Crouch.StandingHeight * 0.5f; // 발 위치 고정 중심 적용
-            CurrentStamina = playerData.Stamina.MaximumStamina; // 시작 스태미나 충전
+            CurrentStamina = playerData.Stamina.MaximumStamina; // 초기 스태미나 충전
 
             if (visualRoot != null) // 외형 연결 확인
             {
@@ -178,7 +178,7 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
                 return; // 달리기 판정 종료
             }
 
-            float requiredStamina = IsSprinting ? 0f : playerData.Stamina.MinimumStaminaToStartSprint; // 시작 또는 유지 스태미나 계산
+            float requiredStamina = IsSprinting ? 0f : playerData.Stamina.MinimumStaminaToStartSprint; // 진입 또는 유지 스태미나 계산
             IsSprinting = CurrentStamina > requiredStamina || Mathf.Approximately(CurrentStamina, requiredStamina); // 현재 달리기 가능 여부 적용
         }
 
@@ -321,6 +321,28 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
             verticalVelocity = Mathf.Sqrt(2f * gravityMagnitude * playerData.Jump.JumpHeight); // 점프 초기 속도 계산
             coyoteTimeRemaining = 0f; // 코요테 시간 소비
             jumpBufferTimeRemaining = 0f; // 점프 버퍼 소비
+        }
+
+        public void ResetAfterRespawn() // 부활 직후 이동과 자세 상태 초기화
+        {
+            if (characterController == null || playerData == null) // 필수 참조 준비 여부 확인
+            {
+                return; // 초기화 처리 생략
+            }
+
+            horizontalVelocity = Vector3.zero; // 수평 속도 제거
+            verticalVelocity = playerData.Gravity.GroundedGravity; // 접지 유지용 수직 속도 적용
+            coyoteTimeRemaining = 0f; // 코요테 시간 초기화
+            jumpBufferTimeRemaining = 0f; // 점프 버퍼 초기화
+            staminaRecoveryDelayRemaining = 0f; // 스태미나 회복 대기 초기화
+            CurrentStamina = playerData.Stamina.MaximumStamina; // 스태미나 최대치 복원
+            IsGrounded = false; // 접지 상태 재검사 준비
+            IsSprinting = false; // 달리기 상태 해제
+            IsCrouching = false; // 앉기 상태 해제
+            characterController.radius = playerData.Crouch.ControllerRadius; // 충돌체 반지름 복원
+            characterController.height = playerData.Crouch.StandingHeight; // 충돌체 서기 높이 복원
+            characterController.center = Vector3.up * playerData.Crouch.StandingHeight * 0.5f; // 충돌체 중심 복원
+            UpdateVisualHeight(playerData.Crouch.StandingHeight); // 외형 서기 높이 복원
         }
     }
 }

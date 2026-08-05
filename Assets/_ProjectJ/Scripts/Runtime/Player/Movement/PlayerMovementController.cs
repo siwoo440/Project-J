@@ -1,4 +1,5 @@
 using ProjectJ.Data; // 플레이어 설정 데이터 참조
+using ProjectJ.Diagnostics; // 프로젝트 공통 로그 기능 참조
 using UnityEngine; // Unity 이동과 물리 기능 참조
 
 namespace ProjectJ.Player // 플레이어 기능 네임스페이스
@@ -39,6 +40,7 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
         public bool IsGrounded { get; private set; } // 현재 접지 상태
         public bool IsSprinting { get; private set; } // 현재 달리기 상태
         public bool IsCrouching { get; private set; } // 현재 앉기 상태
+        public bool IsChangingDirection { get; private set; } // 지상 반대 방향 전환 상태
 
         private void Awake() // 이동 기능 준비
         { // 메서드 범위 시작
@@ -59,14 +61,14 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
 
             if (playerData == null) // 플레이어 데이터 누락 확인
             { // 조건 범위 시작
-                Debug.LogError("[ProjectJ][Gameplay][PLAYER_DATA_MISSING] PLY-001_DefaultPlayer 에셋이 연결되지 않았습니다.", this); // 데이터 누락 오류
+                ProjectLog.Error(ProjectLogCategory.Gameplay, "PLY-001_DefaultPlayer 에셋이 연결되지 않았습니다.", "PLAYER_DATA_MISSING", this); // 데이터 누락 오류 출력
                 enabled = false; // 이동 컴포넌트 비활성화
                 return; // 이동 준비 중단
             } // 조건 범위 종료
 
             if (movementCamera == null) // 이동 카메라 누락 확인
             { // 조건 범위 시작
-                Debug.LogError("[ProjectJ][Gameplay][MOVEMENT_CAMERA_MISSING] 이동 기준 카메라가 연결되지 않았습니다.", this); // 카메라 누락 오류
+                ProjectLog.Error(ProjectLogCategory.Gameplay, "이동 기준 카메라가 연결되지 않았습니다.", "MOVEMENT_CAMERA_MISSING", this); // 카메라 누락 오류 출력
                 enabled = false; // 이동 컴포넌트 비활성화
                 return; // 이동 준비 중단
             } // 조건 범위 종료
@@ -263,8 +265,9 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
             } // 조건 범위 종료
 
             Vector3 targetVelocity = desiredDirection * targetSpeed; // 목표 수평 속도 계산
-            float acceleration = GetHorizontalAcceleration(moveInput); // 현재 가속도 조회
-            controlledHorizontalVelocity = Vector3.MoveTowards(controlledHorizontalVelocity, targetVelocity, acceleration * deltaTime); // 입력 기반 수평 속도 전환
+            IsChangingDirection = IsGrounded && PlayerGroundMovementSolver.IsOppositeDirection(controlledHorizontalVelocity, targetVelocity); // 지상 반대 방향 전환 상태 갱신
+            float acceleration = GetHorizontalAcceleration(targetVelocity); // 현재 가속도 조회
+            controlledHorizontalVelocity = Vector3.MoveTowards(controlledHorizontalVelocity, targetVelocity, acceleration * deltaTime); // 선택된 가속도를 이용한 수평 속도 전환
 
             if (desiredDirection.sqrMagnitude > MovementInputThreshold) // 회전 가능한 방향 확인
             { // 조건 범위 시작
@@ -288,24 +291,15 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
             return playerData.Movement.MoveSpeed; // 기본 이동 속도 반환
         } // 메서드 범위 종료
 
-        private float GetHorizontalAcceleration(Vector2 moveInput) // 현재 수평 가속도 반환
+        private float GetHorizontalAcceleration(Vector3 targetVelocity) // 현재 수평 가속도 반환
         { // 메서드 범위 시작
             if (!IsGrounded) // 공중 상태 확인
             { // 조건 범위 시작
                 return playerData.AirControl.Acceleration; // 공중 가속도 반환
             } // 조건 범위 종료
 
-            if (moveInput.sqrMagnitude <= MovementInputThreshold) // 이동 입력 없음 확인
-            { // 조건 범위 시작
-                return playerData.Movement.Deceleration; // 지상 감속도 반환
-            } // 조건 범위 종료
-
-            if (IsSprinting) // 달리기 상태 확인
-            { // 조건 범위 시작
-                return playerData.Sprint.SprintAcceleration; // 달리기 가속도 반환
-            } // 조건 범위 종료
-
-            return playerData.Movement.Acceleration; // 기본 지상 가속도 반환
+            float baseAcceleration = IsSprinting ? playerData.Sprint.SprintAcceleration : playerData.Movement.Acceleration; // 걷기 또는 달리기 기본 가속도 선택
+            return PlayerGroundMovementSolver.SelectAcceleration(controlledHorizontalVelocity, targetVelocity, baseAcceleration, playerData.Movement.Deceleration); // 입력 해제와 방향 전환을 반영한 지상 가속도 반환
         } // 메서드 범위 종료
 
         private void UpdateVerticalVelocity(float deltaTime) // 수직 속도 갱신
@@ -350,6 +344,7 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
             IsGrounded = false; // 접지 상태 재검사 준비
             IsSprinting = false; // 달리기 상태 해제
             IsCrouching = false; // 앉기 상태 해제
+            IsChangingDirection = false; // 방향 전환 상태 해제
             characterController.radius = playerData.Crouch.ControllerRadius; // 충돌체 반지름 복원
             characterController.height = playerData.Crouch.StandingHeight; // 충돌체 서기 높이 복원
             characterController.center = Vector3.up * playerData.Crouch.StandingHeight * 0.5f; // 충돌체 중심 복원

@@ -19,6 +19,7 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
         private Quaternion respawnRotation; // 현재 부활 회전
         private float heightOriginY; // 높이 기준 Y 좌표
         private Coroutine respawnRoutine; // 진행 중인 부활 코루틴
+        private bool isRespawnBlocked; // 경기 종료 후 부활 차단 상태
 
         public float CurrentHeight => Mathf.Max(0f, transform.position.y - heightOriginY); // 현재 높이 반환
         public float HighestHeight { get; private set; } // 최고 높이 반환
@@ -39,6 +40,11 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
 
         private void Update() // 높이와 추락 상태 갱신
         {
+            if (isRespawnBlocked) // 경기 종료 후 갱신 차단 확인
+            {
+                return; // 높이와 부활 갱신 생략
+            }
+
             if (!IsRespawning) // 정상 플레이 상태 확인
             {
                 HighestHeight = Mathf.Max(HighestHeight, CurrentHeight); // 최고 높이 갱신
@@ -65,12 +71,32 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
 
         public void BeginRespawn() // 외부 호출용 부활 시작
         {
-            if (IsRespawning || respawnRoutine != null) // 중복 부활 요청 확인
+            if (isRespawnBlocked || IsRespawning || respawnRoutine != null) // 경기 종료와 중복 부활 요청 확인
             {
                 return; // 중복 처리 생략
             }
 
             respawnRoutine = StartCoroutine(RespawnRoutine()); // 부활 코루틴 실행
+        }
+
+        public void StopRespawnForMatchEnd() // 경기 종료용 부활 중단
+        {
+            isRespawnBlocked = true; // 이후 부활 요청 차단
+
+            if (respawnRoutine != null) // 진행 중인 부활 코루틴 확인
+            {
+                StopCoroutine(respawnRoutine); // 부활 코루틴 즉시 중단
+                respawnRoutine = null; // 코루틴 참조 초기화
+            }
+
+            if (characterController != null && !characterController.enabled) // 비활성화된 충돌체 확인
+            {
+                characterController.enabled = true; // 캐릭터 충돌체 복구
+            }
+
+            IsRespawning = false; // 부활 상태 해제
+            inputReader.enabled = false; // 경기 종료 입력 차단
+            movementController.enabled = false; // 경기 종료 이동 차단
         }
 
         private IEnumerator RespawnRoutine() // 입력 정지와 위치 복귀 처리

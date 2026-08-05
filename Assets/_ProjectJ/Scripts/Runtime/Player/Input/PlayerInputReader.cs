@@ -15,6 +15,7 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
         private InputAction jumpAction; // 점프 액션
         private InputAction sprintAction; // 달리기 액션
         private InputAction crouchAction; // 앉기 액션
+        private InputAction pushAction; // 밀치기 액션
 
         public Vector2 MoveValue => moveAction != null ? moveAction.ReadValue<Vector2>() : Vector2.zero; // 현재 이동 입력
         public Vector2 LookValue => lookAction != null ? lookAction.ReadValue<Vector2>() : Vector2.zero; // 현재 시점 입력
@@ -46,10 +47,11 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
             jumpAction = gameplayMap.FindAction(ProjectInputNames.Gameplay.Jump, false); // 점프 액션 검색
             sprintAction = gameplayMap.FindAction(ProjectInputNames.Gameplay.Sprint, false); // 달리기 액션 검색
             crouchAction = gameplayMap.FindAction(ProjectInputNames.Gameplay.Crouch, false); // 앉기 액션 검색
+            pushAction = gameplayMap.FindAction(ProjectInputNames.Gameplay.Push, false); // 밀치기 액션 검색
 
-            if (moveAction == null || lookAction == null || jumpAction == null || sprintAction == null || crouchAction == null) // 필수 액션 누락 확인
+            if (moveAction == null || lookAction == null || jumpAction == null || sprintAction == null || crouchAction == null || pushAction == null) // 필수 액션 누락 확인
             {
-                Debug.LogError("[ProjectJ][Input][PLAYER_ACTION_MISSING] Move, Look, Jump, Sprint, Crouch 액션 구성을 확인합니다.", this); // 필수 액션 누락 오류
+                Debug.LogError("[ProjectJ][Input][PLAYER_ACTION_MISSING] Move, Look, Jump, Sprint, Crouch, Push 액션 구성을 확인합니다.", this); // 필수 액션 누락 오류
                 enabled = false; // 입력 컴포넌트 비활성화
             }
         }
@@ -78,6 +80,11 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
         public bool WasJumpPressedThisFrame() // 점프 시작 입력 반환
         {
             return jumpAction != null && jumpAction.WasPressedThisFrame(); // 현재 프레임 점프 입력
+        }
+
+        public bool WasPushPressedThisFrame() // 밀치기 시작 입력 반환
+        {
+            return pushAction != null && pushAction.WasPressedThisFrame(); // 현재 프레임 밀치기 입력
         }
     }
 }

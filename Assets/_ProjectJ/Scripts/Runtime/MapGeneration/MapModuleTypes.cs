@@ -10,7 +10,10 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
         Branch, // 경로 분기 모듈
         Merge, // 경로 합류 모듈
         Checkpoint, // 체크포인트 모듈
-        CourseTop // 정상 도착 모듈
+        CourseTop, // 정상 도착 모듈
+        StepRise, // 연속 계단 상승 모듈
+        ZigzagRise, // 지그재그 상승 모듈
+        JumpRise // 연속 점프 상승 모듈
     } // 맵 모듈 종류 묶음 종료
 
     public enum MapConnectionRole // 연결 지점 역할 선언

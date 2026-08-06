@@ -23,6 +23,7 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
         private string generationSignature = string.Empty; // 최근 생성 결과 재현 서명
         private MapGenerationValidationReport lastValidationReport = MapGenerationValidationReport.CreateNotRun(); // 최근 생성 결과 종합 검사 보고서
         private MapPlayableRouteReport lastPlayableRouteReport = MapPlayableRouteReport.CreateNotRun(); // 최근 플레이 가능 경로 검사 보고서
+        private MapObstaclePlanReport lastObstaclePlanReport = MapObstaclePlanReport.CreateNotRun(); // 최근 분기 장애물 계획 보고서
         [SerializeField, HideInInspector] private float effectiveTargetHeight; // 이번 수직 생성 목표 높이
         [SerializeField, HideInInspector] private float generatedHeight; // 현재 누적 생성 높이
         [SerializeField, HideInInspector] private int ascendingModuleCount; // 현재 상승 모듈 개수
@@ -49,6 +50,7 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
         public string GenerationSignature => generationSignature; // 최근 생성 결과 서명 반환
         public MapGenerationValidationReport LastValidationReport => lastValidationReport; // 최근 생성 결과 종합 검사 보고서 반환
         public MapPlayableRouteReport LastPlayableRouteReport => lastPlayableRouteReport; // 최근 플레이 가능 경로 검사 보고서 반환
+        public MapObstaclePlanReport LastObstaclePlanReport => lastObstaclePlanReport; // 최근 분기 장애물 계획 보고서 반환
         public float EffectiveTargetHeight => effectiveTargetHeight; // 실제 수직 목표 높이 반환
         public float GeneratedHeight => generatedHeight; // 최종 누적 생성 높이 반환
         public int AscendingModuleCount => ascendingModuleCount; // 생성된 상승 모듈 개수 반환
@@ -105,6 +107,7 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             generationSignature = string.Empty; // 최근 생성 서명 초기화
             lastValidationReport = MapGenerationValidationReport.CreateNotRun(); // 최근 종합 검사 결과 초기화
             lastPlayableRouteReport = MapPlayableRouteReport.CreateNotRun(); // 최근 플레이 가능 경로 검사 결과 초기화
+            lastObstaclePlanReport = MapObstaclePlanReport.CreateNotRun(); // 최근 분기 장애물 계획 결과 초기화
 
             if (settings == null) // 생성 설정 누락 확인
             { // 생성 설정 누락 처리
@@ -158,8 +161,9 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
 
             ApplyVerticalResultValidation(); // 수직 목표 높이와 상승 모듈 기준 검사
             RunPlayableRouteValidation(); // 시작부터 종료까지 실제 이동 경로 검사
+            RunObstaclePlanning(); // 좌우 분기 장애물 생성과 통로 안전성 검사
 
-            lastGenerationSucceeded = lastValidationReport.IsValid && lastPlayableRouteReport.IsValid; // 생성 규격과 플레이 경로 통합 성공 여부 저장
+            lastGenerationSucceeded = lastValidationReport.IsValid && lastPlayableRouteReport.IsValid && lastObstaclePlanReport.IsValid; // 생성 규격과 플레이 경로와 장애물 계획 통합 성공 여부 저장
             generationSignature = BuildGenerationSignature(); // 생성 결과 재현 서명 계산
 
             if (logDetailedResults) // 상세 로그 표시 활성 확인
@@ -168,7 +172,8 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
                 string verticalLabel = settings.UseVerticalGeneration ? $" | 높이: {generatedHeight:0.00}m/{effectiveTargetHeight:0.00}m | 상승 모듈: {ascendingModuleCount} | 최대 연속 평지: {maximumObservedConsecutiveFlatModules}" : string.Empty; // 수직 생성 결과 문구 계산
                 string branchLabel = settings.UseVerticalGeneration && settings.UseBranchingPath ? $" | 분기 높이: L {leftBranchHeight:0.00}m/R {rightBranchHeight:0.00}m | 분기 상승: L {leftBranchAscendingModuleCount}/R {rightBranchAscendingModuleCount} | 재시도: {branchCombinationRetryCount}" : string.Empty; // 수직 분기 결과 문구 계산
                 string routeLabel = $" | 플레이 경로: {lastPlayableRouteReport.RouteCount} | 경로 문제: {lastPlayableRouteReport.IssueCount}"; // 플레이 가능 경로 결과 문구 계산
-                Debug.Log($"[ProjectJ][Day37] 맵 생성 및 플레이 가능성 검사 {resultLabel} | 시드: {effectiveSeed} | 모듈: {generatedModules.Count}/{settings.ModuleCount} | 간선: {graphEdges.Count} | 생성 문제: {lastValidationReport.IssueCount}{routeLabel}{verticalLabel}{branchLabel}", this); // 생성과 플레이 가능성 요약 로그 출력
+                string obstacleLabel = lastObstaclePlanReport.IsRequired ? $" | 장애물: {lastObstaclePlanReport.PlacementCount} | 위험도: L {lastObstaclePlanReport.LeftBranch.TotalRiskScore}/R {lastObstaclePlanReport.RightBranch.TotalRiskScore} | 장애물 문제: {lastObstaclePlanReport.IssueCount}" : " | 장애물 계획: 미사용"; // 장애물 계획 결과 문구 계산
+                Debug.Log($"[ProjectJ][Day38] 맵 생성과 분기 장애물 계획 {resultLabel} | 시드: {effectiveSeed} | 모듈: {generatedModules.Count}/{settings.ModuleCount} | 간선: {graphEdges.Count} | 생성 문제: {lastValidationReport.IssueCount}{routeLabel}{obstacleLabel}{verticalLabel}{branchLabel}", this); // 생성과 플레이 경로와 장애물 계획 요약 로그 출력
 
                 if (!lastValidationReport.IsValid) // 종합 검사 실패 확인
                 { // 종합 검사 실패 처리
@@ -179,6 +184,11 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
                 { // 플레이 가능 경로 검사 실패 처리
                     Debug.LogError(lastPlayableRouteReport.BuildDetailedMessage(), this); // 모든 플레이 가능 경로 문제 상세 로그 출력
                 } // 플레이 가능 경로 검사 실패 처리 종료
+
+                if (!lastObstaclePlanReport.IsValid) // 분기 장애물 계획 실패 확인
+                { // 분기 장애물 계획 실패 처리
+                    Debug.LogError(lastObstaclePlanReport.BuildDetailedMessage(), this); // 모든 장애물 배치와 위험도 문제 상세 로그 출력
+                } // 분기 장애물 계획 실패 처리 종료
             } // 상세 생성 결과 출력 처리
         } // 새 시드 맵 생성 처리
 
@@ -196,11 +206,12 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             lastValidationReport = MapGenerationResultValidator.Validate(generatedModules, graphNodes, graphEdges, settings.ModuleCount, settings.OverlapTolerance, settings.ConnectionSizeTolerance, settings.ConnectionPositionTolerance); // 현재 생성 결과 종합 검사 실행
             ApplyVerticalResultValidation(); // 수직 생성 결과 기준 추가 검사
             RunPlayableRouteValidation(); // 현재 생성 결과의 실제 이동 경로 검사
-            lastGenerationSucceeded = lastValidationReport.IsValid && lastPlayableRouteReport.IsValid; // 생성 규격과 플레이 경로 통합 성공 상태 갱신
+            RunObstacleValidation(); // 현재 분기 장애물 배치와 위험도 재검사
+            lastGenerationSucceeded = lastValidationReport.IsValid && lastPlayableRouteReport.IsValid && lastObstaclePlanReport.IsValid; // 생성 규격과 플레이 경로와 장애물 계획 통합 성공 상태 갱신
 
             if (lastGenerationSucceeded) // 생성 결과와 플레이 경로 검사 성공 확인
             { // 생성 결과 검사 성공 처리
-                Debug.Log($"[ProjectJ][Day37] {lastValidationReport.BuildSummary()} {lastPlayableRouteReport.BuildSummary()}", this); // 통합 검사 성공 로그 출력
+                Debug.Log($"[ProjectJ][Day38] {lastValidationReport.BuildSummary()} {lastPlayableRouteReport.BuildSummary()} {lastObstaclePlanReport.BuildSummary()}", this); // 통합 검사 성공 로그 출력
             } // 생성 결과 검사 성공 처리 종료
             else // 생성 결과 검사 실패 확인
             { // 생성 결과 검사 실패 처리
@@ -213,6 +224,11 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
                 { // 플레이 가능 경로 검사 실패 처리
                     Debug.LogError(lastPlayableRouteReport.BuildDetailedMessage(), this); // 경로 검사 실패 상세 로그 출력
                 } // 플레이 가능 경로 검사 실패 처리 종료
+
+                if (!lastObstaclePlanReport.IsValid) // 분기 장애물 계획 검사 실패 확인
+                { // 분기 장애물 계획 검사 실패 처리
+                    Debug.LogError(lastObstaclePlanReport.BuildDetailedMessage(), this); // 장애물 계획 실패 상세 로그 출력
+                } // 분기 장애물 계획 검사 실패 처리 종료
             } // 생성 결과 검사 실패 처리 종료
         } // 현재 생성 결과 종합 검사 처리 종료
 
@@ -220,7 +236,7 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
         public void ValidatePlayableRoutes() // 현재 생성 결과의 시작부터 종료 경로 검사
         { // 플레이 가능 경로 수동 검사 처리
             RunPlayableRouteValidation(); // 현재 생성 그래프 경로 검사 실행
-            lastGenerationSucceeded = lastValidationReport.IsValid && lastPlayableRouteReport.IsValid; // 생성 규격과 경로 검사 통합 상태 갱신
+            lastGenerationSucceeded = lastValidationReport.IsValid && lastPlayableRouteReport.IsValid && lastObstaclePlanReport.IsValid; // 생성 규격과 경로와 장애물 계획 통합 상태 갱신
 
             if (lastPlayableRouteReport.IsValid) // 플레이 가능 경로 검사 성공 확인
             { // 플레이 가능 경로 검사 성공 처리
@@ -232,9 +248,49 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             } // 플레이 가능 경로 검사 실패 처리 종료
         } // 플레이 가능 경로 수동 검사 처리 종료
 
+        [ContextMenu("Regenerate Branch Obstacles")] // Inspector 분기 장애물 재생성 메뉴 등록
+        public void RegenerateBranchObstacles() // 현재 생성 맵의 좌우 분기 장애물 다시 생성
+        { // 분기 장애물 재생성 처리
+            RunObstaclePlanning(); // 현재 생성 결과 기반 장애물 계획 다시 실행
+            lastGenerationSucceeded = lastValidationReport.IsValid && lastPlayableRouteReport.IsValid && lastObstaclePlanReport.IsValid; // 모든 검사 통합 성공 상태 갱신
+            generationSignature = BuildGenerationSignature(); // 장애물 계획을 포함한 생성 서명 갱신
+
+            if (lastObstaclePlanReport.IsValid) // 장애물 계획 성공 확인
+            { // 장애물 계획 성공 처리
+                Debug.Log($"[ProjectJ][Day38] {lastObstaclePlanReport.BuildDetailedMessage()}", this); // 장애물 계획 성공 상세 로그 출력
+            } // 장애물 계획 성공 처리 종료
+            else // 장애물 계획 실패 확인
+            { // 장애물 계획 실패 처리
+                Debug.LogError(lastObstaclePlanReport.BuildDetailedMessage(), this); // 장애물 계획 실패 상세 로그 출력
+            } // 장애물 계획 실패 처리 종료
+        } // 분기 장애물 재생성 처리 종료
+
+        [ContextMenu("Validate Branch Obstacles")] // Inspector 분기 장애물 검사 메뉴 등록
+        public void ValidateBranchObstacles() // 현재 생성 장애물의 통로 폭과 위험도 검사
+        { // 분기 장애물 수동 검사 처리
+            RunObstacleValidation(); // 현재 장애물 배치 검사 실행
+            lastGenerationSucceeded = lastValidationReport.IsValid && lastPlayableRouteReport.IsValid && lastObstaclePlanReport.IsValid; // 모든 검사 통합 성공 상태 갱신
+
+            if (lastObstaclePlanReport.IsValid) // 장애물 배치 검사 성공 확인
+            { // 장애물 배치 검사 성공 처리
+                Debug.Log($"[ProjectJ][Day38] {lastObstaclePlanReport.BuildDetailedMessage()}", this); // 장애물 배치 성공 상세 로그 출력
+            } // 장애물 배치 검사 성공 처리 종료
+            else // 장애물 배치 검사 실패 확인
+            { // 장애물 배치 검사 실패 처리
+                Debug.LogError(lastObstaclePlanReport.BuildDetailedMessage(), this); // 장애물 배치 실패 상세 로그 출력
+            } // 장애물 배치 검사 실패 처리 종료
+        } // 분기 장애물 수동 검사 처리 종료
+
         [ContextMenu("Clear Generated Map")] // Inspector 생성 맵 제거 메뉴 등록
         public void ClearGeneratedMap() // 현재 생성된 맵 전체 제거
         { // 생성 맵 제거 처리
+            MapBranchObstaclePlanner obstaclePlanner = GetComponent<MapBranchObstaclePlanner>(); // 현재 분기 장애물 계획기 조회
+
+            if (obstaclePlanner != null) // 분기 장애물 계획기 존재 확인
+            { // 분기 장애물 계획기 처리
+                obstaclePlanner.ClearPlacedObstacles(this); // 생성된 장애물과 계획 보고서 먼저 제거
+            } // 분기 장애물 계획기 처리 종료
+
             generatedModules.Clear(); // 생성 모듈 목록 초기화
             graphNodes.Clear(); // 그래프 노드 목록 초기화
             graphEdges.Clear(); // 그래프 간선 목록 초기화
@@ -243,6 +299,7 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             generationSignature = string.Empty; // 생성 결과 서명 초기화
             lastValidationReport = MapGenerationValidationReport.CreateNotRun(); // 생성 결과 검사 상태 초기화
             lastPlayableRouteReport = MapPlayableRouteReport.CreateNotRun(); // 플레이 가능 경로 검사 상태 초기화
+            lastObstaclePlanReport = MapObstaclePlanReport.CreateNotRun(); // 분기 장애물 계획 상태 초기화
             lastGenerationSucceeded = false; // 최근 생성 성공 상태 초기화
             effectiveTargetHeight = 0f; // 수직 목표 높이 초기화
             generatedHeight = 0f; // 누적 생성 높이 초기화
@@ -272,6 +329,7 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
 
                 if (Application.isPlaying) // Play Mode 여부 확인
                 { // Play Mode 제거 처리
+                    childObject.transform.SetParent(null, true); // 삭제 대기 모듈을 현재 생성 루트에서 즉시 분리
                     childObject.SetActive(false); // 제거 대기 오브젝트 비활성화
                     Destroy(childObject); // 프레임 종료 시 오브젝트 제거
                 } // Play Mode 제거 처리
@@ -1310,6 +1368,39 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             lastPlayableRouteReport = MapPlayableRouteValidator.Validate(generatedModules, graphNodes, graphEdges, 0, 16, requireBothBranchLanes); // 최대 16개 경로와 좌우 분기 이동 가능성 검사
         } // 플레이 가능 경로 검사 처리 종료
 
+        private void RunObstaclePlanning() // 현재 생성된 좌우 분기에 장애물 생성과 위험도 계획 실행
+        { // 분기 장애물 계획 처리
+            MapBranchObstaclePlanner obstaclePlanner = GetComponent<MapBranchObstaclePlanner>(); // 같은 오브젝트의 분기 장애물 계획기 조회
+
+            if (settings == null || !settings.UseBranchingPath || obstaclePlanner == null) // 장애물 계획 미사용 조건 확인
+            { // 장애물 계획 미사용 처리
+                lastObstaclePlanReport = MapObstaclePlanReport.CreateNotRequired(); // 계획 불필요 성공 보고서 저장
+                return; // 장애물 계획 실행 생략
+            } // 장애물 계획 미사용 처리 종료
+
+            if (!lastValidationReport.IsValid || !lastPlayableRouteReport.IsValid) // 선행 생성과 경로 검사 실패 확인
+            { // 선행 검사 실패 처리
+                obstaclePlanner.ClearPlacedObstacles(this); // 잘못된 맵의 기존 장애물 제거
+                lastObstaclePlanReport = MapObstaclePlanReport.CreateNotRequired(); // 선행 실패로 계획 생략 보고서 저장
+                return; // 장애물 계획 실행 중단
+            } // 선행 검사 실패 처리 종료
+
+            lastObstaclePlanReport = obstaclePlanner.GeneratePlan(this); // 고정 시드 장애물 생성과 통로 폭과 위험도 검사 실행
+        } // 분기 장애물 계획 처리 종료
+
+        private void RunObstacleValidation() // 현재 생성 장애물의 통로 폭과 분기 위험도 재검사
+        { // 분기 장애물 검사 처리
+            MapBranchObstaclePlanner obstaclePlanner = GetComponent<MapBranchObstaclePlanner>(); // 같은 오브젝트의 분기 장애물 계획기 조회
+
+            if (settings == null || !settings.UseBranchingPath || obstaclePlanner == null) // 장애물 검사 미사용 조건 확인
+            { // 장애물 검사 미사용 처리
+                lastObstaclePlanReport = MapObstaclePlanReport.CreateNotRequired(); // 검사 불필요 성공 보고서 저장
+                return; // 장애물 검사 실행 생략
+            } // 장애물 검사 미사용 처리 종료
+
+            lastObstaclePlanReport = obstaclePlanner.ValidateCurrentPlan(this); // 현재 장애물 배치와 위험도 검사 실행
+        } // 분기 장애물 검사 처리 종료
+
         private string BuildGenerationSignature() // 동일 시드 재현 확인용 생성 결과 서명 계산
         { // 생성 결과 서명 계산 처리
             StringBuilder builder = new StringBuilder(); // 결과 서명 문자열 생성기 준비
@@ -1369,6 +1460,12 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
                     builder.Append(branchCombinationRetryCount); // 분기 조합 재시도 수 추가
                 } // 수직 분기 서명 추가 처리 종료
             } // 수직 생성 서명 추가 처리 종료
+
+            if (lastObstaclePlanReport != null && lastObstaclePlanReport.IsCompleted && lastObstaclePlanReport.IsRequired) // 장애물 계획 서명 추가 여부 확인
+            { // 장애물 계획 서명 추가 처리
+                builder.Append("|O:"); // 장애물 계획 정보 시작 표시 추가
+                builder.Append(lastObstaclePlanReport.BuildSignature()); // 장애물 배치와 위험도 재현 서명 추가
+            } // 장애물 계획 서명 추가 처리 종료
 
             return builder.ToString(); // 완성된 생성 결과 서명 반환
         } // 생성 결과 서명 계산 처리
@@ -1448,6 +1545,7 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
 
             if (Application.isPlaying) // Play Mode 여부 확인
             { // Play Mode 후보 제거 처리
+                candidate.transform.SetParent(null, true); // 삭제 대기 후보를 현재 생성 루트에서 즉시 분리
                 candidate.gameObject.SetActive(false); // 제거 대기 후보 비활성화
                 Destroy(candidate.gameObject); // 프레임 종료 시 후보 제거
             } // Play Mode 후보 제거 처리

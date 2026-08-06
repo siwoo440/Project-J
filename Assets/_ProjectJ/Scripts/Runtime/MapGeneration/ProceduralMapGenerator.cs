@@ -21,6 +21,7 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
         private int effectiveSeed; // 이번 생성에 사용한 시드
         private bool lastGenerationSucceeded; // 최근 생성 성공 여부
         private string generationSignature = string.Empty; // 최근 생성 결과 재현 서명
+        private MapGenerationValidationReport lastValidationReport = MapGenerationValidationReport.CreateNotRun(); // 최근 생성 결과 종합 검사 보고서
 
         public int EffectiveSeed => effectiveSeed; // 실제 사용 시드 반환
         public bool LastGenerationSucceeded => lastGenerationSucceeded; // 최근 생성 성공 여부 반환
@@ -29,6 +30,7 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
         public IReadOnlyList<MapGenerationGraphNode> GraphNodes => graphNodes; // 현재 그래프 노드 목록 반환
         public IReadOnlyList<MapGenerationGraphEdge> GraphEdges => graphEdges; // 현재 그래프 간선 목록 반환
         public string GenerationSignature => generationSignature; // 최근 생성 결과 서명 반환
+        public MapGenerationValidationReport LastValidationReport => lastValidationReport; // 최근 생성 결과 종합 검사 보고서 반환
 
         private struct PlacementOption // 단일 모듈 배치 후보 선언
         { // 단일 모듈 배치 후보 묶음
@@ -56,10 +58,12 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
         { // 새 시드 맵 생성 처리
             lastGenerationSucceeded = false; // 최근 생성 결과 초기화
             generationSignature = string.Empty; // 최근 생성 서명 초기화
+            lastValidationReport = MapGenerationValidationReport.CreateNotRun(); // 최근 종합 검사 결과 초기화
 
             if (settings == null) // 생성 설정 누락 확인
             { // 생성 설정 누락 처리
-                Debug.LogError("[ProjectJ][Day32] Map Generation Settings가 연결되지 않았습니다.", this); // 생성 설정 누락 오류 출력
+                lastValidationReport = MapGenerationValidationReport.CreateFailure(MapGenerationValidationIssueCode.GenerationFlowFailed, "Map Generation Settings가 연결되지 않았습니다."); // 생성 설정 누락 검사 보고서 저장
+                Debug.LogError(lastValidationReport.BuildDetailedMessage(), this); // 생성 설정 누락 오류 출력
                 return; // 맵 생성 중단
             } // 생성 설정 누락 처리
 
@@ -68,7 +72,8 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
 
             if (ordinaryPrefabs.Count == 0) // 일반 경로 후보 없음 확인
             { // 일반 경로 후보 없음 처리
-                Debug.LogError("[ProjectJ][Day32] 생성 가능한 일반 맵 모듈 Prefab이 없습니다.", this); // 후보 없음 오류 출력
+                lastValidationReport = MapGenerationValidationReport.CreateFailure(MapGenerationValidationIssueCode.GenerationFlowFailed, "생성 가능한 일반 맵 모듈 Prefab이 없습니다."); // 후보 없음 검사 보고서 저장
+                Debug.LogError(lastValidationReport.BuildDetailedMessage(), this); // 후보 없음 오류 출력
                 return; // 맵 생성 중단
             } // 일반 경로 후보 없음 처리
 
@@ -80,22 +85,57 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
 
             if (firstModule == null) // 첫 모듈 생성 실패 확인
             { // 첫 모듈 생성 실패 처리
-                Debug.LogError("[ProjectJ][Day32] 첫 번째 맵 모듈을 생성하지 못했습니다.", this); // 첫 모듈 생성 오류 출력
+                lastValidationReport = MapGenerationValidationReport.CreateFailure(MapGenerationValidationIssueCode.GenerationFlowFailed, "첫 번째 맵 모듈을 생성하지 못했습니다."); // 첫 모듈 실패 검사 보고서 저장
+                Debug.LogError(lastValidationReport.BuildDetailedMessage(), this); // 첫 모듈 생성 오류 출력
                 return; // 맵 생성 중단
             } // 첫 모듈 생성 실패 처리
 
             RegisterFirstModule(firstModule); // 첫 모듈과 그래프 시작 노드 등록
             bool generationFlowSucceeded = settings.UseBranchingPath ? GenerateBranchedPath(firstModule, validPrefabs, ordinaryPrefabs, random) : GenerateLinearPath(firstModule, ordinaryPrefabs, random); // 설정에 따른 생성 흐름 실행
-            bool graphIsReachable = MapGenerationGraphRules.AreAllNodesReachable(graphNodes.Count, graphEdges, 0); // 시작점 기준 전체 노드 도달 가능성 검사
-            lastGenerationSucceeded = generationFlowSucceeded && generatedModules.Count == settings.ModuleCount && graphIsReachable; // 목표 개수와 연결성 통합 결과 저장
+            lastValidationReport = MapGenerationResultValidator.Validate(generatedModules, graphNodes, graphEdges, settings.ModuleCount, settings.OverlapTolerance, settings.ConnectionSizeTolerance, settings.ConnectionPositionTolerance); // 생성 결과 종합 검사 실행
+
+            if (!generationFlowSucceeded) // 생성 흐름 실패 확인
+            { // 생성 흐름 실패 처리
+                lastValidationReport.AddIssue(MapGenerationValidationIssueCode.GenerationFlowFailed, "목표 맵 구조를 완성하기 전에 생성 흐름이 중단됐습니다.", -1, -1); // 생성 흐름 실패 문제 등록
+            } // 생성 흐름 실패 처리 종료
+
+            lastGenerationSucceeded = lastValidationReport.IsValid; // 종합 검사 기반 최근 생성 성공 여부 저장
             generationSignature = BuildGenerationSignature(); // 생성 결과 재현 서명 계산
 
             if (logDetailedResults) // 상세 로그 표시 활성 확인
             { // 상세 생성 결과 출력 처리
-                string resultLabel = lastGenerationSucceeded ? "성공" : "부분 성공"; // 생성 결과 문구 계산
-                Debug.Log($"[ProjectJ][Day32] 분기 맵 생성 {resultLabel} | 시드: {effectiveSeed} | 모듈: {generatedModules.Count}/{settings.ModuleCount} | 간선: {graphEdges.Count}", this); // 생성 결과 로그 출력
+                string resultLabel = lastGenerationSucceeded ? "성공" : "실패"; // 생성 결과 문구 계산
+                Debug.Log($"[ProjectJ][Day33] 맵 생성 및 종합 검사 {resultLabel} | 시드: {effectiveSeed} | 모듈: {generatedModules.Count}/{settings.ModuleCount} | 간선: {graphEdges.Count} | 문제: {lastValidationReport.IssueCount}", this); // 생성 결과 요약 로그 출력
+
+                if (!lastValidationReport.IsValid) // 종합 검사 실패 확인
+                { // 종합 검사 실패 처리
+                    Debug.LogError(lastValidationReport.BuildDetailedMessage(), this); // 모든 생성 문제 상세 로그 출력
+                } // 종합 검사 실패 처리 종료
             } // 상세 생성 결과 출력 처리
         } // 새 시드 맵 생성 처리
+
+        [ContextMenu("Validate Generated Map")] // Inspector 생성 결과 검사 메뉴 등록
+        public void ValidateGeneratedMap() // 현재 생성 결과 종합 검사 실행
+        { // 현재 생성 결과 종합 검사 처리
+            if (settings == null) // 생성 설정 누락 확인
+            { // 생성 설정 누락 처리
+                lastValidationReport = MapGenerationValidationReport.CreateFailure(MapGenerationValidationIssueCode.GenerationFlowFailed, "Map Generation Settings가 연결되지 않았습니다."); // 생성 설정 누락 검사 보고서 저장
+                Debug.LogError(lastValidationReport.BuildDetailedMessage(), this); // 생성 설정 누락 오류 출력
+                return; // 생성 결과 검사 중단
+            } // 생성 설정 누락 처리 종료
+
+            lastValidationReport = MapGenerationResultValidator.Validate(generatedModules, graphNodes, graphEdges, settings.ModuleCount, settings.OverlapTolerance, settings.ConnectionSizeTolerance, settings.ConnectionPositionTolerance); // 현재 생성 결과 종합 검사 실행
+            lastGenerationSucceeded = lastValidationReport.IsValid; // 종합 검사 기반 성공 상태 갱신
+
+            if (lastValidationReport.IsValid) // 생성 결과 검사 성공 확인
+            { // 생성 결과 검사 성공 처리
+                Debug.Log($"[ProjectJ][Day33] {lastValidationReport.BuildSummary()}", this); // 검사 성공 로그 출력
+            } // 생성 결과 검사 성공 처리 종료
+            else // 생성 결과 검사 실패 확인
+            { // 생성 결과 검사 실패 처리
+                Debug.LogError(lastValidationReport.BuildDetailedMessage(), this); // 검사 실패 상세 로그 출력
+            } // 생성 결과 검사 실패 처리 종료
+        } // 현재 생성 결과 종합 검사 처리 종료
 
         [ContextMenu("Clear Generated Map")] // Inspector 생성 맵 제거 메뉴 등록
         public void ClearGeneratedMap() // 현재 생성된 맵 전체 제거
@@ -106,6 +146,8 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             graphNodeIndices.Clear(); // 그래프 노드 번호 사전 초기화
             usedConnections.Clear(); // 사용 연결 지점 집합 초기화
             generationSignature = string.Empty; // 생성 결과 서명 초기화
+            lastValidationReport = MapGenerationValidationReport.CreateNotRun(); // 생성 결과 검사 상태 초기화
+            lastGenerationSucceeded = false; // 최근 생성 성공 상태 초기화
 
             if (generatedRoot == null) // 생성 루트 누락 확인
             { // 생성 루트 누락 처리

@@ -34,6 +34,9 @@ namespace ProjectJ.Tests.EditMode // EditMode 테스트 네임스페이스 선�
             Assert.AreEqual(8, generator.GraphEdges.Count); // 분기와 합류를 포함한 간선 8개 확인
             Assert.IsTrue(MapGenerationGraphRules.AreAllNodesReachable(generator.GraphNodes.Count, generator.GraphEdges, 0)); // 시작점 기준 전체 노드 도달 확인
             AssertNoBlockingOverlap(generator.GeneratedModules, 0.05f); // 모든 생성 모듈 Bounds 비겹침 확인
+            Assert.IsTrue(generator.LastValidationReport.IsCompleted); // 생성 직후 종합 검사 완료 확인
+            Assert.IsTrue(generator.LastValidationReport.IsValid, generator.LastValidationReport.BuildDetailedMessage()); // 생성 결과 종합 검사 통과 확인
+            Assert.AreEqual(0, generator.LastValidationReport.IssueCount); // 생성 결과 발견 문제 없음 확인
         } // 고정 시드 분기 생성 테스트 처리
 
         [Test] // 자동 테스트 항목 표시

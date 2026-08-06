@@ -1,3 +1,4 @@
+using System; // 상자 획득 이벤트 기능 참조
 using ProjectJ.Data; // 아이템 공통 데이터 형식 참조
 using UnityEngine; // Unity 충돌과 오브젝트 기능 참조
 
@@ -14,6 +15,8 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
         [SerializeField] private bool logPickupResult = true; // 획득 결과 Console 출력 여부 저장
 
         private bool isCollected; // 이미 획득된 상자 여부 저장
+
+        public event Action<ItemChestPickup, ItemDataDefinition, int> Collected; // 상자 획득 완료 정보 전달 이벤트
 
         public ItemDataDefinition ItemData => itemData; // 상자 아이템 데이터 반환
         public bool IsCollected => isCollected; // 상자 획득 완료 여부 반환
@@ -64,10 +67,32 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
             } // 인벤토리 가득 참 처리 종료
 
             isCollected = true; // 상자 획득 완료 상태 저장
+            Collected?.Invoke(this, itemData, placedSlotIndex); // 상자 생성 지점에 획득 완료 정보 전달
             DisablePickupObjects(); // 상자 Trigger와 표시 비활성화
             LogPickupSuccess(placedSlotIndex); // 획득 성공 로그 출력
             return true; // 아이템 지급 성공 반환
         } // 상자 아이템 지급 처리 종료
+
+        public void ConfigureRuntime(ItemDataDefinition newItemData, Collider newPickupTrigger, GameObject newVisualRoot, bool newDeactivateAfterPickup, bool newLogPickupResult) // 런타임 생성 상자 데이터 연결
+        { // 런타임 상자 설정 처리
+            itemData = newItemData; // 지급 아이템 데이터 저장
+            pickupTrigger = newPickupTrigger; // 접촉 Trigger 저장
+            visualRoot = newVisualRoot; // 상자 표시 오브젝트 저장
+            deactivateAfterPickup = newDeactivateAfterPickup; // 획득 뒤 비활성화 설정 저장
+            logPickupResult = newLogPickupResult; // 결과 로그 설정 저장
+            isCollected = false; // 획득 전 상태로 초기화
+
+            if (pickupTrigger != null) // 연결된 Trigger 존재 여부 확인
+            { // 런타임 Trigger 준비 처리
+                pickupTrigger.enabled = true; // 접촉 감지 활성화
+                pickupTrigger.isTrigger = true; // 접촉 전용 Trigger 적용
+            } // 런타임 Trigger 준비 처리 종료
+
+            if (visualRoot != null) // 연결된 표시 오브젝트 존재 여부 확인
+            { // 런타임 표시 준비 처리
+                visualRoot.SetActive(true); // 상자 표시 활성화
+            } // 런타임 표시 준비 처리 종료
+        } // 런타임 상자 설정 처리 종료
 
         private void DisablePickupObjects() // 획득 완료 상자 접촉과 표시 중지
         { // 상자 비활성화 처리
@@ -104,7 +129,7 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
                 return; // 로그 처리 중단
             } // 로그 생략 처리 종료
 
-            Debug.Log($"[ProjectJ][Day39] 아이템 획득 | {itemData.DisplayName} | 슬롯 {placedSlotIndex + 1}/{PlayerItemInventory.Capacity}", this); // 아이템 이름과 배치 슬롯 출력
+            Debug.Log($"[ProjectJ][Day41] 아이템 획득 | {itemData.DisplayName} | 슬롯 {placedSlotIndex + 1}/{PlayerItemInventory.Capacity}", this); // 아이템 이름과 배치 슬롯 출력
         } // 획득 성공 로그 처리 종료
 
         private void LogInventoryFull() // 인벤토리 가득 참 로그 출력
@@ -114,7 +139,7 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
                 return; // 로그 처리 중단
             } // 로그 생략 처리 종료
 
-            Debug.Log($"[ProjectJ][Day39] 아이템 획득 실패 | 2개 슬롯 사용 중 | 상자 유지: {itemData.DisplayName}", this); // 가득 참 상태와 상자 유지 안내 출력
+            Debug.Log($"[ProjectJ][Day41] 아이템 획득 실패 | 2개 슬롯 사용 중 | 상자 유지: {itemData.DisplayName}", this); // 가득 참 상태와 상자 유지 안내 출력
         } // 인벤토리 가득 참 로그 처리 종료
 
         private void OnDrawGizmosSelected() // Scene 선택 시 상자 접촉 범위 표시
@@ -133,12 +158,7 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
 #if UNITY_EDITOR // Editor 전용 설정 시작
         public void ConfigureForEditor(ItemDataDefinition newItemData, Collider newPickupTrigger, GameObject newVisualRoot, bool newDeactivateAfterPickup, bool newLogPickupResult) // Editor 자동 설정용 상자 데이터 연결
         { // Editor 상자 설정 처리
-            itemData = newItemData; // 지급 아이템 데이터 저장
-            pickupTrigger = newPickupTrigger; // 접촉 Trigger 저장
-            visualRoot = newVisualRoot; // 상자 표시 오브젝트 저장
-            deactivateAfterPickup = newDeactivateAfterPickup; // 획득 뒤 비활성화 설정 저장
-            logPickupResult = newLogPickupResult; // 결과 로그 설정 저장
-            isCollected = false; // 획득 전 상태로 초기화
+            ConfigureRuntime(newItemData, newPickupTrigger, newVisualRoot, newDeactivateAfterPickup, newLogPickupResult); // 런타임 공통 설정 방식으로 참조 연결
         } // Editor 상자 설정 처리 종료
 #endif // Editor 전용 설정 종료
     } // 아이템 상자 획득 기능 묶음 종료

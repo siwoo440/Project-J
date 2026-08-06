@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73f276289c0bdfc49912438c97c0fdd7, type: 3}
+  m_Name: MAP-GEN-001_DefaultGenerationSettings
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.MapGeneration.MapGenerationSettings
+  seed: 31001
+  randomizeSeed: 0
+  startingQuarterTurns: 0
+  moduleCount: 8
+  maximumPlacementAttempts: 32
+  overlapTolerance: 0.05
+  modulePrefabs:
+  - {fileID: 1721837932572128859, guid: cf3d0b949e1785144a5e70317682199b, type: 3}
+  - {fileID: 5757924093560836091, guid: 74511f71670d82a4189cf74f626eefbf, type: 3}
+  - {fileID: 1340070991981424902, guid: db9166f9d7d75464d9bd983a2ccdbae9, type: 3}

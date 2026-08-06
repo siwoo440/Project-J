@@ -27,7 +27,17 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
         [SerializeField, HideInInspector] private int ascendingModuleCount; // 현재 상승 모듈 개수
         [SerializeField, HideInInspector] private int consecutiveFlatModuleCount; // 현재 연속 평지 모듈 개수
         [SerializeField, HideInInspector] private int maximumObservedConsecutiveFlatModules; // 생성 중 최대 연속 평지 모듈 개수
+        [SerializeField, HideInInspector] private float leftBranchHeight; // 왼쪽 분기 누적 높이
+        [SerializeField, HideInInspector] private float rightBranchHeight; // 오른쪽 분기 누적 높이
+        [SerializeField, HideInInspector] private int leftBranchAscendingModuleCount; // 왼쪽 분기 상승 모듈 개수
+        [SerializeField, HideInInspector] private int rightBranchAscendingModuleCount; // 오른쪽 분기 상승 모듈 개수
+        [SerializeField, HideInInspector] private int branchCombinationRetryCount; // 수직 분기 조합 재시도 횟수
         private float maximumAvailableHeightGain; // 후보 한 개의 최대 상승량
+        private float sharedPathHeight; // 분기 전후 공통 경로 누적 높이
+        private int sharedAscendingModuleCount; // 분기 전후 공통 경로 상승 모듈 개수
+        private int sharedConsecutiveFlatModuleCount; // 공통 경로 연속 평지 모듈 개수
+        private int leftBranchConsecutiveFlatModuleCount; // 왼쪽 분기 연속 평지 모듈 개수
+        private int rightBranchConsecutiveFlatModuleCount; // 오른쪽 분기 연속 평지 모듈 개수
 
         public int EffectiveSeed => effectiveSeed; // 실제 사용 시드 반환
         public bool LastGenerationSucceeded => lastGenerationSucceeded; // 최근 생성 성공 여부 반환
@@ -41,6 +51,11 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
         public float GeneratedHeight => generatedHeight; // 최종 누적 생성 높이 반환
         public int AscendingModuleCount => ascendingModuleCount; // 생성된 상승 모듈 개수 반환
         public int MaximumObservedConsecutiveFlatModules => maximumObservedConsecutiveFlatModules; // 최대 연속 평지 모듈 개수 반환
+        public float LeftBranchHeight => leftBranchHeight; // 왼쪽 분기 누적 높이 반환
+        public float RightBranchHeight => rightBranchHeight; // 오른쪽 분기 누적 높이 반환
+        public int LeftBranchAscendingModuleCount => leftBranchAscendingModuleCount; // 왼쪽 분기 상승 모듈 개수 반환
+        public int RightBranchAscendingModuleCount => rightBranchAscendingModuleCount; // 오른쪽 분기 상승 모듈 개수 반환
+        public int BranchCombinationRetryCount => branchCombinationRetryCount; // 분기 조합 재시도 횟수 반환
 
         private struct PlacementOption // 단일 모듈 배치 후보 선언
         { // 단일 모듈 배치 후보 묶음
@@ -54,6 +69,24 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             public MapModuleConnectionPoint SourceExit; // 이전 모듈 출구
             public MapModuleConnectionPoint Entrance; // 생성 모듈 입구
         } // 성공한 단일 연결 배치 결과 묶음
+
+        private struct VerticalPairOption // 좌우 수직 분기 배치 후보 선언
+        { // 좌우 수직 분기 배치 후보 묶음
+            public PlacementOption LeftOption; // 왼쪽 배치 후보
+            public PlacementOption RightOption; // 오른쪽 배치 후보
+        } // 좌우 수직 분기 배치 후보 묶음
+
+        private struct GenerationSnapshot // 분기 조합 재시도용 생성 상태 선언
+        { // 생성 상태 묶음
+            public int ModuleCount; // 보존할 생성 모듈 개수
+            public int NodeCount; // 보존할 그래프 노드 개수
+            public int EdgeCount; // 보존할 그래프 간선 개수
+            public HashSet<MapModuleConnectionPoint> UsedConnections; // 보존할 사용 연결 지점 집합
+            public float SharedPathHeight; // 보존할 공통 경로 높이
+            public int SharedAscendingModules; // 보존할 공통 경로 상승 수
+            public int SharedConsecutiveFlatModules; // 보존할 공통 경로 연속 평지 수
+            public int MaximumConsecutiveFlatModules; // 보존할 최대 연속 평지 수
+        } // 생성 상태 묶음
 
         private void Start() // 게임 시작 처리
         { // 게임 시작 처리 묶음
@@ -93,15 +126,16 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             System.Random random = new System.Random(effectiveSeed); // 독립 난수 생성기 준비
             maximumAvailableHeightGain = MapVerticalGenerationRules.GetMaximumHeightGain(ordinaryPrefabs); // 전체 후보의 최대 상승량 계산
             effectiveTargetHeight = settings.UseVerticalGeneration ? CalculateEffectiveTargetHeight(random) : 0f; // 시드 기반 수직 목표 높이 결정
+            int verticalRouteSlotCount = settings.UseVerticalGeneration && settings.UseBranchingPath ? MapVerticalBranchGenerationRules.CalculateRouteOrdinarySlotCount(settings.ModuleCount, CalculateBranchPairCount()) : settings.ModuleCount; // 생성 방식별 단일 경로 일반 슬롯 수 계산
 
-            if (settings.UseVerticalGeneration && !MapVerticalGenerationRules.TryValidateConfiguration(settings.ModuleCount, effectiveTargetHeight, settings.MinimumAscendingModules, settings.MaximumConsecutiveFlatModules, maximumAvailableHeightGain, out string verticalConfigurationReason)) // 수직 목표 달성 가능성 확인
+            if (settings.UseVerticalGeneration && !MapVerticalGenerationRules.TryValidateConfiguration(verticalRouteSlotCount, effectiveTargetHeight, settings.MinimumAscendingModules, settings.MaximumConsecutiveFlatModules, maximumAvailableHeightGain, out string verticalConfigurationReason)) // 수직 목표 달성 가능성 확인
             { // 수직 목표 달성 불가 처리
                 lastValidationReport = MapGenerationValidationReport.CreateFailure(MapGenerationValidationIssueCode.GenerationFlowFailed, $"수직 생성 설정 오류: {verticalConfigurationReason}"); // 수직 설정 오류 보고서 저장
                 Debug.LogError(lastValidationReport.BuildDetailedMessage(), this); // 수직 설정 오류 출력
                 return; // 맵 생성 중단
             } // 수직 목표 달성 불가 처리 종료
 
-            MapModuleDefinition firstModule = CreateFirstModule(ordinaryPrefabs, random); // 첫 모듈 생성
+            MapModuleDefinition firstModule = settings.UseVerticalGeneration && settings.UseBranchingPath ? CreateFirstVerticalBranchModule(ordinaryPrefabs, random) : CreateFirstModule(ordinaryPrefabs, random); // 생성 방식에 맞는 첫 모듈 생성
 
             if (firstModule == null) // 첫 모듈 생성 실패 확인
             { // 첫 모듈 생성 실패 처리
@@ -111,7 +145,7 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             } // 첫 모듈 생성 실패 처리
 
             RegisterFirstModule(firstModule); // 첫 모듈과 그래프 시작 노드 등록
-            bool generationFlowSucceeded = settings.UseVerticalGeneration ? GenerateLinearPath(firstModule, ordinaryPrefabs, random) : settings.UseBranchingPath ? GenerateBranchedPath(firstModule, validPrefabs, ordinaryPrefabs, random) : GenerateLinearPath(firstModule, ordinaryPrefabs, random); // 수직 또는 기존 설정에 따른 생성 흐름 실행
+            bool generationFlowSucceeded = settings.UseVerticalGeneration && settings.UseBranchingPath ? GenerateVerticalBranchedPath(firstModule, validPrefabs, ordinaryPrefabs, random) : settings.UseVerticalGeneration ? GenerateLinearPath(firstModule, ordinaryPrefabs, random) : settings.UseBranchingPath ? GenerateBranchedPath(firstModule, validPrefabs, ordinaryPrefabs, random) : GenerateLinearPath(firstModule, ordinaryPrefabs, random); // 수직 분기·수직 선형·기존 분기 설정에 따른 생성 흐름 실행
             lastValidationReport = MapGenerationResultValidator.Validate(generatedModules, graphNodes, graphEdges, settings.ModuleCount, settings.OverlapTolerance, settings.ConnectionSizeTolerance, settings.ConnectionPositionTolerance); // 생성 결과 종합 검사 실행
 
             if (!generationFlowSucceeded) // 생성 흐름 실패 확인
@@ -128,7 +162,8 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             { // 상세 생성 결과 출력 처리
                 string resultLabel = lastGenerationSucceeded ? "성공" : "실패"; // 생성 결과 문구 계산
                 string verticalLabel = settings.UseVerticalGeneration ? $" | 높이: {generatedHeight:0.00}m/{effectiveTargetHeight:0.00}m | 상승 모듈: {ascendingModuleCount} | 최대 연속 평지: {maximumObservedConsecutiveFlatModules}" : string.Empty; // 수직 생성 결과 문구 계산
-                Debug.Log($"[ProjectJ][Day35] 맵 생성 및 종합 검사 {resultLabel} | 시드: {effectiveSeed} | 모듈: {generatedModules.Count}/{settings.ModuleCount} | 간선: {graphEdges.Count} | 문제: {lastValidationReport.IssueCount}{verticalLabel}", this); // 생성 결과 요약 로그 출력
+                string branchLabel = settings.UseVerticalGeneration && settings.UseBranchingPath ? $" | 분기 높이: L {leftBranchHeight:0.00}m/R {rightBranchHeight:0.00}m | 분기 상승: L {leftBranchAscendingModuleCount}/R {rightBranchAscendingModuleCount} | 재시도: {branchCombinationRetryCount}" : string.Empty; // 수직 분기 결과 문구 계산
+                Debug.Log($"[ProjectJ][Day36] 맵 생성 및 종합 검사 {resultLabel} | 시드: {effectiveSeed} | 모듈: {generatedModules.Count}/{settings.ModuleCount} | 간선: {graphEdges.Count} | 문제: {lastValidationReport.IssueCount}{verticalLabel}{branchLabel}", this); // 생성 결과 요약 로그 출력
 
                 if (!lastValidationReport.IsValid) // 종합 검사 실패 확인
                 { // 종합 검사 실패 처리
@@ -178,6 +213,16 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             ascendingModuleCount = 0; // 상승 모듈 개수 초기화
             consecutiveFlatModuleCount = 0; // 연속 평지 모듈 개수 초기화
             maximumObservedConsecutiveFlatModules = 0; // 최대 연속 평지 모듈 개수 초기화
+            leftBranchHeight = 0f; // 왼쪽 분기 높이 초기화
+            rightBranchHeight = 0f; // 오른쪽 분기 높이 초기화
+            leftBranchAscendingModuleCount = 0; // 왼쪽 분기 상승 수 초기화
+            rightBranchAscendingModuleCount = 0; // 오른쪽 분기 상승 수 초기화
+            branchCombinationRetryCount = 0; // 분기 조합 재시도 수 초기화
+            sharedPathHeight = 0f; // 공통 경로 높이 초기화
+            sharedAscendingModuleCount = 0; // 공통 경로 상승 수 초기화
+            sharedConsecutiveFlatModuleCount = 0; // 공통 경로 연속 평지 수 초기화
+            leftBranchConsecutiveFlatModuleCount = 0; // 왼쪽 분기 연속 평지 수 초기화
+            rightBranchConsecutiveFlatModuleCount = 0; // 오른쪽 분기 연속 평지 수 초기화
             maximumAvailableHeightGain = 0f; // 후보 최대 상승량 초기화
 
             if (generatedRoot == null) // 생성 루트 누락 확인
@@ -218,6 +263,126 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
 
             return true; // 선형 생성 성공 반환
         } // 기존 선형 생성 처리
+
+        private bool GenerateVerticalBranchedPath(MapModuleDefinition firstModule, List<MapModuleDefinition> validPrefabs, List<MapModuleDefinition> ordinaryPrefabs, System.Random random) // 높이가 일치하는 수직 분기와 합류 경로 생성
+        { // 수직 분기와 합류 경로 생성 처리
+            List<MapModuleDefinition> branchPrefabs = FilterPrefabsByKind(validPrefabs, MapModuleKind.Branch); // 분기 모듈 후보 수집
+            List<MapModuleDefinition> mergePrefabs = FilterPrefabsByKind(validPrefabs, MapModuleKind.Merge); // 합류 모듈 후보 수집
+
+            if (branchPrefabs.Count == 0 || mergePrefabs.Count == 0) // 분기 또는 합류 후보 누락 확인
+            { // 수직 분기 후보 누락 처리
+                Debug.LogError("[ProjectJ][Day36] Branch와 Merge 모듈 Prefab이 각각 하나 이상 필요합니다.", this); // 특수 모듈 누락 오류 출력
+                return false; // 수직 분기 생성 실패 반환
+            } // 수직 분기 후보 누락 처리 종료
+
+            if (!TryCreateNextModule(firstModule, branchPrefabs, random, out PlacementResult branchPlacement)) // 시작 모듈 뒤 분기 모듈 배치 시도
+            { // 분기 모듈 배치 실패 처리
+                Debug.LogWarning("[ProjectJ][Day36] 수직 분기 모듈을 배치하지 못했습니다.", this); // 분기 배치 실패 경고 출력
+                return false; // 수직 분기 생성 실패 반환
+            } // 분기 모듈 배치 실패 처리 종료
+
+            RegisterPlacement(firstModule, branchPlacement, 0); // 분기 모듈과 시작 간선 등록
+            MapModuleDefinition branchModule = branchPlacement.Module; // 생성된 분기 모듈 저장
+            List<MapModuleConnectionPoint> branchExits = GetAvailableConnections(branchModule, MapConnectionRole.Exit); // 분기 모듈 사용 가능 출구 수집
+            SortConnectionsByWorldX(branchExits); // 좌우 순서로 분기 출구 정렬
+
+            if (branchExits.Count < 2) // 분기 출구 수량 확인
+            { // 분기 출구 부족 처리
+                Debug.LogWarning("[ProjectJ][Day36] 수직 분기 모듈에 사용 가능한 출구가 두 개 미만입니다.", branchModule); // 분기 출구 부족 경고 출력
+                return false; // 수직 분기 생성 실패 반환
+            } // 분기 출구 부족 처리 종료
+
+            int pairCount = CalculateBranchPairCount(); // 실제 병렬 경로 단계 수 계산
+            int fixedStructureCount = 3 + pairCount * 2; // 시작·분기·병렬 쌍·합류 구조 수 계산
+            int sharedTailCount = Mathf.Max(0, settings.ModuleCount - fixedStructureCount); // 합류 뒤 공통 모듈 수 계산
+            GenerationSnapshot branchSnapshot = CaptureGenerationSnapshot(); // 분기 직후 되돌리기 상태 저장
+            bool branchSucceeded = false; // 수직 분기 완성 여부 초기화
+            MapModuleDefinition mergeModule = null; // 성공한 합류 모듈 초기화
+
+            for (int retryIndex = 0; retryIndex < settings.MaximumBranchCombinationRetries; retryIndex++) // 허용된 분기 조합 재시도 순회
+            { // 단일 수직 분기 조합 시도 처리
+                if (retryIndex > 0) // 둘째 이후 조합 확인
+                { // 이전 분기 조합 되돌리기 처리
+                    RollbackToSnapshot(branchSnapshot); // 분기 직후 상태로 복원
+                } // 이전 분기 조합 되돌리기 처리 종료
+
+                branchCombinationRetryCount = retryIndex; // 현재 분기 조합 재시도 수 저장
+                InitializeBranchProgress(); // 좌우 분기 진행 상태 초기화
+                MapModuleDefinition leftPrevious = branchModule; // 왼쪽 경로 이전 모듈 초기화
+                MapModuleDefinition rightPrevious = branchModule; // 오른쪽 경로 이전 모듈 초기화
+                MapModuleConnectionPoint forcedLeftExit = branchExits[0]; // 왼쪽 고정 분기 출구 저장
+                MapModuleConnectionPoint forcedRightExit = branchExits[branchExits.Count - 1]; // 오른쪽 고정 분기 출구 저장
+                bool pairSequenceSucceeded = true; // 병렬 단계 완성 여부 초기화
+
+                for (int pairIndex = 0; pairIndex < pairCount; pairIndex++) // 모든 수직 병렬 단계 순회
+                { // 단일 수직 병렬 단계 처리
+                    int remainingBranchSlots = pairCount - pairIndex - 1; // 현재 후보 뒤 남는 분기 단계 수 계산
+
+                    if (!TryCreateVerticalParallelPair(leftPrevious, rightPrevious, forcedLeftExit, forcedRightExit, ordinaryPrefabs, remainingBranchSlots, sharedTailCount, random, out PlacementResult leftPlacement, out PlacementResult rightPlacement)) // 높이가 맞는 좌우 후보 쌍 배치 시도
+                    { // 수직 병렬 단계 배치 실패 처리
+                        pairSequenceSucceeded = false; // 병렬 단계 실패 상태 저장
+                        break; // 현재 분기 조합 중단
+                    } // 수직 병렬 단계 배치 실패 처리 종료
+
+                    RegisterPlacement(leftPrevious, leftPlacement, -1); // 왼쪽 분기 모듈과 간선 등록
+                    RegisterPlacement(rightPrevious, rightPlacement, 1); // 오른쪽 분기 모듈과 간선 등록
+                    leftPrevious = leftPlacement.Module; // 왼쪽 경로 마지막 모듈 갱신
+                    rightPrevious = rightPlacement.Module; // 오른쪽 경로 마지막 모듈 갱신
+                    forcedLeftExit = null; // 다음 왼쪽 출구 자동 선택 전환
+                    forcedRightExit = null; // 다음 오른쪽 출구 자동 선택 전환
+                } // 단일 수직 병렬 단계 처리 종료
+
+                if (!pairSequenceSucceeded) // 병렬 단계 실패 확인
+                { // 병렬 단계 실패 처리
+                    continue; // 다음 분기 조합 시도
+                } // 병렬 단계 실패 처리 종료
+
+                if (!MapVerticalBranchGenerationRules.TryValidateMerge(leftBranchHeight, rightBranchHeight, leftBranchAscendingModuleCount, rightBranchAscendingModuleCount, settings.MinimumAscendingModulesPerBranch, settings.BranchMergeHeightTolerance, out string mergeReason)) // 좌우 누적 높이와 상승 수 검사
+                { // 수직 합류 기준 미달 처리
+                    Debug.LogWarning($"[ProjectJ][Day36] 수직 분기 조합 재시도: {mergeReason}", this); // 합류 기준 미달 원인 출력
+                    continue; // 다음 분기 조합 시도
+                } // 수직 합류 기준 미달 처리 종료
+
+                int mergeConsecutiveFlatModules = Mathf.Max(leftBranchConsecutiveFlatModuleCount, rightBranchConsecutiveFlatModuleCount) + 1; // 평면 합류 모듈까지 이어지는 연속 평지 수 계산
+
+                if (mergeConsecutiveFlatModules > settings.MaximumConsecutiveFlatModules) // 합류 시 연속 평지 제한 초과 확인
+                { // 합류 연속 평지 제한 초과 처리
+                    continue; // 다음 분기 조합 시도
+                } // 합류 연속 평지 제한 초과 처리 종료
+
+                if (!TryCreateMergeModule(leftPrevious, rightPrevious, mergePrefabs, random, out mergeModule, out PlacementResult leftMergePlacement, out PlacementResult rightMergePlacement)) // 실제 XYZ 합류 모듈 배치 시도
+                { // 실제 합류 배치 실패 처리
+                    continue; // 다음 분기 조합 시도
+                } // 실제 합류 배치 실패 처리 종료
+
+                PrepareSharedProgressForMerge(); // 좌우 경로의 연속 평지 상태를 공통 경로로 연결
+                RegisterMergePlacement(leftPrevious, rightPrevious, mergeModule, leftMergePlacement, rightMergePlacement); // 합류 모듈과 두 간선 등록
+                branchSucceeded = true; // 수직 분기 완성 상태 저장
+                break; // 분기 조합 재시도 종료
+            } // 단일 수직 분기 조합 시도 처리 종료
+
+            if (!branchSucceeded || mergeModule == null) // 모든 수직 분기 조합 실패 확인
+            { // 모든 수직 분기 조합 실패 처리
+                RollbackToSnapshot(branchSnapshot); // 분기 직후 상태로 복원
+                Debug.LogWarning("[ProjectJ][Day36] 높이와 XYZ 위치가 모두 맞는 수직 분기·합류 조합을 찾지 못했습니다.", this); // 수직 분기 조합 실패 경고 출력
+                return false; // 수직 분기 생성 실패 반환
+            } // 모든 수직 분기 조합 실패 처리 종료
+
+            MapModuleDefinition previousModule = mergeModule; // 합류 뒤 공통 경로 마지막 모듈 저장
+
+            while (generatedModules.Count < settings.ModuleCount) // 남은 목표 개수까지 반복
+            { // 합류 뒤 공통 경로 생성 처리
+                if (!TryCreateNextModule(previousModule, ordinaryPrefabs, random, out PlacementResult placement)) // 다음 공통 모듈 배치 시도
+                { // 다음 공통 모듈 배치 실패 처리
+                    return false; // 수직 분기 생성 실패 반환
+                } // 다음 공통 모듈 배치 실패 처리 종료
+
+                RegisterPlacement(previousModule, placement, 0); // 공통 후속 모듈과 간선 등록
+                previousModule = placement.Module; // 공통 경로 마지막 모듈 갱신
+            } // 합류 뒤 공통 경로 생성 처리 종료
+
+            return true; // 수직 분기 생성 성공 반환
+        } // 수직 분기와 합류 경로 생성 처리 종료
 
         private bool GenerateBranchedPath(MapModuleDefinition firstModule, List<MapModuleDefinition> validPrefabs, List<MapModuleDefinition> ordinaryPrefabs, System.Random random) // 분기와 합류 경로 생성
         { // 분기와 합류 경로 생성 처리
@@ -408,6 +573,45 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             return instance; // 생성된 첫 모듈 반환
         } // 첫 번째 모듈 생성 처리
 
+        private MapModuleDefinition CreateFirstVerticalBranchModule(List<MapModuleDefinition> validPrefabs, System.Random random) // 수직 분기 경로의 첫 모듈 생성
+        { // 수직 분기 첫 모듈 생성 처리
+            List<MapModuleDefinition> selectablePrefabs = new List<MapModuleDefinition>(); // 수직 분기 첫 후보 목록 생성
+            int routeSlotCount = MapVerticalBranchGenerationRules.CalculateRouteOrdinarySlotCount(settings.ModuleCount, CalculateBranchPairCount()); // 단일 경로 일반 슬롯 수 계산
+            int remainingRouteSlots = Mathf.Max(0, routeSlotCount - 1); // 첫 후보 뒤 남는 단일 경로 슬롯 수 계산
+
+            for (int prefabIndex = 0; prefabIndex < validPrefabs.Count; prefabIndex++) // 모든 일반 후보 순회
+            { // 첫 후보 목표 가능성 검사 처리
+                MapModuleDefinition prefab = validPrefabs[prefabIndex]; // 현재 첫 후보 조회
+                float heightGain = MapVerticalGenerationRules.GetHeightGain(prefab); // 현재 첫 후보 상승량 조회
+                bool isFeasible = MapVerticalGenerationRules.IsCandidateFeasible(0f, 0, 0, heightGain, remainingRouteSlots, effectiveTargetHeight, settings.MinimumAscendingModules, settings.MaximumConsecutiveFlatModules, maximumAvailableHeightGain, settings.AllowDescendingModules); // 첫 후보 뒤 최종 경로 목표 달성 가능성 계산
+
+                if (isFeasible) // 첫 후보 선택 가능 확인
+                { // 첫 후보 선택 가능 처리
+                    selectablePrefabs.Add(prefab); // 수직 분기 첫 후보 목록 등록
+                } // 첫 후보 선택 가능 처리 종료
+            } // 첫 후보 목표 가능성 검사 처리 종료
+
+            if (selectablePrefabs.Count == 0) // 수직 분기 첫 후보 없음 확인
+            { // 수직 분기 첫 후보 없음 처리
+                return null; // 첫 모듈 생성 실패 반환
+            } // 수직 분기 첫 후보 없음 처리 종료
+
+            MapModuleDefinition selectedPrefab = selectablePrefabs[random.Next(selectablePrefabs.Count)]; // 첫 후보 Prefab 시드 기반 선택
+            int[] allowedQuarterTurns = MapGenerationRules.GetAllowedQuarterTurns(selectedPrefab.AllowedRotations); // 허용 회전 목록 조회
+            int selectedQuarterTurns = MapGenerationRules.IsRotationAllowed(selectedPrefab.AllowedRotations, settings.StartingQuarterTurns) ? settings.StartingQuarterTurns : allowedQuarterTurns[0]; // 설정 회전 또는 첫 허용 회전 선택
+            MapModuleDefinition instance = Instantiate(selectedPrefab, generatedRoot); // 첫 모듈 인스턴스 생성
+            instance.name = $"{selectedPrefab.ModuleId}_00"; // 첫 모듈 이름 적용
+            instance.transform.localPosition = Vector3.zero; // 생성 루트 원점 배치
+            instance.transform.localRotation = MapGenerationRules.QuarterTurnRotation(selectedQuarterTurns); // 허용 직각 회전 적용
+            return instance; // 생성된 첫 수직 분기 모듈 반환
+        } // 수직 분기 첫 모듈 생성 처리 종료
+
+        private int CalculateBranchPairCount() // 목표 모듈 수 안의 실제 병렬 단계 수 계산
+        { // 실제 병렬 단계 수 계산 처리
+            int maximumPairsForTarget = Mathf.Max(1, (settings.ModuleCount - 3) / 2); // 목표 개수 안의 최대 병렬 단계 수 계산
+            return Mathf.Min(settings.BranchPairCount, maximumPairsForTarget); // 설정과 목표를 반영한 병렬 단계 수 반환
+        } // 실제 병렬 단계 수 계산 처리 종료
+
         private bool TryCreateNextModule(MapModuleDefinition previousModule, List<MapModuleDefinition> candidatePrefabs, System.Random random, out PlacementResult result) // 이전 모듈의 모든 출구 뒤에 다음 모듈 생성
         { // 다음 모듈 생성 처리
             result = new PlacementResult(); // 생성 결과 초기화
@@ -474,6 +678,128 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
 
             return false; // 모든 연결 조합 배치 실패 반환
         } // 다음 모듈 생성 처리
+
+        private bool TryCreateVerticalParallelPair(MapModuleDefinition leftPrevious, MapModuleDefinition rightPrevious, MapModuleConnectionPoint forcedLeftExit, MapModuleConnectionPoint forcedRightExit, List<MapModuleDefinition> candidatePrefabs, int remainingBranchSlots, int remainingSharedSlots, System.Random random, out PlacementResult leftResult, out PlacementResult rightResult) // 누적 높이가 맞는 좌우 수직 모듈 쌍 배치
+        { // 수직 병렬 모듈 쌍 배치 처리
+            leftResult = new PlacementResult(); // 왼쪽 배치 결과 초기화
+            rightResult = new PlacementResult(); // 오른쪽 배치 결과 초기화
+            List<MapModuleConnectionPoint> leftExits = forcedLeftExit != null ? new List<MapModuleConnectionPoint> { forcedLeftExit } : GetAvailableConnections(leftPrevious, MapConnectionRole.Exit); // 왼쪽 사용 가능 출구 준비
+            List<MapModuleConnectionPoint> rightExits = forcedRightExit != null ? new List<MapModuleConnectionPoint> { forcedRightExit } : GetAvailableConnections(rightPrevious, MapConnectionRole.Exit); // 오른쪽 사용 가능 출구 준비
+            List<VerticalPairOption> pairOptions = BuildVerticalPairOptions(candidatePrefabs, remainingBranchSlots, remainingSharedSlots); // 목표와 합류가 가능한 좌우 후보 조합 생성
+            ShuffleList(leftExits, random); // 왼쪽 출구 순서 섞기
+            ShuffleList(rightExits, random); // 오른쪽 출구 순서 섞기
+            ShuffleList(pairOptions, random); // 수직 후보 조합 순서 섞기
+            int attemptCount = 0; // 실제 수직 병렬 조합 시도 횟수 초기화
+
+            for (int leftExitIndex = 0; leftExitIndex < leftExits.Count; leftExitIndex++) // 모든 왼쪽 출구 순회
+            { // 왼쪽 수직 출구 조합 처리
+                for (int rightExitIndex = 0; rightExitIndex < rightExits.Count; rightExitIndex++) // 모든 오른쪽 출구 순회
+                { // 오른쪽 수직 출구 조합 처리
+                    for (int pairOptionIndex = 0; pairOptionIndex < pairOptions.Count; pairOptionIndex++) // 모든 수직 후보 쌍 순회
+                    { // 수직 후보 쌍 처리
+                        VerticalPairOption pairOption = pairOptions[pairOptionIndex]; // 현재 좌우 수직 후보 조회
+                        MapModuleDefinition leftCandidate = CreateCandidate(pairOption.LeftOption, generatedModules.Count); // 왼쪽 임시 후보 생성
+                        MapModuleDefinition rightCandidate = CreateCandidate(pairOption.RightOption, generatedModules.Count + 1); // 오른쪽 임시 후보 생성
+                        List<MapModuleConnectionPoint> leftEntrances = GetAvailableConnections(leftCandidate, MapConnectionRole.Entrance); // 왼쪽 후보 입구 수집
+                        List<MapModuleConnectionPoint> rightEntrances = GetAvailableConnections(rightCandidate, MapConnectionRole.Entrance); // 오른쪽 후보 입구 수집
+                        ShuffleList(leftEntrances, random); // 왼쪽 입구 순서 섞기
+                        ShuffleList(rightEntrances, random); // 오른쪽 입구 순서 섞기
+
+                        for (int leftEntranceIndex = 0; leftEntranceIndex < leftEntrances.Count; leftEntranceIndex++) // 모든 왼쪽 입구 순회
+                        { // 왼쪽 수직 입구 조합 처리
+                            for (int rightEntranceIndex = 0; rightEntranceIndex < rightEntrances.Count; rightEntranceIndex++) // 모든 오른쪽 입구 순회
+                            { // 오른쪽 수직 입구 조합 처리
+                                attemptCount++; // 실제 수직 병렬 조합 시도 횟수 증가
+
+                                if (attemptCount > settings.MaximumPlacementAttempts) // 최대 시도 횟수 초과 확인
+                                { // 수직 병렬 최대 시도 초과 처리
+                                    DestroyCandidate(leftCandidate); // 왼쪽 임시 후보 제거
+                                    DestroyCandidate(rightCandidate); // 오른쪽 임시 후보 제거
+                                    return false; // 수직 병렬 배치 실패 반환
+                                } // 수직 병렬 최대 시도 초과 처리 종료
+
+                                MapModuleConnectionPoint leftExit = leftExits[leftExitIndex]; // 현재 왼쪽 출구 조회
+                                MapModuleConnectionPoint rightExit = rightExits[rightExitIndex]; // 현재 오른쪽 출구 조회
+                                MapModuleConnectionPoint leftEntrance = leftEntrances[leftEntranceIndex]; // 현재 왼쪽 입구 조회
+                                MapModuleConnectionPoint rightEntrance = rightEntrances[rightEntranceIndex]; // 현재 오른쪽 입구 조회
+                                ResetCandidateTransform(leftCandidate, pairOption.LeftOption.QuarterTurns); // 왼쪽 후보 위치와 회전 초기화
+                                ResetCandidateTransform(rightCandidate, pairOption.RightOption.QuarterTurns); // 오른쪽 후보 위치와 회전 초기화
+
+                                if (!AreConnectionsCompatible(leftExit, leftEntrance) || !AreConnectionsCompatible(rightExit, rightEntrance)) // 좌우 연결 호환성 확인
+                                { // 좌우 수직 연결 비호환 처리
+                                    continue; // 다음 입구 조합 시도
+                                } // 좌우 수직 연결 비호환 처리 종료
+
+                                AlignCandidate(leftExit, leftEntrance, leftCandidate); // 왼쪽 후보 XYZ 정렬
+                                AlignCandidate(rightExit, rightEntrance, rightCandidate); // 오른쪽 후보 XYZ 정렬
+                                bool pairOverlaps = MapGenerationRules.BoundsHaveBlockingOverlap(leftCandidate.WorldBounds, rightCandidate.WorldBounds, settings.OverlapTolerance); // 좌우 후보 상호 겹침 검사
+
+                                if (pairOverlaps || OverlapsPlacedModule(leftCandidate) || OverlapsPlacedModule(rightCandidate)) // 전체 수직 후보 영역 겹침 확인
+                                { // 수직 병렬 후보 겹침 처리
+                                    continue; // 다음 입구 조합 시도
+                                } // 수직 병렬 후보 겹침 처리 종료
+
+                                usedConnections.Add(leftExit); // 왼쪽 이전 출구 사용 완료 등록
+                                usedConnections.Add(rightExit); // 오른쪽 이전 출구 사용 완료 등록
+                                usedConnections.Add(leftEntrance); // 왼쪽 후보 입구 사용 완료 등록
+                                usedConnections.Add(rightEntrance); // 오른쪽 후보 입구 사용 완료 등록
+                                leftResult.Module = leftCandidate; // 왼쪽 생성 모듈 저장
+                                leftResult.SourceExit = leftExit; // 왼쪽 사용 출구 저장
+                                leftResult.Entrance = leftEntrance; // 왼쪽 사용 입구 저장
+                                rightResult.Module = rightCandidate; // 오른쪽 생성 모듈 저장
+                                rightResult.SourceExit = rightExit; // 오른쪽 사용 출구 저장
+                                rightResult.Entrance = rightEntrance; // 오른쪽 사용 입구 저장
+                                return true; // 수직 병렬 배치 성공 반환
+                            } // 오른쪽 수직 입구 조합 처리 종료
+                        } // 왼쪽 수직 입구 조합 처리 종료
+
+                        DestroyCandidate(leftCandidate); // 실패한 왼쪽 수직 후보 제거
+                        DestroyCandidate(rightCandidate); // 실패한 오른쪽 수직 후보 제거
+                    } // 수직 후보 쌍 처리 종료
+                } // 오른쪽 수직 출구 조합 처리 종료
+            } // 왼쪽 수직 출구 조합 처리 종료
+
+            return false; // 모든 수직 병렬 조합 실패 반환
+        } // 수직 병렬 모듈 쌍 배치 처리 종료
+
+        private List<VerticalPairOption> BuildVerticalPairOptions(List<MapModuleDefinition> candidatePrefabs, int remainingBranchSlots, int remainingSharedSlots) // 목표 달성 가능한 좌우 수직 후보 조합 생성
+        { // 좌우 수직 후보 조합 생성 처리
+            List<VerticalPairOption> results = new List<VerticalPairOption>(); // 좌우 수직 후보 결과 목록 생성
+            List<PlacementOption> placementOptions = BuildPlacementOptions(candidatePrefabs); // 일반 Prefab과 회전 조합 생성
+
+            for (int leftOptionIndex = 0; leftOptionIndex < placementOptions.Count; leftOptionIndex++) // 모든 왼쪽 후보 순회
+            { // 왼쪽 수직 후보 처리
+                PlacementOption leftOption = placementOptions[leftOptionIndex]; // 현재 왼쪽 후보 조회
+                float leftHeightGain = MapVerticalGenerationRules.GetHeightGain(leftOption.Prefab); // 왼쪽 후보 상승량 조회
+
+                for (int rightOptionIndex = 0; rightOptionIndex < placementOptions.Count; rightOptionIndex++) // 모든 오른쪽 후보 순회
+                { // 오른쪽 수직 후보 처리
+                    PlacementOption rightOption = placementOptions[rightOptionIndex]; // 현재 오른쪽 후보 조회
+                    float rightHeightGain = MapVerticalGenerationRules.GetHeightGain(rightOption.Prefab); // 오른쪽 후보 상승량 조회
+                    bool leftFlatLimitExceeded = Mathf.Abs(leftHeightGain) <= MapVerticalGenerationRules.HeightEpsilon && leftBranchConsecutiveFlatModuleCount + 1 > settings.MaximumConsecutiveFlatModules; // 왼쪽 후보의 연속 평지 제한 초과 계산
+                    bool rightFlatLimitExceeded = Mathf.Abs(rightHeightGain) <= MapVerticalGenerationRules.HeightEpsilon && rightBranchConsecutiveFlatModuleCount + 1 > settings.MaximumConsecutiveFlatModules; // 오른쪽 후보의 연속 평지 제한 초과 계산
+
+                    if (leftFlatLimitExceeded || rightFlatLimitExceeded) // 좌우 연속 평지 제한 초과 확인
+                    { // 좌우 연속 평지 제한 초과 처리
+                        continue; // 현재 좌우 조합 제외
+                    } // 좌우 연속 평지 제한 초과 처리 종료
+
+                    bool isFeasible = MapVerticalBranchGenerationRules.IsBranchPairFeasible(sharedPathHeight, sharedAscendingModuleCount, leftBranchHeight, leftBranchAscendingModuleCount, rightBranchHeight, rightBranchAscendingModuleCount, leftHeightGain, rightHeightGain, remainingBranchSlots, remainingSharedSlots, effectiveTargetHeight, settings.MinimumAscendingModules, settings.MinimumAscendingModulesPerBranch, maximumAvailableHeightGain, settings.BranchMergeHeightTolerance, settings.AllowDescendingModules); // 좌우 후보 선택 뒤 합류와 최종 목표 달성 가능성 계산
+
+                    if (!isFeasible) // 목표 달성 불가 후보 확인
+                    { // 목표 달성 불가 후보 처리
+                        continue; // 현재 좌우 조합 제외
+                    } // 목표 달성 불가 후보 처리 종료
+
+                    VerticalPairOption pairOption = new VerticalPairOption(); // 새 좌우 수직 후보 조합 생성
+                    pairOption.LeftOption = leftOption; // 왼쪽 후보 저장
+                    pairOption.RightOption = rightOption; // 오른쪽 후보 저장
+                    results.Add(pairOption); // 수직 후보 조합 목록 등록
+                } // 오른쪽 수직 후보 처리 종료
+            } // 왼쪽 수직 후보 처리 종료
+
+            return results; // 목표 달성 가능한 좌우 후보 조합 반환
+        } // 좌우 수직 후보 조합 생성 처리 종료
 
         private bool TryCreateParallelPair(MapModuleDefinition leftPrevious, MapModuleDefinition rightPrevious, MapModuleConnectionPoint forcedLeftExit, MapModuleConnectionPoint forcedRightExit, List<MapModuleDefinition> candidatePrefabs, System.Random random, out PlacementResult leftResult, out PlacementResult rightResult) // 동일 모듈을 좌우 경로에 나란히 배치
         { // 병렬 모듈 쌍 배치 처리
@@ -742,7 +1068,7 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
         private void RegisterFirstModule(MapModuleDefinition module) // 첫 모듈과 그래프 시작 노드 등록
         { // 첫 모듈 등록 처리
             generatedModules.Add(module); // 생성 모듈 목록 등록
-            UpdateVerticalProgress(module); // 첫 모듈 상승량 누적
+            UpdateVerticalProgress(module, 0); // 첫 모듈 공통 경로 상승량 누적
             int nodeIndex = AddGraphNode(module, 0); // 중앙 경로 그래프 노드 등록
             graphNodeIndices.Add(module, nodeIndex); // 모듈별 노드 번호 등록
         } // 첫 모듈 등록 처리
@@ -750,7 +1076,7 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
         private void RegisterPlacement(MapModuleDefinition previousModule, PlacementResult placement, int laneIndex) // 단일 연결 배치 결과 등록
         { // 단일 연결 배치 등록 처리
             generatedModules.Add(placement.Module); // 생성 모듈 목록 등록
-            UpdateVerticalProgress(placement.Module); // 새 모듈 상승량 누적
+            UpdateVerticalProgress(placement.Module, laneIndex); // 새 모듈 경로별 상승량 누적
             int nodeIndex = AddGraphNode(placement.Module, laneIndex); // 새 그래프 노드 등록
             graphNodeIndices.Add(placement.Module, nodeIndex); // 모듈별 노드 번호 등록
             int previousNodeIndex = graphNodeIndices[previousModule]; // 이전 그래프 노드 번호 조회
@@ -760,7 +1086,7 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
         private void RegisterMergePlacement(MapModuleDefinition leftPrevious, MapModuleDefinition rightPrevious, MapModuleDefinition mergeModule, PlacementResult leftResult, PlacementResult rightResult) // 두 경로 합류 배치 결과 등록
         { // 합류 배치 등록 처리
             generatedModules.Add(mergeModule); // 합류 모듈 목록 등록
-            UpdateVerticalProgress(mergeModule); // 합류 모듈 상승량 누적
+            UpdateVerticalProgress(mergeModule, 0); // 합류 모듈 공통 경로 상승량 누적
             int mergeNodeIndex = AddGraphNode(mergeModule, 0); // 중앙 합류 그래프 노드 등록
             graphNodeIndices.Add(mergeModule, mergeNodeIndex); // 합류 모듈 노드 번호 등록
             int leftNodeIndex = graphNodeIndices[leftPrevious]; // 왼쪽 이전 노드 번호 조회
@@ -790,6 +1116,73 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             float rawTargetHeight = Mathf.Lerp(minimumHeight, maximumHeight, interpolation); // 최소와 최대 사이 목표 높이 계산
             return Mathf.Round(rawTargetHeight * 2f) * 0.5f; // 0.5미터 단위 목표 높이 반환
         } // 실제 목표 높이 계산 처리 종료
+
+        private void UpdateVerticalProgress(MapModuleDefinition module, int laneIndex) // 생성 방식과 경로에 맞는 수직 진행 수치 누적
+        { // 경로별 수직 진행 누적 처리
+            if (settings != null && settings.UseVerticalGeneration && settings.UseBranchingPath) // 수직 분기 생성 활성 확인
+            { // 수직 분기 진행 누적 처리
+                UpdateVerticalBranchProgress(module, laneIndex); // 좌우 또는 공통 경로 수치 갱신
+                return; // 선형 진행 누적 생략
+            } // 수직 분기 진행 누적 처리 종료
+
+            UpdateVerticalProgress(module); // 기존 수직 선형 진행 수치 누적
+        } // 경로별 수직 진행 누적 처리 종료
+
+        private void UpdateVerticalBranchProgress(MapModuleDefinition module, int laneIndex) // 수직 분기 경로별 진행 수치 누적
+        { // 수직 분기 진행 누적 처리
+            float heightGain = MapVerticalGenerationRules.GetHeightGain(module); // 현재 모듈 상승량 조회
+            bool isAscending = heightGain > MapVerticalGenerationRules.HeightEpsilon; // 현재 모듈 상승 여부 계산
+            bool isFlat = Mathf.Abs(heightGain) <= MapVerticalGenerationRules.HeightEpsilon; // 현재 모듈 평지 여부 계산
+
+            if (laneIndex < 0) // 왼쪽 분기 경로 확인
+            { // 왼쪽 분기 진행 처리
+                leftBranchHeight += heightGain; // 왼쪽 분기 누적 높이 갱신
+                leftBranchAscendingModuleCount += isAscending ? 1 : 0; // 왼쪽 분기 상승 수 갱신
+                leftBranchConsecutiveFlatModuleCount = isFlat ? leftBranchConsecutiveFlatModuleCount + 1 : 0; // 왼쪽 연속 평지 수 갱신
+                maximumObservedConsecutiveFlatModules = Mathf.Max(maximumObservedConsecutiveFlatModules, leftBranchConsecutiveFlatModuleCount); // 전체 최대 연속 평지 수 갱신
+            } // 왼쪽 분기 진행 처리 종료
+            else if (laneIndex > 0) // 오른쪽 분기 경로 확인
+            { // 오른쪽 분기 진행 처리
+                rightBranchHeight += heightGain; // 오른쪽 분기 누적 높이 갱신
+                rightBranchAscendingModuleCount += isAscending ? 1 : 0; // 오른쪽 분기 상승 수 갱신
+                rightBranchConsecutiveFlatModuleCount = isFlat ? rightBranchConsecutiveFlatModuleCount + 1 : 0; // 오른쪽 연속 평지 수 갱신
+                maximumObservedConsecutiveFlatModules = Mathf.Max(maximumObservedConsecutiveFlatModules, rightBranchConsecutiveFlatModuleCount); // 전체 최대 연속 평지 수 갱신
+            } // 오른쪽 분기 진행 처리 종료
+            else // 분기 전후 공통 경로 확인
+            { // 공통 경로 진행 처리
+                sharedPathHeight += heightGain; // 공통 경로 누적 높이 갱신
+                sharedAscendingModuleCount += isAscending ? 1 : 0; // 공통 경로 상승 수 갱신
+                sharedConsecutiveFlatModuleCount = isFlat ? sharedConsecutiveFlatModuleCount + 1 : 0; // 공통 경로 연속 평지 수 갱신
+                maximumObservedConsecutiveFlatModules = Mathf.Max(maximumObservedConsecutiveFlatModules, sharedConsecutiveFlatModuleCount); // 전체 최대 연속 평지 수 갱신
+            } // 공통 경로 진행 처리 종료
+
+            RefreshVerticalBranchSummary(); // 좌우 경로 공통 요약 갱신
+        } // 수직 분기 진행 누적 처리 종료
+
+        private void InitializeBranchProgress() // 분기 시작 시 좌우 진행 수치 초기화
+        { // 좌우 분기 진행 초기화 처리
+            leftBranchHeight = 0f; // 왼쪽 분기 높이 초기화
+            rightBranchHeight = 0f; // 오른쪽 분기 높이 초기화
+            leftBranchAscendingModuleCount = 0; // 왼쪽 분기 상승 수 초기화
+            rightBranchAscendingModuleCount = 0; // 오른쪽 분기 상승 수 초기화
+            leftBranchConsecutiveFlatModuleCount = sharedConsecutiveFlatModuleCount; // 왼쪽 연속 평지 수를 공통 경로에서 이어받기
+            rightBranchConsecutiveFlatModuleCount = sharedConsecutiveFlatModuleCount; // 오른쪽 연속 평지 수를 공통 경로에서 이어받기
+            RefreshVerticalBranchSummary(); // 초기 분기 요약 갱신
+        } // 좌우 분기 진행 초기화 처리 종료
+
+        private void PrepareSharedProgressForMerge() // 합류 뒤 공통 경로의 연속 평지 상태 준비
+        { // 합류 공통 진행 준비 처리
+            sharedConsecutiveFlatModuleCount = Mathf.Max(leftBranchConsecutiveFlatModuleCount, rightBranchConsecutiveFlatModuleCount); // 더 긴 좌우 연속 평지 수를 공통 경로로 연결
+        } // 합류 공통 진행 준비 처리 종료
+
+        private void RefreshVerticalBranchSummary() // 좌우 분기 기준 최종 높이와 상승 수 요약 갱신
+        { // 수직 분기 요약 갱신 처리
+            float reachableBranchHeight = Mathf.Min(leftBranchHeight, rightBranchHeight); // 양쪽 모두 도달 가능한 분기 높이 계산
+            int reachableBranchAscendingModules = Mathf.Min(leftBranchAscendingModuleCount, rightBranchAscendingModuleCount); // 양쪽 모두 만족하는 분기 상승 수 계산
+            generatedHeight = sharedPathHeight + reachableBranchHeight; // 공통 경로와 양쪽 분기 높이 합산
+            ascendingModuleCount = sharedAscendingModuleCount + reachableBranchAscendingModules; // 공통 경로와 양쪽 최소 상승 수 합산
+            consecutiveFlatModuleCount = sharedConsecutiveFlatModuleCount; // 기존 후보 필터용 공통 연속 평지 수 동기화
+        } // 수직 분기 요약 갱신 처리 종료
 
         private void UpdateVerticalProgress(MapModuleDefinition module) // 단일 모듈의 수직 진행 수치 누적
         { // 단일 모듈 수직 진행 누적 처리
@@ -823,10 +1216,35 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             ascendingModuleCount = 0; // 상승 모듈 개수 초기화
             consecutiveFlatModuleCount = 0; // 연속 평지 모듈 개수 초기화
             maximumObservedConsecutiveFlatModules = 0; // 최대 연속 평지 모듈 개수 초기화
+            leftBranchHeight = 0f; // 왼쪽 분기 높이 초기화
+            rightBranchHeight = 0f; // 오른쪽 분기 높이 초기화
+            leftBranchAscendingModuleCount = 0; // 왼쪽 분기 상승 수 초기화
+            rightBranchAscendingModuleCount = 0; // 오른쪽 분기 상승 수 초기화
+            sharedPathHeight = 0f; // 공통 경로 높이 초기화
+            sharedAscendingModuleCount = 0; // 공통 경로 상승 수 초기화
+            sharedConsecutiveFlatModuleCount = 0; // 공통 경로 연속 평지 수 초기화
+            leftBranchConsecutiveFlatModuleCount = 0; // 왼쪽 분기 연속 평지 수 초기화
+            rightBranchConsecutiveFlatModuleCount = 0; // 오른쪽 분기 연속 평지 수 초기화
+            bool branchStarted = false; // 수직 분기 시작 여부 초기화
+            bool branchMerged = false; // 수직 분기 합류 여부 초기화
 
             for (int moduleIndex = 0; moduleIndex < generatedModules.Count; moduleIndex++) // 모든 생성 모듈 순회
             { // 생성 모듈 수직 진행 반영 처리
-                UpdateVerticalProgress(generatedModules[moduleIndex]); // 현재 모듈 상승량과 연속 평지 수 반영
+                int laneIndex = moduleIndex < graphNodes.Count && graphNodes[moduleIndex] != null ? graphNodes[moduleIndex].LaneIndex : 0; // 현재 모듈 그래프 경로 번호 조회
+
+                if (settings.UseVerticalGeneration && settings.UseBranchingPath && laneIndex != 0 && !branchStarted) // 첫 분기 경로 진입 확인
+                { // 첫 분기 경로 진입 처리
+                    InitializeBranchProgress(); // 공통 경로에서 좌우 진행 상태 분리
+                    branchStarted = true; // 분기 시작 상태 저장
+                } // 첫 분기 경로 진입 처리 종료
+
+                if (settings.UseVerticalGeneration && settings.UseBranchingPath && laneIndex == 0 && branchStarted && !branchMerged) // 분기 뒤 첫 공통 모듈 확인
+                { // 분기 합류 상태 연결 처리
+                    PrepareSharedProgressForMerge(); // 좌우 연속 평지 상태를 공통 경로로 연결
+                    branchMerged = true; // 분기 합류 상태 저장
+                } // 분기 합류 상태 연결 처리 종료
+
+                UpdateVerticalProgress(generatedModules[moduleIndex], laneIndex); // 현재 모듈의 경로별 상승량과 연속 평지 수 반영
             } // 생성 모듈 수직 진행 반영 처리 종료
         } // 수직 진행 수치 재계산 처리 종료
 
@@ -843,6 +1261,11 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             { // 수직 생성 결과 실패 처리
                 lastValidationReport.AddIssue(MapGenerationValidationIssueCode.GenerationFlowFailed, $"수직 생성 기준 미달: {reason}", -1, -1); // 수직 기준 미달 문제 등록
             } // 수직 생성 결과 실패 처리 종료
+
+            if (settings.UseBranchingPath && !MapVerticalBranchGenerationRules.TryValidateMerge(leftBranchHeight, rightBranchHeight, leftBranchAscendingModuleCount, rightBranchAscendingModuleCount, settings.MinimumAscendingModulesPerBranch, settings.BranchMergeHeightTolerance, out string branchReason)) // 수직 분기 합류 결과 검사
+            { // 수직 분기 합류 결과 실패 처리
+                lastValidationReport.AddIssue(MapGenerationValidationIssueCode.GenerationFlowFailed, $"수직 분기 합류 기준 미달: {branchReason}", -1, -1); // 수직 분기 기준 미달 문제 등록
+            } // 수직 분기 합류 결과 실패 처리 종료
         } // 수직 생성 결과 반영 처리 종료
 
         private string BuildGenerationSignature() // 동일 시드 재현 확인용 생성 결과 서명 계산
@@ -889,10 +1312,78 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
                 builder.Append(ascendingModuleCount); // 상승 모듈 수 추가
                 builder.Append(':'); // 수직 정보 구분자 추가
                 builder.Append(maximumObservedConsecutiveFlatModules); // 최대 연속 평지 수 추가
+
+                if (settings.UseBranchingPath) // 수직 분기 서명 추가 여부 확인
+                { // 수직 분기 서명 추가 처리
+                    builder.Append(":B:"); // 수직 분기 정보 시작 표시 추가
+                    builder.Append(leftBranchHeight.ToString("0.000")); // 왼쪽 분기 높이 추가
+                    builder.Append(':'); // 수직 분기 정보 구분자 추가
+                    builder.Append(rightBranchHeight.ToString("0.000")); // 오른쪽 분기 높이 추가
+                    builder.Append(':'); // 수직 분기 정보 구분자 추가
+                    builder.Append(leftBranchAscendingModuleCount); // 왼쪽 분기 상승 수 추가
+                    builder.Append(':'); // 수직 분기 정보 구분자 추가
+                    builder.Append(rightBranchAscendingModuleCount); // 오른쪽 분기 상승 수 추가
+                    builder.Append(':'); // 수직 분기 정보 구분자 추가
+                    builder.Append(branchCombinationRetryCount); // 분기 조합 재시도 수 추가
+                } // 수직 분기 서명 추가 처리 종료
             } // 수직 생성 서명 추가 처리 종료
 
             return builder.ToString(); // 완성된 생성 결과 서명 반환
         } // 생성 결과 서명 계산 처리
+
+        private GenerationSnapshot CaptureGenerationSnapshot() // 현재 생성 상태의 안전한 되돌리기 지점 생성
+        { // 생성 상태 저장 처리
+            GenerationSnapshot snapshot = new GenerationSnapshot(); // 새 생성 상태 스냅샷 생성
+            snapshot.ModuleCount = generatedModules.Count; // 현재 모듈 개수 저장
+            snapshot.NodeCount = graphNodes.Count; // 현재 그래프 노드 개수 저장
+            snapshot.EdgeCount = graphEdges.Count; // 현재 그래프 간선 개수 저장
+            snapshot.UsedConnections = new HashSet<MapModuleConnectionPoint>(usedConnections); // 현재 사용 연결 지점 복사
+            snapshot.SharedPathHeight = sharedPathHeight; // 현재 공통 경로 높이 저장
+            snapshot.SharedAscendingModules = sharedAscendingModuleCount; // 현재 공통 경로 상승 수 저장
+            snapshot.SharedConsecutiveFlatModules = sharedConsecutiveFlatModuleCount; // 현재 공통 경로 연속 평지 수 저장
+            snapshot.MaximumConsecutiveFlatModules = maximumObservedConsecutiveFlatModules; // 현재 최대 연속 평지 수 저장
+            return snapshot; // 완성된 생성 상태 스냅샷 반환
+        } // 생성 상태 저장 처리 종료
+
+        private void RollbackToSnapshot(GenerationSnapshot snapshot) // 실패한 분기 조합을 저장된 생성 상태로 복원
+        { // 생성 상태 복원 처리
+            for (int moduleIndex = generatedModules.Count - 1; moduleIndex >= snapshot.ModuleCount; moduleIndex--) // 스냅샷 뒤 생성 모듈 역순 순회
+            { // 실패 모듈 제거 처리
+                MapModuleDefinition module = generatedModules[moduleIndex]; // 현재 제거 대상 모듈 조회
+                graphNodeIndices.Remove(module); // 제거 모듈 그래프 번호 삭제
+                generatedModules.RemoveAt(moduleIndex); // 생성 모듈 목록에서 제거
+                DestroyCandidate(module); // 실패 모듈 오브젝트 제거
+            } // 실패 모듈 제거 처리 종료
+
+            if (graphNodes.Count > snapshot.NodeCount) // 추가 그래프 노드 존재 확인
+            { // 추가 그래프 노드 제거 처리
+                graphNodes.RemoveRange(snapshot.NodeCount, graphNodes.Count - snapshot.NodeCount); // 스냅샷 뒤 그래프 노드 제거
+            } // 추가 그래프 노드 제거 처리 종료
+
+            if (graphEdges.Count > snapshot.EdgeCount) // 추가 그래프 간선 존재 확인
+            { // 추가 그래프 간선 제거 처리
+                graphEdges.RemoveRange(snapshot.EdgeCount, graphEdges.Count - snapshot.EdgeCount); // 스냅샷 뒤 그래프 간선 제거
+            } // 추가 그래프 간선 제거 처리 종료
+
+            usedConnections.Clear(); // 현재 사용 연결 지점 초기화
+
+            foreach (MapModuleConnectionPoint connection in snapshot.UsedConnections) // 저장된 사용 연결 지점 순회
+            { // 사용 연결 지점 복원 처리
+                usedConnections.Add(connection); // 저장된 연결 지점 다시 등록
+            } // 사용 연결 지점 복원 처리 종료
+
+            sharedPathHeight = snapshot.SharedPathHeight; // 공통 경로 높이 복원
+            sharedAscendingModuleCount = snapshot.SharedAscendingModules; // 공통 경로 상승 수 복원
+            sharedConsecutiveFlatModuleCount = snapshot.SharedConsecutiveFlatModules; // 공통 경로 연속 평지 수 복원
+            maximumObservedConsecutiveFlatModules = snapshot.MaximumConsecutiveFlatModules; // 최대 연속 평지 수 복원
+            leftBranchHeight = 0f; // 왼쪽 분기 높이 초기화
+            rightBranchHeight = 0f; // 오른쪽 분기 높이 초기화
+            leftBranchAscendingModuleCount = 0; // 왼쪽 분기 상승 수 초기화
+            rightBranchAscendingModuleCount = 0; // 오른쪽 분기 상승 수 초기화
+            leftBranchConsecutiveFlatModuleCount = sharedConsecutiveFlatModuleCount; // 왼쪽 연속 평지 수 복원
+            rightBranchConsecutiveFlatModuleCount = sharedConsecutiveFlatModuleCount; // 오른쪽 연속 평지 수 복원
+            RefreshVerticalBranchSummary(); // 복원된 수직 분기 요약 갱신
+        } // 생성 상태 복원 처리 종료
 
         private void EnsureGeneratedRoot() // 생성 모듈 보관 루트 존재 보장
         { // 생성 루트 존재 보장 처리

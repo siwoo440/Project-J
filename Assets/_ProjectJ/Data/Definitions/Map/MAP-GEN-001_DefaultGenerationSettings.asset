@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 73f276289c0bdfc49912438c97c0fdd7, type: 3}
   m_Name: MAP-GEN-001_DefaultGenerationSettings
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.MapGeneration.MapGenerationSettings
-  seed: 35001
+  seed: 36001
   randomizeSeed: 0
   startingQuarterTurns: 0
   moduleCount: 8
@@ -20,7 +20,7 @@ MonoBehaviour:
   overlapTolerance: 0.05
   connectionSizeTolerance: 0.05
   connectionPositionTolerance: 0.02
-  useBranchingPath: 0
+  useBranchingPath: 1
   branchPairCount: 2
   useVerticalGeneration: 1
   minimumTargetHeight: 8
@@ -28,6 +28,9 @@ MonoBehaviour:
   minimumAscendingModules: 3
   maximumConsecutiveFlatModules: 2
   allowDescendingModules: 0
+  minimumAscendingModulesPerBranch: 1
+  branchMergeHeightTolerance: 0.02
+  maximumBranchCombinationRetries: 64
   modulePrefabs:
   - {fileID: 1721837932572128859, guid: cf3d0b949e1785144a5e70317682199b, type: 3}
   - {fileID: 5757924093560836091, guid: 74511f71670d82a4189cf74f626eefbf, type: 3}

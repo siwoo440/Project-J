@@ -22,6 +22,12 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
         private bool lastGenerationSucceeded; // 최근 생성 성공 여부
         private string generationSignature = string.Empty; // 최근 생성 결과 재현 서명
         private MapGenerationValidationReport lastValidationReport = MapGenerationValidationReport.CreateNotRun(); // 최근 생성 결과 종합 검사 보고서
+        [SerializeField, HideInInspector] private float effectiveTargetHeight; // 이번 수직 생성 목표 높이
+        [SerializeField, HideInInspector] private float generatedHeight; // 현재 누적 생성 높이
+        [SerializeField, HideInInspector] private int ascendingModuleCount; // 현재 상승 모듈 개수
+        [SerializeField, HideInInspector] private int consecutiveFlatModuleCount; // 현재 연속 평지 모듈 개수
+        [SerializeField, HideInInspector] private int maximumObservedConsecutiveFlatModules; // 생성 중 최대 연속 평지 모듈 개수
+        private float maximumAvailableHeightGain; // 후보 한 개의 최대 상승량
 
         public int EffectiveSeed => effectiveSeed; // 실제 사용 시드 반환
         public bool LastGenerationSucceeded => lastGenerationSucceeded; // 최근 생성 성공 여부 반환
@@ -31,6 +37,10 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
         public IReadOnlyList<MapGenerationGraphEdge> GraphEdges => graphEdges; // 현재 그래프 간선 목록 반환
         public string GenerationSignature => generationSignature; // 최근 생성 결과 서명 반환
         public MapGenerationValidationReport LastValidationReport => lastValidationReport; // 최근 생성 결과 종합 검사 보고서 반환
+        public float EffectiveTargetHeight => effectiveTargetHeight; // 실제 수직 목표 높이 반환
+        public float GeneratedHeight => generatedHeight; // 최종 누적 생성 높이 반환
+        public int AscendingModuleCount => ascendingModuleCount; // 생성된 상승 모듈 개수 반환
+        public int MaximumObservedConsecutiveFlatModules => maximumObservedConsecutiveFlatModules; // 최대 연속 평지 모듈 개수 반환
 
         private struct PlacementOption // 단일 모듈 배치 후보 선언
         { // 단일 모듈 배치 후보 묶음
@@ -81,6 +91,16 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             ClearGeneratedMap(); // 이전 생성 결과 제거
             effectiveSeed = settings.RandomizeSeed ? Environment.TickCount : settings.Seed; // 이번 생성 시드 결정
             System.Random random = new System.Random(effectiveSeed); // 독립 난수 생성기 준비
+            maximumAvailableHeightGain = MapVerticalGenerationRules.GetMaximumHeightGain(ordinaryPrefabs); // 전체 후보의 최대 상승량 계산
+            effectiveTargetHeight = settings.UseVerticalGeneration ? CalculateEffectiveTargetHeight(random) : 0f; // 시드 기반 수직 목표 높이 결정
+
+            if (settings.UseVerticalGeneration && !MapVerticalGenerationRules.TryValidateConfiguration(settings.ModuleCount, effectiveTargetHeight, settings.MinimumAscendingModules, settings.MaximumConsecutiveFlatModules, maximumAvailableHeightGain, out string verticalConfigurationReason)) // 수직 목표 달성 가능성 확인
+            { // 수직 목표 달성 불가 처리
+                lastValidationReport = MapGenerationValidationReport.CreateFailure(MapGenerationValidationIssueCode.GenerationFlowFailed, $"수직 생성 설정 오류: {verticalConfigurationReason}"); // 수직 설정 오류 보고서 저장
+                Debug.LogError(lastValidationReport.BuildDetailedMessage(), this); // 수직 설정 오류 출력
+                return; // 맵 생성 중단
+            } // 수직 목표 달성 불가 처리 종료
+
             MapModuleDefinition firstModule = CreateFirstModule(ordinaryPrefabs, random); // 첫 모듈 생성
 
             if (firstModule == null) // 첫 모듈 생성 실패 확인
@@ -91,7 +111,7 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             } // 첫 모듈 생성 실패 처리
 
             RegisterFirstModule(firstModule); // 첫 모듈과 그래프 시작 노드 등록
-            bool generationFlowSucceeded = settings.UseBranchingPath ? GenerateBranchedPath(firstModule, validPrefabs, ordinaryPrefabs, random) : GenerateLinearPath(firstModule, ordinaryPrefabs, random); // 설정에 따른 생성 흐름 실행
+            bool generationFlowSucceeded = settings.UseVerticalGeneration ? GenerateLinearPath(firstModule, ordinaryPrefabs, random) : settings.UseBranchingPath ? GenerateBranchedPath(firstModule, validPrefabs, ordinaryPrefabs, random) : GenerateLinearPath(firstModule, ordinaryPrefabs, random); // 수직 또는 기존 설정에 따른 생성 흐름 실행
             lastValidationReport = MapGenerationResultValidator.Validate(generatedModules, graphNodes, graphEdges, settings.ModuleCount, settings.OverlapTolerance, settings.ConnectionSizeTolerance, settings.ConnectionPositionTolerance); // 생성 결과 종합 검사 실행
 
             if (!generationFlowSucceeded) // 생성 흐름 실패 확인
@@ -99,13 +119,16 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
                 lastValidationReport.AddIssue(MapGenerationValidationIssueCode.GenerationFlowFailed, "목표 맵 구조를 완성하기 전에 생성 흐름이 중단됐습니다.", -1, -1); // 생성 흐름 실패 문제 등록
             } // 생성 흐름 실패 처리 종료
 
+            ApplyVerticalResultValidation(); // 수직 목표 높이와 상승 모듈 기준 검사
+
             lastGenerationSucceeded = lastValidationReport.IsValid; // 종합 검사 기반 최근 생성 성공 여부 저장
             generationSignature = BuildGenerationSignature(); // 생성 결과 재현 서명 계산
 
             if (logDetailedResults) // 상세 로그 표시 활성 확인
             { // 상세 생성 결과 출력 처리
                 string resultLabel = lastGenerationSucceeded ? "성공" : "실패"; // 생성 결과 문구 계산
-                Debug.Log($"[ProjectJ][Day33] 맵 생성 및 종합 검사 {resultLabel} | 시드: {effectiveSeed} | 모듈: {generatedModules.Count}/{settings.ModuleCount} | 간선: {graphEdges.Count} | 문제: {lastValidationReport.IssueCount}", this); // 생성 결과 요약 로그 출력
+                string verticalLabel = settings.UseVerticalGeneration ? $" | 높이: {generatedHeight:0.00}m/{effectiveTargetHeight:0.00}m | 상승 모듈: {ascendingModuleCount} | 최대 연속 평지: {maximumObservedConsecutiveFlatModules}" : string.Empty; // 수직 생성 결과 문구 계산
+                Debug.Log($"[ProjectJ][Day35] 맵 생성 및 종합 검사 {resultLabel} | 시드: {effectiveSeed} | 모듈: {generatedModules.Count}/{settings.ModuleCount} | 간선: {graphEdges.Count} | 문제: {lastValidationReport.IssueCount}{verticalLabel}", this); // 생성 결과 요약 로그 출력
 
                 if (!lastValidationReport.IsValid) // 종합 검사 실패 확인
                 { // 종합 검사 실패 처리
@@ -124,7 +147,9 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
                 return; // 생성 결과 검사 중단
             } // 생성 설정 누락 처리 종료
 
+            RecalculateVerticalProgress(); // 현재 모듈 목록에서 수직 진행 수치 다시 계산
             lastValidationReport = MapGenerationResultValidator.Validate(generatedModules, graphNodes, graphEdges, settings.ModuleCount, settings.OverlapTolerance, settings.ConnectionSizeTolerance, settings.ConnectionPositionTolerance); // 현재 생성 결과 종합 검사 실행
+            ApplyVerticalResultValidation(); // 수직 생성 결과 기준 추가 검사
             lastGenerationSucceeded = lastValidationReport.IsValid; // 종합 검사 기반 성공 상태 갱신
 
             if (lastValidationReport.IsValid) // 생성 결과 검사 성공 확인
@@ -148,6 +173,12 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             generationSignature = string.Empty; // 생성 결과 서명 초기화
             lastValidationReport = MapGenerationValidationReport.CreateNotRun(); // 생성 결과 검사 상태 초기화
             lastGenerationSucceeded = false; // 최근 생성 성공 상태 초기화
+            effectiveTargetHeight = 0f; // 수직 목표 높이 초기화
+            generatedHeight = 0f; // 누적 생성 높이 초기화
+            ascendingModuleCount = 0; // 상승 모듈 개수 초기화
+            consecutiveFlatModuleCount = 0; // 연속 평지 모듈 개수 초기화
+            maximumObservedConsecutiveFlatModules = 0; // 최대 연속 평지 모듈 개수 초기화
+            maximumAvailableHeightGain = 0f; // 후보 최대 상승량 초기화
 
             if (generatedRoot == null) // 생성 루트 누락 확인
             { // 생성 루트 누락 처리
@@ -287,6 +318,14 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
                     continue; // 현재 후보 제외
                 } // 잘못된 모듈 처리
 
+                MapVerticalModuleData verticalData = prefab.GetComponent<MapVerticalModuleData>(); // 후보 수직 데이터 조회
+
+                if (verticalData != null && !verticalData.TryValidate(out string verticalReason)) // 수직 데이터 유효성 확인
+                { // 잘못된 수직 모듈 처리
+                    Debug.LogWarning($"[ProjectJ][Day35] {prefab.name} 제외: {verticalReason}", prefab); // 수직 후보 제외 사유 출력
+                    continue; // 현재 후보 제외
+                } // 잘못된 수직 모듈 처리 종료
+
                 if (MapGenerationRules.GetAllowedQuarterTurns(prefab.AllowedRotations).Length == 0) // 허용 회전 누락 확인
                 { // 허용 회전 누락 처리
                     continue; // 현재 후보 제외
@@ -315,6 +354,26 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             return results; // 일반 후보 결과 반환
         } // 일반 후보 수집 처리
 
+        private List<MapModuleDefinition> FilterVerticalFeasiblePrefabs(List<MapModuleDefinition> prefabs) // 남은 슬롯으로 수직 목표를 달성할 후보 수집
+        { // 수직 목표 달성 가능 후보 수집 처리
+            List<MapModuleDefinition> results = new List<MapModuleDefinition>(); // 수직 목표 가능 후보 목록 생성
+            int remainingSlotsAfterCandidate = Mathf.Max(0, settings.ModuleCount - generatedModules.Count - 1); // 현재 후보 배치 뒤 남는 모듈 슬롯 계산
+
+            for (int prefabIndex = 0; prefabIndex < prefabs.Count; prefabIndex++) // 모든 일반 후보 순회
+            { // 수직 목표 가능성 검사 처리
+                MapModuleDefinition prefab = prefabs[prefabIndex]; // 현재 후보 Prefab 조회
+                float candidateHeightGain = MapVerticalGenerationRules.GetHeightGain(prefab); // 현재 후보 상승량 조회
+                bool isFeasible = MapVerticalGenerationRules.IsCandidateFeasible(generatedHeight, ascendingModuleCount, consecutiveFlatModuleCount, candidateHeightGain, remainingSlotsAfterCandidate, effectiveTargetHeight, settings.MinimumAscendingModules, settings.MaximumConsecutiveFlatModules, maximumAvailableHeightGain, settings.AllowDescendingModules); // 후보 선택 후 최종 목표 달성 가능성 계산
+
+                if (isFeasible) // 수직 목표 달성 가능 후보 확인
+                { // 수직 목표 달성 가능 후보 처리
+                    results.Add(prefab); // 선택 가능 후보 목록 등록
+                } // 수직 목표 달성 가능 후보 처리 종료
+            } // 수직 목표 가능성 검사 처리 종료
+
+            return results; // 수직 목표 가능 후보 목록 반환
+        } // 수직 목표 달성 가능 후보 수집 처리 종료
+
         private List<MapModuleDefinition> FilterPrefabsByKind(List<MapModuleDefinition> prefabs, MapModuleKind kind) // 지정 종류 후보 수집
         { // 지정 종류 후보 수집 처리
             List<MapModuleDefinition> results = new List<MapModuleDefinition>(); // 지정 종류 결과 목록 생성
@@ -332,7 +391,14 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
 
         private MapModuleDefinition CreateFirstModule(List<MapModuleDefinition> validPrefabs, System.Random random) // 첫 번째 모듈 생성
         { // 첫 번째 모듈 생성 처리
-            MapModuleDefinition selectedPrefab = validPrefabs[random.Next(validPrefabs.Count)]; // 첫 후보 Prefab 무작위 선택
+            List<MapModuleDefinition> selectablePrefabs = settings.UseVerticalGeneration ? FilterVerticalFeasiblePrefabs(validPrefabs) : validPrefabs; // 현재 목표를 만족할 첫 후보 목록 계산
+
+            if (selectablePrefabs.Count == 0) // 첫 배치 가능 후보 없음 확인
+            { // 첫 배치 가능 후보 없음 처리
+                return null; // 첫 모듈 생성 실패 반환
+            } // 첫 배치 가능 후보 없음 처리 종료
+
+            MapModuleDefinition selectedPrefab = selectablePrefabs[random.Next(selectablePrefabs.Count)]; // 첫 후보 Prefab 무작위 선택
             int[] allowedQuarterTurns = MapGenerationRules.GetAllowedQuarterTurns(selectedPrefab.AllowedRotations); // 허용 회전 목록 조회
             int selectedQuarterTurns = MapGenerationRules.IsRotationAllowed(selectedPrefab.AllowedRotations, settings.StartingQuarterTurns) ? settings.StartingQuarterTurns : allowedQuarterTurns[0]; // 설정 회전 또는 첫 허용 회전 선택
             MapModuleDefinition instance = Instantiate(selectedPrefab, generatedRoot); // 첫 모듈 인스턴스 생성
@@ -345,9 +411,16 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
         private bool TryCreateNextModule(MapModuleDefinition previousModule, List<MapModuleDefinition> candidatePrefabs, System.Random random, out PlacementResult result) // 이전 모듈의 모든 출구 뒤에 다음 모듈 생성
         { // 다음 모듈 생성 처리
             result = new PlacementResult(); // 생성 결과 초기화
+            List<MapModuleDefinition> selectablePrefabs = settings.UseVerticalGeneration ? FilterVerticalFeasiblePrefabs(candidatePrefabs) : candidatePrefabs; // 현재 수직 목표를 만족할 후보 목록 계산
+
+            if (selectablePrefabs.Count == 0) // 배치 가능 후보 없음 확인
+            { // 배치 가능 후보 없음 처리
+                return false; // 다음 모듈 생성 실패 반환
+            } // 배치 가능 후보 없음 처리 종료
+
             List<MapModuleConnectionPoint> exits = GetAvailableConnections(previousModule, MapConnectionRole.Exit); // 이전 모듈 사용 가능 출구 수집
             ShuffleList(exits, random); // 시드 기반 출구 순서 섞기
-            List<PlacementOption> placementOptions = BuildPlacementOptions(candidatePrefabs); // 전체 Prefab과 회전 조합 생성
+            List<PlacementOption> placementOptions = BuildPlacementOptions(selectablePrefabs); // 목표 달성 가능 Prefab과 회전 조합 생성
             ShuffleList(placementOptions, random); // 시드 기반 후보 순서 섞기
             int attemptCount = 0; // 실제 연결 조합 시도 횟수 초기화
 
@@ -669,6 +742,7 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
         private void RegisterFirstModule(MapModuleDefinition module) // 첫 모듈과 그래프 시작 노드 등록
         { // 첫 모듈 등록 처리
             generatedModules.Add(module); // 생성 모듈 목록 등록
+            UpdateVerticalProgress(module); // 첫 모듈 상승량 누적
             int nodeIndex = AddGraphNode(module, 0); // 중앙 경로 그래프 노드 등록
             graphNodeIndices.Add(module, nodeIndex); // 모듈별 노드 번호 등록
         } // 첫 모듈 등록 처리
@@ -676,6 +750,7 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
         private void RegisterPlacement(MapModuleDefinition previousModule, PlacementResult placement, int laneIndex) // 단일 연결 배치 결과 등록
         { // 단일 연결 배치 등록 처리
             generatedModules.Add(placement.Module); // 생성 모듈 목록 등록
+            UpdateVerticalProgress(placement.Module); // 새 모듈 상승량 누적
             int nodeIndex = AddGraphNode(placement.Module, laneIndex); // 새 그래프 노드 등록
             graphNodeIndices.Add(placement.Module, nodeIndex); // 모듈별 노드 번호 등록
             int previousNodeIndex = graphNodeIndices[previousModule]; // 이전 그래프 노드 번호 조회
@@ -685,6 +760,7 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
         private void RegisterMergePlacement(MapModuleDefinition leftPrevious, MapModuleDefinition rightPrevious, MapModuleDefinition mergeModule, PlacementResult leftResult, PlacementResult rightResult) // 두 경로 합류 배치 결과 등록
         { // 합류 배치 등록 처리
             generatedModules.Add(mergeModule); // 합류 모듈 목록 등록
+            UpdateVerticalProgress(mergeModule); // 합류 모듈 상승량 누적
             int mergeNodeIndex = AddGraphNode(mergeModule, 0); // 중앙 합류 그래프 노드 등록
             graphNodeIndices.Add(mergeModule, mergeNodeIndex); // 합류 모듈 노드 번호 등록
             int leftNodeIndex = graphNodeIndices[leftPrevious]; // 왼쪽 이전 노드 번호 조회
@@ -699,6 +775,75 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             graphNodes.Add(new MapGenerationGraphNode(nodeIndex, module.ModuleId, laneIndex, module.transform.position)); // 새 그래프 노드 등록
             return nodeIndex; // 새 노드 번호 반환
         } // 그래프 노드 추가 처리
+
+        private float CalculateEffectiveTargetHeight(System.Random random) // 시드 기반 실제 목표 높이 계산
+        { // 실제 목표 높이 계산 처리
+            float minimumHeight = settings.MinimumTargetHeight; // 최소 목표 높이 조회
+            float maximumHeight = settings.MaximumTargetHeight; // 최대 목표 높이 조회
+
+            if (Mathf.Approximately(minimumHeight, maximumHeight)) // 단일 목표 높이 확인
+            { // 단일 목표 높이 처리
+                return minimumHeight; // 고정 목표 높이 반환
+            } // 단일 목표 높이 처리 종료
+
+            float interpolation = (float)random.NextDouble(); // 시드 기반 0부터 1 사이 비율 계산
+            float rawTargetHeight = Mathf.Lerp(minimumHeight, maximumHeight, interpolation); // 최소와 최대 사이 목표 높이 계산
+            return Mathf.Round(rawTargetHeight * 2f) * 0.5f; // 0.5미터 단위 목표 높이 반환
+        } // 실제 목표 높이 계산 처리 종료
+
+        private void UpdateVerticalProgress(MapModuleDefinition module) // 단일 모듈의 수직 진행 수치 누적
+        { // 단일 모듈 수직 진행 누적 처리
+            if (settings == null || !settings.UseVerticalGeneration) // 수직 생성 비활성 확인
+            { // 수직 생성 비활성 처리
+                return; // 수직 진행 누적 생략
+            } // 수직 생성 비활성 처리 종료
+
+            float heightGain = MapVerticalGenerationRules.GetHeightGain(module); // 현재 모듈 상승량 조회
+            generatedHeight += heightGain; // 누적 생성 높이에 현재 상승량 추가
+
+            if (heightGain > MapVerticalGenerationRules.HeightEpsilon) // 상승 모듈 확인
+            { // 상승 모듈 처리
+                ascendingModuleCount++; // 상승 모듈 개수 증가
+                consecutiveFlatModuleCount = 0; // 연속 평지 개수 초기화
+            } // 상승 모듈 처리 종료
+            else if (Mathf.Abs(heightGain) <= MapVerticalGenerationRules.HeightEpsilon) // 평지 모듈 확인
+            { // 평지 모듈 처리
+                consecutiveFlatModuleCount++; // 연속 평지 개수 증가
+                maximumObservedConsecutiveFlatModules = Mathf.Max(maximumObservedConsecutiveFlatModules, consecutiveFlatModuleCount); // 최대 연속 평지 개수 갱신
+            } // 평지 모듈 처리 종료
+            else // 하강 모듈 확인
+            { // 하강 모듈 처리
+                consecutiveFlatModuleCount = 0; // 연속 평지 개수 초기화
+            } // 하강 모듈 처리 종료
+        } // 단일 모듈 수직 진행 누적 처리 종료
+
+        private void RecalculateVerticalProgress() // 생성 모듈 목록 기반 수직 진행 수치 재계산
+        { // 수직 진행 수치 재계산 처리
+            generatedHeight = 0f; // 누적 생성 높이 초기화
+            ascendingModuleCount = 0; // 상승 모듈 개수 초기화
+            consecutiveFlatModuleCount = 0; // 연속 평지 모듈 개수 초기화
+            maximumObservedConsecutiveFlatModules = 0; // 최대 연속 평지 모듈 개수 초기화
+
+            for (int moduleIndex = 0; moduleIndex < generatedModules.Count; moduleIndex++) // 모든 생성 모듈 순회
+            { // 생성 모듈 수직 진행 반영 처리
+                UpdateVerticalProgress(generatedModules[moduleIndex]); // 현재 모듈 상승량과 연속 평지 수 반영
+            } // 생성 모듈 수직 진행 반영 처리 종료
+        } // 수직 진행 수치 재계산 처리 종료
+
+        private void ApplyVerticalResultValidation() // 현재 수직 생성 결과를 종합 검사에 반영
+        { // 수직 생성 결과 반영 처리
+            if (settings == null || !settings.UseVerticalGeneration) // 수직 생성 검사 제외 확인
+            { // 수직 생성 검사 제외 처리
+                return; // 수직 결과 검사 생략
+            } // 수직 생성 검사 제외 처리 종료
+
+            bool isValid = MapVerticalGenerationRules.TryValidateResult(generatedHeight, effectiveTargetHeight, ascendingModuleCount, settings.MinimumAscendingModules, maximumObservedConsecutiveFlatModules, settings.MaximumConsecutiveFlatModules, out string reason); // 수직 목표 높이와 구성 기준 검사
+
+            if (!isValid) // 수직 생성 결과 실패 확인
+            { // 수직 생성 결과 실패 처리
+                lastValidationReport.AddIssue(MapGenerationValidationIssueCode.GenerationFlowFailed, $"수직 생성 기준 미달: {reason}", -1, -1); // 수직 기준 미달 문제 등록
+            } // 수직 생성 결과 실패 처리 종료
+        } // 수직 생성 결과 반영 처리 종료
 
         private string BuildGenerationSignature() // 동일 시드 재현 확인용 생성 결과 서명 계산
         { // 생성 결과 서명 계산 처리
@@ -733,6 +878,18 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
                 builder.Append(edge.EntranceConnectionId); // 입구 ID 추가
                 builder.Append('|'); // 간선 구분자 추가
             } // 그래프 간선 서명 추가 처리
+
+            if (settings != null && settings.UseVerticalGeneration) // 수직 생성 서명 추가 여부 확인
+            { // 수직 생성 서명 추가 처리
+                builder.Append("V:"); // 수직 정보 시작 표시 추가
+                builder.Append(effectiveTargetHeight.ToString("0.000")); // 목표 높이 추가
+                builder.Append(':'); // 수직 정보 구분자 추가
+                builder.Append(generatedHeight.ToString("0.000")); // 생성 높이 추가
+                builder.Append(':'); // 수직 정보 구분자 추가
+                builder.Append(ascendingModuleCount); // 상승 모듈 수 추가
+                builder.Append(':'); // 수직 정보 구분자 추가
+                builder.Append(maximumObservedConsecutiveFlatModules); // 최대 연속 평지 수 추가
+            } // 수직 생성 서명 추가 처리 종료
 
             return builder.ToString(); // 완성된 생성 결과 서명 반환
         } // 생성 결과 서명 계산 처리

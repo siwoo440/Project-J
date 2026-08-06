@@ -12,19 +12,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 73f276289c0bdfc49912438c97c0fdd7, type: 3}
   m_Name: MAP-GEN-001_DefaultGenerationSettings
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.MapGeneration.MapGenerationSettings
-  seed: 31001
+  seed: 35001
   randomizeSeed: 0
   startingQuarterTurns: 0
   moduleCount: 8
-  maximumPlacementAttempts: 32
+  maximumPlacementAttempts: 128
   overlapTolerance: 0.05
   connectionSizeTolerance: 0.05
   connectionPositionTolerance: 0.02
-  useBranchingPath: 1
+  useBranchingPath: 0
   branchPairCount: 2
+  useVerticalGeneration: 1
+  minimumTargetHeight: 8
+  maximumTargetHeight: 16
+  minimumAscendingModules: 3
+  maximumConsecutiveFlatModules: 2
+  allowDescendingModules: 0
   modulePrefabs:
   - {fileID: 1721837932572128859, guid: cf3d0b949e1785144a5e70317682199b, type: 3}
   - {fileID: 5757924093560836091, guid: 74511f71670d82a4189cf74f626eefbf, type: 3}
   - {fileID: 1340070991981424902, guid: db9166f9d7d75464d9bd983a2ccdbae9, type: 3}
   - {fileID: 6745373771453075871, guid: a7b2ca0444712734fbe1c0fd7f3f29ce, type: 3}
   - {fileID: 4422790274150598216, guid: e4b9862f332263448bddc009379034f5, type: 3}
+  - {fileID: 5389848470541053328, guid: a64831e396111ad4bb5dd73837938a11, type: 3}
+  - {fileID: 3441972826320693546, guid: a4e0df9fc64099c4db083aad4e8cc7f5, type: 3}
+  - {fileID: 7334691829462071853, guid: 978296f7a012e294ab4dea60e3db9071, type: 3}

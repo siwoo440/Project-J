@@ -22,6 +22,7 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
         private bool lastGenerationSucceeded; // 최근 생성 성공 여부
         private string generationSignature = string.Empty; // 최근 생성 결과 재현 서명
         private MapGenerationValidationReport lastValidationReport = MapGenerationValidationReport.CreateNotRun(); // 최근 생성 결과 종합 검사 보고서
+        private MapPlayableRouteReport lastPlayableRouteReport = MapPlayableRouteReport.CreateNotRun(); // 최근 플레이 가능 경로 검사 보고서
         [SerializeField, HideInInspector] private float effectiveTargetHeight; // 이번 수직 생성 목표 높이
         [SerializeField, HideInInspector] private float generatedHeight; // 현재 누적 생성 높이
         [SerializeField, HideInInspector] private int ascendingModuleCount; // 현재 상승 모듈 개수
@@ -47,6 +48,7 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
         public IReadOnlyList<MapGenerationGraphEdge> GraphEdges => graphEdges; // 현재 그래프 간선 목록 반환
         public string GenerationSignature => generationSignature; // 최근 생성 결과 서명 반환
         public MapGenerationValidationReport LastValidationReport => lastValidationReport; // 최근 생성 결과 종합 검사 보고서 반환
+        public MapPlayableRouteReport LastPlayableRouteReport => lastPlayableRouteReport; // 최근 플레이 가능 경로 검사 보고서 반환
         public float EffectiveTargetHeight => effectiveTargetHeight; // 실제 수직 목표 높이 반환
         public float GeneratedHeight => generatedHeight; // 최종 누적 생성 높이 반환
         public int AscendingModuleCount => ascendingModuleCount; // 생성된 상승 모듈 개수 반환
@@ -102,6 +104,7 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             lastGenerationSucceeded = false; // 최근 생성 결과 초기화
             generationSignature = string.Empty; // 최근 생성 서명 초기화
             lastValidationReport = MapGenerationValidationReport.CreateNotRun(); // 최근 종합 검사 결과 초기화
+            lastPlayableRouteReport = MapPlayableRouteReport.CreateNotRun(); // 최근 플레이 가능 경로 검사 결과 초기화
 
             if (settings == null) // 생성 설정 누락 확인
             { // 생성 설정 누락 처리
@@ -154,8 +157,9 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             } // 생성 흐름 실패 처리 종료
 
             ApplyVerticalResultValidation(); // 수직 목표 높이와 상승 모듈 기준 검사
+            RunPlayableRouteValidation(); // 시작부터 종료까지 실제 이동 경로 검사
 
-            lastGenerationSucceeded = lastValidationReport.IsValid; // 종합 검사 기반 최근 생성 성공 여부 저장
+            lastGenerationSucceeded = lastValidationReport.IsValid && lastPlayableRouteReport.IsValid; // 생성 규격과 플레이 경로 통합 성공 여부 저장
             generationSignature = BuildGenerationSignature(); // 생성 결과 재현 서명 계산
 
             if (logDetailedResults) // 상세 로그 표시 활성 확인
@@ -163,12 +167,18 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
                 string resultLabel = lastGenerationSucceeded ? "성공" : "실패"; // 생성 결과 문구 계산
                 string verticalLabel = settings.UseVerticalGeneration ? $" | 높이: {generatedHeight:0.00}m/{effectiveTargetHeight:0.00}m | 상승 모듈: {ascendingModuleCount} | 최대 연속 평지: {maximumObservedConsecutiveFlatModules}" : string.Empty; // 수직 생성 결과 문구 계산
                 string branchLabel = settings.UseVerticalGeneration && settings.UseBranchingPath ? $" | 분기 높이: L {leftBranchHeight:0.00}m/R {rightBranchHeight:0.00}m | 분기 상승: L {leftBranchAscendingModuleCount}/R {rightBranchAscendingModuleCount} | 재시도: {branchCombinationRetryCount}" : string.Empty; // 수직 분기 결과 문구 계산
-                Debug.Log($"[ProjectJ][Day36] 맵 생성 및 종합 검사 {resultLabel} | 시드: {effectiveSeed} | 모듈: {generatedModules.Count}/{settings.ModuleCount} | 간선: {graphEdges.Count} | 문제: {lastValidationReport.IssueCount}{verticalLabel}{branchLabel}", this); // 생성 결과 요약 로그 출력
+                string routeLabel = $" | 플레이 경로: {lastPlayableRouteReport.RouteCount} | 경로 문제: {lastPlayableRouteReport.IssueCount}"; // 플레이 가능 경로 결과 문구 계산
+                Debug.Log($"[ProjectJ][Day37] 맵 생성 및 플레이 가능성 검사 {resultLabel} | 시드: {effectiveSeed} | 모듈: {generatedModules.Count}/{settings.ModuleCount} | 간선: {graphEdges.Count} | 생성 문제: {lastValidationReport.IssueCount}{routeLabel}{verticalLabel}{branchLabel}", this); // 생성과 플레이 가능성 요약 로그 출력
 
                 if (!lastValidationReport.IsValid) // 종합 검사 실패 확인
                 { // 종합 검사 실패 처리
                     Debug.LogError(lastValidationReport.BuildDetailedMessage(), this); // 모든 생성 문제 상세 로그 출력
                 } // 종합 검사 실패 처리 종료
+
+                if (!lastPlayableRouteReport.IsValid) // 플레이 가능 경로 검사 실패 확인
+                { // 플레이 가능 경로 검사 실패 처리
+                    Debug.LogError(lastPlayableRouteReport.BuildDetailedMessage(), this); // 모든 플레이 가능 경로 문제 상세 로그 출력
+                } // 플레이 가능 경로 검사 실패 처리 종료
             } // 상세 생성 결과 출력 처리
         } // 새 시드 맵 생성 처리
 
@@ -185,17 +195,42 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             RecalculateVerticalProgress(); // 현재 모듈 목록에서 수직 진행 수치 다시 계산
             lastValidationReport = MapGenerationResultValidator.Validate(generatedModules, graphNodes, graphEdges, settings.ModuleCount, settings.OverlapTolerance, settings.ConnectionSizeTolerance, settings.ConnectionPositionTolerance); // 현재 생성 결과 종합 검사 실행
             ApplyVerticalResultValidation(); // 수직 생성 결과 기준 추가 검사
-            lastGenerationSucceeded = lastValidationReport.IsValid; // 종합 검사 기반 성공 상태 갱신
+            RunPlayableRouteValidation(); // 현재 생성 결과의 실제 이동 경로 검사
+            lastGenerationSucceeded = lastValidationReport.IsValid && lastPlayableRouteReport.IsValid; // 생성 규격과 플레이 경로 통합 성공 상태 갱신
 
-            if (lastValidationReport.IsValid) // 생성 결과 검사 성공 확인
+            if (lastGenerationSucceeded) // 생성 결과와 플레이 경로 검사 성공 확인
             { // 생성 결과 검사 성공 처리
-                Debug.Log($"[ProjectJ][Day33] {lastValidationReport.BuildSummary()}", this); // 검사 성공 로그 출력
+                Debug.Log($"[ProjectJ][Day37] {lastValidationReport.BuildSummary()} {lastPlayableRouteReport.BuildSummary()}", this); // 통합 검사 성공 로그 출력
             } // 생성 결과 검사 성공 처리 종료
             else // 생성 결과 검사 실패 확인
             { // 생성 결과 검사 실패 처리
-                Debug.LogError(lastValidationReport.BuildDetailedMessage(), this); // 검사 실패 상세 로그 출력
+                if (!lastValidationReport.IsValid) // 생성 규격 검사 실패 확인
+                { // 생성 규격 검사 실패 처리
+                    Debug.LogError(lastValidationReport.BuildDetailedMessage(), this); // 생성 규격 실패 상세 로그 출력
+                } // 생성 규격 검사 실패 처리 종료
+
+                if (!lastPlayableRouteReport.IsValid) // 플레이 가능 경로 검사 실패 확인
+                { // 플레이 가능 경로 검사 실패 처리
+                    Debug.LogError(lastPlayableRouteReport.BuildDetailedMessage(), this); // 경로 검사 실패 상세 로그 출력
+                } // 플레이 가능 경로 검사 실패 처리 종료
             } // 생성 결과 검사 실패 처리 종료
         } // 현재 생성 결과 종합 검사 처리 종료
+
+        [ContextMenu("Validate Playable Routes")] // Inspector 플레이 가능 경로 검사 메뉴 등록
+        public void ValidatePlayableRoutes() // 현재 생성 결과의 시작부터 종료 경로 검사
+        { // 플레이 가능 경로 수동 검사 처리
+            RunPlayableRouteValidation(); // 현재 생성 그래프 경로 검사 실행
+            lastGenerationSucceeded = lastValidationReport.IsValid && lastPlayableRouteReport.IsValid; // 생성 규격과 경로 검사 통합 상태 갱신
+
+            if (lastPlayableRouteReport.IsValid) // 플레이 가능 경로 검사 성공 확인
+            { // 플레이 가능 경로 검사 성공 처리
+                Debug.Log($"[ProjectJ][Day37] {lastPlayableRouteReport.BuildDetailedMessage()}", this); // 발견된 모든 정상 경로 출력
+            } // 플레이 가능 경로 검사 성공 처리 종료
+            else // 플레이 가능 경로 검사 실패 확인
+            { // 플레이 가능 경로 검사 실패 처리
+                Debug.LogError(lastPlayableRouteReport.BuildDetailedMessage(), this); // 경로별 실패 원인 출력
+            } // 플레이 가능 경로 검사 실패 처리 종료
+        } // 플레이 가능 경로 수동 검사 처리 종료
 
         [ContextMenu("Clear Generated Map")] // Inspector 생성 맵 제거 메뉴 등록
         public void ClearGeneratedMap() // 현재 생성된 맵 전체 제거
@@ -207,6 +242,7 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             usedConnections.Clear(); // 사용 연결 지점 집합 초기화
             generationSignature = string.Empty; // 생성 결과 서명 초기화
             lastValidationReport = MapGenerationValidationReport.CreateNotRun(); // 생성 결과 검사 상태 초기화
+            lastPlayableRouteReport = MapPlayableRouteReport.CreateNotRun(); // 플레이 가능 경로 검사 상태 초기화
             lastGenerationSucceeded = false; // 최근 생성 성공 상태 초기화
             effectiveTargetHeight = 0f; // 수직 목표 높이 초기화
             generatedHeight = 0f; // 누적 생성 높이 초기화
@@ -1267,6 +1303,12 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
                 lastValidationReport.AddIssue(MapGenerationValidationIssueCode.GenerationFlowFailed, $"수직 분기 합류 기준 미달: {branchReason}", -1, -1); // 수직 분기 기준 미달 문제 등록
             } // 수직 분기 합류 결과 실패 처리 종료
         } // 수직 생성 결과 반영 처리 종료
+
+        private void RunPlayableRouteValidation() // 현재 그래프의 시작부터 종료까지 이동 가능 경로 검사
+        { // 플레이 가능 경로 검사 처리
+            bool requireBothBranchLanes = settings != null && settings.UseBranchingPath; // 현재 설정의 좌우 분기 경로 필수 여부 계산
+            lastPlayableRouteReport = MapPlayableRouteValidator.Validate(generatedModules, graphNodes, graphEdges, 0, 16, requireBothBranchLanes); // 최대 16개 경로와 좌우 분기 이동 가능성 검사
+        } // 플레이 가능 경로 검사 처리 종료
 
         private string BuildGenerationSignature() // 동일 시드 재현 확인용 생성 결과 서명 계산
         { // 생성 결과 서명 계산 처리

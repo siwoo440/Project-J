@@ -7200,6 +7200,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1453376401}
   - component: {fileID: 1453376400}
+  - component: {fileID: 1453376402}
   m_Layer: 0
   m_Name: ProceduralMapGenerator
   m_TagString: Untagged
@@ -7228,6 +7229,11 @@ MonoBehaviour:
   ascendingModuleCount: 5
   consecutiveFlatModuleCount: 0
   maximumObservedConsecutiveFlatModules: 2
+  leftBranchHeight: 0
+  rightBranchHeight: 0
+  leftBranchAscendingModuleCount: 0
+  rightBranchAscendingModuleCount: 0
+  branchCombinationRetryCount: 0
 --- !u!4 &1453376401
 Transform:
   m_ObjectHideFlags: 0
@@ -7244,6 +7250,29 @@ Transform:
   - {fileID: 380472806}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1453376402
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1453376399}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20353ffc47e7c1545b099079ff2d91ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.MapGeneration.MapGenerationDebugVisualizer
+  generator: {fileID: 1453376400}
+  drawOnlyWhenSelected: 1
+  showNodeLabels: 1
+  nodeRadius: 0.3
+  lineHeightOffset: 0.35
+  sharedNodeColor: {r: 0.2, g: 1, b: 0.4, a: 1}
+  leftNodeColor: {r: 0.2, g: 0.65, b: 1, a: 1}
+  rightNodeColor: {r: 1, g: 0.35, b: 0.85, a: 1}
+  validEdgeColor: {r: 0.25, g: 1, b: 1, a: 1}
+  invalidColor: {r: 1, g: 0.15, b: 0.1, a: 1}
+  finishColor: {r: 1, g: 0.85, b: 0.15, a: 1}
 --- !u!1 &1494521417
 GameObject:
   m_ObjectHideFlags: 0

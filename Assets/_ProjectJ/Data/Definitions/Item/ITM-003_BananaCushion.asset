@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d9c5b4b5ef21e744b13e262140baee7, type: 3}
-  m_Name: ITM-001_SpringShoes
+  m_Name: ITM-003_BananaCushion
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Data.ItemDataDefinition
-  dataId: ITM-001
-  displayName: Spring Shoes
+  dataId: ITM-003
+  displayName: Banana Cushion
   version:
     major: 1
     minor: 0
     patch: 0
-  description: "41\uC77C\uCC28 \uD6A8\uACFC \uAD6C\uD604 \uC608\uC815\uC778 \uC2A4\uD504\uB9C1
-    \uC2E0\uBC1C \uACF5\uD1B5 \uB370\uC774\uD130"
+  description: "42\uC77C\uCC28 \uD6A8\uACFC \uAD6C\uD604 \uC608\uC815\uC778 \uBC14\uB098\uB098
+    \uCFE0\uC158 \uACF5\uD1B5 \uB370\uC774\uD130"
   inventoryIcon: {fileID: 0}
-  pickupColor: {r: 0.25, g: 0.85, b: 1, a: 1}
+  pickupColor: {r: 1, g: 0.85, b: 0.2, a: 1}
   pickupVisualScale: 0.75

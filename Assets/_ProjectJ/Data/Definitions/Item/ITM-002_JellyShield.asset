@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d9c5b4b5ef21e744b13e262140baee7, type: 3}
-  m_Name: ITM-001_SpringShoes
+  m_Name: ITM-002_JellyShield
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Data.ItemDataDefinition
-  dataId: ITM-001
-  displayName: Spring Shoes
+  dataId: ITM-002
+  displayName: Jelly Shield
   version:
     major: 1
     minor: 0
     patch: 0
-  description: "41\uC77C\uCC28 \uD6A8\uACFC \uAD6C\uD604 \uC608\uC815\uC778 \uC2A4\uD504\uB9C1
-    \uC2E0\uBC1C \uACF5\uD1B5 \uB370\uC774\uD130"
+  description: "41\uC77C\uCC28 \uD6A8\uACFC \uAD6C\uD604 \uC608\uC815\uC778 \uC824\uB9AC
+    \uBCF4\uD638\uB9C9 \uACF5\uD1B5 \uB370\uC774\uD130"
   inventoryIcon: {fileID: 0}
-  pickupColor: {r: 0.25, g: 0.85, b: 1, a: 1}
+  pickupColor: {r: 0.4, g: 1, b: 0.55, a: 1}
   pickupVisualScale: 0.75

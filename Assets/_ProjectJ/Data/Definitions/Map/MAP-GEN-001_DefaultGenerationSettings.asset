@@ -18,7 +18,13 @@ MonoBehaviour:
   moduleCount: 8
   maximumPlacementAttempts: 32
   overlapTolerance: 0.05
+  connectionSizeTolerance: 0.05
+  connectionPositionTolerance: 0.02
+  useBranchingPath: 1
+  branchPairCount: 2
   modulePrefabs:
   - {fileID: 1721837932572128859, guid: cf3d0b949e1785144a5e70317682199b, type: 3}
   - {fileID: 5757924093560836091, guid: 74511f71670d82a4189cf74f626eefbf, type: 3}
   - {fileID: 1340070991981424902, guid: db9166f9d7d75464d9bd983a2ccdbae9, type: 3}
+  - {fileID: 6745373771453075871, guid: a7b2ca0444712734fbe1c0fd7f3f29ce, type: 3}
+  - {fileID: 4422790274150598216, guid: e4b9862f332263448bddc009379034f5, type: 3}

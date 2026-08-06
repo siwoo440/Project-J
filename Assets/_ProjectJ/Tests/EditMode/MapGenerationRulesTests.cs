@@ -66,5 +66,33 @@ namespace ProjectJ.Tests.EditMode // EditMode 테스트 네임스페이스 선�
             Vector3 result = rotation * Vector3.forward; // 회전 후 앞 방향 계산
             Assert.That(Vector3.Dot(result, Vector3.right), Is.EqualTo(1f).Within(0.001f)); // 동쪽 방향 일치 확인
         } // 90도 회전 테스트 처리
+
+        [Test] // 자동 테스트 항목 표시
+        public void MatchingConnectionSizesAreCompatible() // 같은 연결부 크기 호환 확인
+        { // 같은 연결부 크기 테스트 처리
+            bool result = MapGenerationRules.AreConnectionSizesCompatible(2f, 2.2f, 2f, 2.2f, 0.05f); // 동일한 너비와 높이 비교
+            Assert.IsTrue(result); // 같은 연결부 크기 허용 확인
+        } // 같은 연결부 크기 테스트 처리
+
+        [Test] // 자동 테스트 항목 표시
+        public void DifferentConnectionWidthsAreRejected() // 차이가 큰 연결부 너비 차단 확인
+        { // 연결부 너비 차이 테스트 처리
+            bool result = MapGenerationRules.AreConnectionSizesCompatible(2f, 2.2f, 3f, 2.2f, 0.05f); // 다른 너비와 같은 높이 비교
+            Assert.IsFalse(result); // 연결부 너비 불일치 차단 확인
+        } // 연결부 너비 차이 테스트 처리
+
+        [Test] // 자동 테스트 항목 표시
+        public void NearbyConnectionPositionsAreAligned() // 허용 오차 안의 연결 위치 정렬 확인
+        { // 연결 위치 허용 오차 테스트 처리
+            bool result = MapGenerationRules.AreConnectionPositionsAligned(Vector3.zero, new Vector3(0.01f, 0f, 0f), 0.02f); // 가까운 두 연결 위치 비교
+            Assert.IsTrue(result); // 허용 오차 안의 위치 일치 확인
+        } // 연결 위치 허용 오차 테스트 처리
+
+        [Test] // 자동 테스트 항목 표시
+        public void DistantConnectionPositionsAreNotAligned() // 허용 오차 밖의 연결 위치 차단 확인
+        { // 연결 위치 차단 테스트 처리
+            bool result = MapGenerationRules.AreConnectionPositionsAligned(Vector3.zero, new Vector3(0.1f, 0f, 0f), 0.02f); // 떨어진 두 연결 위치 비교
+            Assert.IsFalse(result); // 허용 오차 밖의 위치 차단 확인
+        } // 연결 위치 차단 테스트 처리
     } // 맵 생성 배치 규칙 자동 테스트 묶음
 } // EditMode 테스트 묶음

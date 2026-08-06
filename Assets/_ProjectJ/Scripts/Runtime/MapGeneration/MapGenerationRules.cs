@@ -56,6 +56,20 @@ namespace ProjectJ.MapGeneration // 맵 생성 기능 네임스페이스 선언
             return directionDot <= -1f + DirectionTolerance; // 반대 방향 여부 반환
         } // 월드 방향 마주 보기 검사 처리
 
+        public static bool AreConnectionSizesCompatible(float firstWidth, float firstHeight, float secondWidth, float secondHeight, float tolerance) // 두 연결부 크기 호환성 검사
+        { // 연결부 크기 호환성 검사 처리
+            float safeTolerance = Mathf.Max(0f, tolerance); // 음수가 없는 크기 허용 오차 계산
+            bool widthMatches = Mathf.Abs(firstWidth - secondWidth) <= safeTolerance; // 연결부 너비 차이 검사
+            bool heightMatches = Mathf.Abs(firstHeight - secondHeight) <= safeTolerance; // 연결부 높이 차이 검사
+            return widthMatches && heightMatches; // 너비와 높이 통합 결과 반환
+        } // 연결부 크기 호환성 검사 처리
+
+        public static bool AreConnectionPositionsAligned(Vector3 firstPosition, Vector3 secondPosition, float tolerance) // 두 연결부 위치 정렬 여부 검사
+        { // 연결부 위치 정렬 검사 처리
+            float safeTolerance = Mathf.Max(0f, tolerance); // 음수가 없는 위치 허용 오차 계산
+            return Vector3.Distance(firstPosition, secondPosition) <= safeTolerance; // 두 위치 거리 기반 결과 반환
+        } // 연결부 위치 정렬 검사 처리
+
         public static Vector3 CalculateAlignedRootPosition(Vector3 currentRootPosition, Vector3 targetConnectionPosition, Vector3 candidateConnectionPosition) // 연결 지점 일치용 루트 위치 계산
         { // 루트 위치 계산 처리
             Vector3 connectionOffset = targetConnectionPosition - candidateConnectionPosition; // 두 연결 지점 위치 차이 계산

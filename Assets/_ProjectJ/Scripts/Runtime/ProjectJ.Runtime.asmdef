@@ -2,7 +2,9 @@
   "name": "ProjectJ.Runtime",
   "rootNamespace": "ProjectJ",
   "references": [
-    "Unity.InputSystem"
+    "Unity.InputSystem",
+    "Unity.TextMeshPro",
+    "UnityEngine.UI"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

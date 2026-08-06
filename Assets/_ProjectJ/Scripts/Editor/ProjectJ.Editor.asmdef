@@ -3,7 +3,9 @@
   "rootNamespace": "ProjectJ.Editor",
   "references": [
     "ProjectJ.Runtime",
-    "Unity.InputSystem"
+    "Unity.InputSystem",
+    "Unity.TextMeshPro",
+    "UnityEngine.UI"
   ],
   "includePlatforms": [
     "Editor"

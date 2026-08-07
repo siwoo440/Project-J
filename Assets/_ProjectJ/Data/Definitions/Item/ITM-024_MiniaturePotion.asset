@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d9c5b4b5ef21e744b13e262140baee7, type: 3}
+  m_Name: ITM-024_MiniaturePotion
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Data.ItemDataDefinition
+  dataId: ITM-024
+  displayName: "\uC18C\uD615\uD654 \uBB3C\uC57D"
+  version:
+    major: 1
+    minor: 1
+    patch: 0
+  description: "6\uCD08 \uB3D9\uC548 \uC678\uD615\uACFC \uCDA9\uB3CC\uCCB4\uB97C
+    80\uD37C\uC13C\uD2B8 \uD06C\uAE30\uB85C \uCD95\uC18C"
+  inventoryIcon: {fileID: 0}
+  pickupColor: {r: 0.6, g: 0.9, b: 0.35, a: 1}
+  pickupVisualScale: 0.75
+  implementationPriority: 2
+  useType: 1
+  effectType: 23
+  spawnWeight: 3
+  maximumStackCount: 1
+  effectDuration: 6
+  primaryValue: 0.8
+  secondaryValue: 0
+  effectRange: 0
+  effectRadius: 0
+  cooldown: 0
+  projectileSpeed: 0
+  placementHalfExtents: {x: 0.5, y: 0.5, z: 0.5}

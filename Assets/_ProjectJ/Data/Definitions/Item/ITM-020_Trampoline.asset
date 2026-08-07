@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d9c5b4b5ef21e744b13e262140baee7, type: 3}
+  m_Name: ITM-020_Trampoline
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Data.ItemDataDefinition
+  dataId: ITM-020
+  displayName: "\uD2B8\uB7A8\uD3F4\uB9B0"
+  version:
+    major: 1
+    minor: 1
+    patch: 0
+  description: "\uC0AC\uC6A9\uC790 \uC804\uC6A9 \uB3C4\uC57D \uBC1C\uD310\uC744 \uC124\uCE58\uD558\uACE0
+    \uCD5C\uB300 3\uD68C \uC0AC\uC6A9"
+  inventoryIcon: {fileID: 0}
+  pickupColor: {r: 1, g: 0.3, b: 0.55, a: 1}
+  pickupVisualScale: 0.75
+  implementationPriority: 1
+  useType: 3
+  effectType: 19
+  spawnWeight: 6
+  maximumStackCount: 1
+  effectDuration: 0
+  primaryValue: 0
+  secondaryValue: 3
+  effectRange: 0
+  effectRadius: 0
+  cooldown: 0
+  projectileSpeed: 0
+  placementHalfExtents: {x: 0.8, y: 0.15, z: 0.8}

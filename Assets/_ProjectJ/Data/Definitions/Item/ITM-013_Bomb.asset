@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d9c5b4b5ef21e744b13e262140baee7, type: 3}
+  m_Name: ITM-013_Bomb
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Data.ItemDataDefinition
+  dataId: ITM-013
+  displayName: "\uD3ED\uD0C4"
+  version:
+    major: 1
+    minor: 1
+    patch: 0
+  description: "\uD22C\uCC99 \uD6C4 2.5\uCD08 \uB4A4 \uD3ED\uBC1C\uD574 \uC8FC\uBCC0
+    \uB300\uC0C1\uC744 \uBC00\uC5B4\uB0C4"
+  inventoryIcon: {fileID: 0}
+  pickupColor: {r: 0.15, g: 0.15, b: 0.15, a: 1}
+  pickupVisualScale: 0.75
+  implementationPriority: 1
+  useType: 2
+  effectType: 12
+  spawnWeight: 6
+  maximumStackCount: 1
+  effectDuration: 2.5
+  primaryValue: 0
+  secondaryValue: 0
+  effectRange: 0
+  effectRadius: 5
+  cooldown: 0
+  projectileSpeed: 0
+  placementHalfExtents: {x: 0.5, y: 0.5, z: 0.5}

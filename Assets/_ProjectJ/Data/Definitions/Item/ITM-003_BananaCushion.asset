@@ -13,13 +13,26 @@ MonoBehaviour:
   m_Name: ITM-003_BananaCushion
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Data.ItemDataDefinition
   dataId: ITM-003
-  displayName: Banana Cushion
+  displayName: "\uBC14\uB098\uB098 \uCFE0\uC158"
   version:
     major: 1
-    minor: 0
+    minor: 1
     patch: 0
-  description: "42\uC77C\uCC28 \uD6A8\uACFC \uAD6C\uD604 \uC608\uC815\uC778 \uBC14\uB098\uB098
-    \uCFE0\uC158 \uACF5\uD1B5 \uB370\uC774\uD130"
+  description: "\uC124\uCE58 \uD6C4 \uBC1F\uC740 \uB300\uC0C1\uC744 \uC804\uBC29\uC73C\uB85C
+    \uBBF8\uB044\uB7EC\uB728\uB9BC"
   inventoryIcon: {fileID: 0}
-  pickupColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+  pickupColor: {r: 1, g: 0.85, b: 0.15, a: 1}
   pickupVisualScale: 0.75
+  implementationPriority: 0
+  useType: 3
+  effectType: 2
+  spawnWeight: 10
+  maximumStackCount: 1
+  effectDuration: 20
+  primaryValue: 8
+  secondaryValue: 1.2
+  effectRange: 0
+  effectRadius: 0
+  cooldown: 0
+  projectileSpeed: 0
+  placementHalfExtents: {x: 0.65, y: 0.12, z: 0.65}

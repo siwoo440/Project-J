@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d9c5b4b5ef21e744b13e262140baee7, type: 3}
+  m_Name: ITM-028_Cart
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Data.ItemDataDefinition
+  dataId: ITM-028
+  displayName: "\uCE74\uD2B8"
+  version:
+    major: 1
+    minor: 1
+    patch: 0
+  description: "\uCD5C\uB300 8\uCD08 \uB3D9\uC548 \uC5F0\uACB0\uB41C \uACBD\uB85C\uB97C
+    \uC790\uB3D9 \uC8FC\uD589"
+  inventoryIcon: {fileID: 0}
+  pickupColor: {r: 0.85, g: 0.25, b: 0.2, a: 1}
+  pickupVisualScale: 0.75
+  implementationPriority: 2
+  useType: 1
+  effectType: 27
+  spawnWeight: 3
+  maximumStackCount: 1
+  effectDuration: 8
+  primaryValue: 0
+  secondaryValue: 0
+  effectRange: 0
+  effectRadius: 0
+  cooldown: 0
+  projectileSpeed: 0
+  placementHalfExtents: {x: 0.5, y: 0.5, z: 0.5}

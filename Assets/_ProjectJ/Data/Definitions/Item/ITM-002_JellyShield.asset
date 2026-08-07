@@ -13,13 +13,26 @@ MonoBehaviour:
   m_Name: ITM-002_JellyShield
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Data.ItemDataDefinition
   dataId: ITM-002
-  displayName: Jelly Shield
+  displayName: "\uC824\uB9AC \uBCF4\uD638\uB9C9"
   version:
     major: 1
-    minor: 0
+    minor: 1
     patch: 0
-  description: "41\uC77C\uCC28 \uD6A8\uACFC \uAD6C\uD604 \uC608\uC815\uC778 \uC824\uB9AC
-    \uBCF4\uD638\uB9C9 \uACF5\uD1B5 \uB370\uC774\uD130"
+  description: "4\uCD08 \uB3D9\uC548 \uBC00\uCE58\uAE30\uC640 \uBC29\uD574 \uC678\uBD80
+    \uD798\uC744 \uBB34\uD6A8\uD654"
   inventoryIcon: {fileID: 0}
-  pickupColor: {r: 0.4, g: 1, b: 0.55, a: 1}
+  pickupColor: {r: 0.35, g: 1, b: 0.55, a: 1}
   pickupVisualScale: 0.75
+  implementationPriority: 0
+  useType: 1
+  effectType: 1
+  spawnWeight: 10
+  maximumStackCount: 1
+  effectDuration: 4
+  primaryValue: 0
+  secondaryValue: 0
+  effectRange: 0
+  effectRadius: 0
+  cooldown: 0
+  projectileSpeed: 0
+  placementHalfExtents: {x: 0.5, y: 0.5, z: 0.5}

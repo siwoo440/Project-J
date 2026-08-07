@@ -90,23 +90,11 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
             activeChest.Collected += HandleChestCollected; // 상자 획득 완료 이벤트 연결
         } // 단일 상자 생성 처리 종료
 
-        private ItemDataDefinition SelectItem(int spawnSequence) // 지점 시드와 생성 순서 기반 아이템 선택
-        { // 아이템 선택 처리
+        private ItemDataDefinition SelectItem(int spawnSequence) // 지점 시드와 생성 순서 기반 가중치 아이템 선택
+        { // 가중치 아이템 선택 처리
             System.Random random = new System.Random(randomSeed + spawnSequence * 7919); // 생성 순서별 결정적 난수 생성
-            int startIndex = random.Next(0, itemPool.Length); // 후보 검색 시작 번호 선택
-
-            for (int offset = 0; offset < itemPool.Length; offset++) // 모든 아이템 후보 순회
-            { // 현재 아이템 후보 확인 처리
-                int itemIndex = (startIndex + offset) % itemPool.Length; // 순환 후보 번호 계산
-
-                if (itemPool[itemIndex] != null) // 현재 아이템 데이터 존재 여부 확인
-                { // 유효 아이템 발견 처리
-                    return itemPool[itemIndex]; // 현재 아이템 데이터 반환
-                } // 유효 아이템 발견 처리 종료
-            } // 현재 아이템 후보 확인 처리 종료
-
-            return null; // 유효 아이템 없음 반환
-        } // 아이템 선택 처리 종료
+            return ItemSelectionRules.SelectByNormalizedValue(itemPool, (float)random.NextDouble()); // P0과 P1과 P2 가중치 기반 아이템 반환
+        } // 가중치 아이템 선택 처리 종료
 
         private void HandleChestCollected(ItemChestPickup collectedChest, ItemDataDefinition unusedItemData, int unusedSlotIndex) // 현재 상자 획득 완료 후 재생성 예약
         { // 상자 획득 완료 처리

@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d9c5b4b5ef21e744b13e262140baee7, type: 3}
+  m_Name: ITM-026_InvisibilityCloak
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Data.ItemDataDefinition
+  dataId: ITM-026
+  displayName: "\uD22C\uBA85 \uB9DD\uD1A0"
+  version:
+    major: 1
+    minor: 1
+    patch: 0
+  description: "5\uCD08 \uB3D9\uC548 \uB2E4\uB978 \uD654\uBA74\uC5D0\uC11C \uD22C\uBA85\uD574\uC9C0\uACE0
+    \uCD94\uC801 \uB300\uC0C1\uC5D0\uC11C \uC81C\uC678"
+  inventoryIcon: {fileID: 0}
+  pickupColor: {r: 0.65, g: 0.65, b: 0.8, a: 0.65}
+  pickupVisualScale: 0.75
+  implementationPriority: 2
+  useType: 1
+  effectType: 25
+  spawnWeight: 3
+  maximumStackCount: 1
+  effectDuration: 5
+  primaryValue: 0
+  secondaryValue: 0
+  effectRange: 0
+  effectRadius: 0
+  cooldown: 0
+  projectileSpeed: 0
+  placementHalfExtents: {x: 0.5, y: 0.5, z: 0.5}

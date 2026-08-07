@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d9c5b4b5ef21e744b13e262140baee7, type: 3}
+  m_Name: ITM-017_GrapplingHook
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Data.ItemDataDefinition
+  dataId: ITM-017
+  displayName: "\uAC08\uACE0\uB9AC"
+  version:
+    major: 1
+    minor: 1
+    patch: 0
+  description: "\uCD5C\uB300 20m \uAC70\uB9AC\uC758 \uAD6C\uC870\uBB3C \uBC29\uD5A5\uC73C\uB85C
+    \uC0AC\uC6A9\uC790\uB97C \uC774\uB3D9"
+  inventoryIcon: {fileID: 0}
+  pickupColor: {r: 0.45, g: 0.5, b: 0.55, a: 1}
+  pickupVisualScale: 0.75
+  implementationPriority: 1
+  useType: 0
+  effectType: 16
+  spawnWeight: 6
+  maximumStackCount: 1
+  effectDuration: 0
+  primaryValue: 0
+  secondaryValue: 0
+  effectRange: 20
+  effectRadius: 0
+  cooldown: 0
+  projectileSpeed: 0
+  placementHalfExtents: {x: 0.5, y: 0.5, z: 0.5}

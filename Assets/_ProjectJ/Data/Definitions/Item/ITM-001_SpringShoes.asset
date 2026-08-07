@@ -13,13 +13,26 @@ MonoBehaviour:
   m_Name: ITM-001_SpringShoes
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Data.ItemDataDefinition
   dataId: ITM-001
-  displayName: Spring Shoes
+  displayName: "\uC2A4\uD504\uB9C1 \uC2E0\uBC1C"
   version:
     major: 1
-    minor: 0
+    minor: 1
     patch: 0
-  description: "41\uC77C\uCC28 \uD6A8\uACFC \uAD6C\uD604 \uC608\uC815\uC778 \uC2A4\uD504\uB9C1
-    \uC2E0\uBC1C \uACF5\uD1B5 \uB370\uC774\uD130"
+  description: "8\uCD08 \uB3D9\uC548 \uACF5\uC911 \uCD94\uAC00 \uC810\uD504 1\uD68C\uB97C
+    \uC81C\uACF5"
   inventoryIcon: {fileID: 0}
-  pickupColor: {r: 0.25, g: 0.85, b: 1, a: 1}
+  pickupColor: {r: 0.2, g: 0.85, b: 1, a: 1}
   pickupVisualScale: 0.75
+  implementationPriority: 0
+  useType: 1
+  effectType: 0
+  spawnWeight: 10
+  maximumStackCount: 1
+  effectDuration: 8
+  primaryValue: 7.5
+  secondaryValue: 0
+  effectRange: 0
+  effectRadius: 0
+  cooldown: 0
+  projectileSpeed: 0
+  placementHalfExtents: {x: 0.5, y: 0.5, z: 0.5}

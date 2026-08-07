@@ -7,7 +7,7 @@ namespace ProjectJ.Editor // 프로젝트 Editor 기능 네임스페이스 선�
 { // 프로젝트 Editor 기능 묶음
     internal static class Day37MapPlayabilitySetupTool // 37일차 플레이 가능성 검사 설정 도구 선언
     { // 37일차 플레이 가능성 검사 설정 도구 묶음
-        private const string MenuPath = "Project J/Day 37/Configure Playability Validation"; // 플레이 가능성 검사 구성 메뉴 경로
+        private const string MenuPath = ProjectJEditorMenuPaths.MapValidation + "/플레이 가능 경로 검증 구성 (Day 37일차)"; // 플레이 가능성 검사 구성 메뉴 경로
 
         [MenuItem(MenuPath)] // Unity 상단 메뉴에 37일차 구성 항목 등록
         private static void ConfigurePlayabilityValidation() // 생성기에 경로 검사 시각화 연결

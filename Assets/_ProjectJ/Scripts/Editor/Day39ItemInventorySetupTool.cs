@@ -9,7 +9,7 @@ namespace ProjectJ.Editor // 프로젝트 Editor 기능 네임스페이스 선�
 { // 프로젝트 Editor 기능 묶음
     internal static class Day39ItemInventorySetupTool // 39일차 아이템과 2슬롯 인벤토리 자동 설정 도구 선언
     { // 39일차 자동 설정 도구 묶음
-        private const string MenuPath = "Project J/Day 39/Configure Item Inventory And Test Chests"; // 39일차 자동 설정 메뉴 경로
+        private const string MenuPath = ProjectJEditorMenuPaths.ItemInventory + "/2슬롯 인벤토리와 테스트 상자 구성 (Day 39일차)"; // 39일차 자동 설정 메뉴 경로
         private const string ItemDataFolderPath = "Assets/_ProjectJ/Data/Definitions/Item"; // 아이템 데이터 저장 폴더 경로
         private const string ChestRootName = "Day39_ItemChests"; // 테스트 상자 묶음 오브젝트 이름
 

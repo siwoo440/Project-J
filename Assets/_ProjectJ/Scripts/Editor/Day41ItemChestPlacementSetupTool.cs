@@ -10,7 +10,7 @@ namespace ProjectJ.Editor // 프로젝트 Editor 기능 네임스페이스 선�
 { // 프로젝트 Editor 기능 묶음
     internal static class Day41ItemChestPlacementSetupTool // 41일차 상자와 설치 검사 자동 설정 도구 선언
     { // 41일차 자동 설정 도구 묶음
-        private const string MenuPath = "Project J/Day 41/Configure Item Chests And Placement Validator"; // 41일차 자동 설정 메뉴 경로
+        private const string MenuPath = ProjectJEditorMenuPaths.ItemChests + "/아이템 상자와 설치 위치 검사 구성 (Day 41일차)"; // 41일차 자동 설정 메뉴 경로
         private const string SystemRootName = "Day41_ItemChestSystem"; // 상자 시스템 루트 오브젝트 이름
         private const string Day39ChestRootName = "Day39_ItemChests"; // 제거할 이전 테스트 상자 루트 이름
 

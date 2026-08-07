@@ -16,7 +16,7 @@ namespace ProjectJ.Editor // 프로젝트 에디터 전용 네임스페이스 �
         private const int ExpectedColumnCount = 4; // CSV 필수 열 개수 선언
         private static readonly string[] ExpectedHeaders = { "Category", "DataId", "DisplayName", "Version" }; // CSV 필수 머리글 순서 선언
 
-        [MenuItem("Project J/Day 17/Create Data CSV Template")] // 17일차 CSV 템플릿 생성 메뉴 등록
+        [MenuItem(ProjectJEditorMenuPaths.DataCsv + "/데이터 CSV 템플릿 생성 (Day 17일차)")] // 17일차 CSV 템플릿 생성 메뉴 등록
         private static void CreateTemplate() // 기본 데이터가 포함된 CSV 템플릿 생성
         {
             EnsureImportDirectory(); // CSV 가져오기 폴더 준비
@@ -44,7 +44,7 @@ namespace ProjectJ.Editor // 프로젝트 에디터 전용 네임스페이스 �
             ProjectLog.Info(ProjectLogCategory.Data, $"CSV 템플릿을 생성했습니다: {ImportFilePath}", "DATA_CSV_TEMPLATE_CREATED"); // CSV 템플릿 생성 완료 로그 출력
         }
 
-        [MenuItem("Project J/Day 17/Import Data CSV")] // 17일차 CSV 데이터 가져오기 메뉴 등록
+        [MenuItem(ProjectJEditorMenuPaths.DataCsv + "/프로젝트 데이터 CSV 가져오기 (Day 17일차)")] // 17일차 CSV 데이터 가져오기 메뉴 등록
         private static void ImportCsv() // 통합 CSV를 ScriptableObject 데이터 에셋으로 가져오기
         {
             if (!File.Exists(ImportFilePath)) // 통합 CSV 파일 존재 여부 확인

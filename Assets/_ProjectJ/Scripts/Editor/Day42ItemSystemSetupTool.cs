@@ -12,7 +12,7 @@ namespace ProjectJ.Editor // 프로젝트 Editor 기능 네임스페이스 선�
 { // 프로젝트 Editor 기능 묶음
     internal static class Day42ItemSystemSetupTool // 42일차 28종 데이터와 P0 사용 시스템 자동 설정 도구 선언
     { // 42일차 자동 설정 도구 묶음
-        private const string MenuPath = "Project J/Day 42/Configure 28 Items And P0 Effects"; // 42일차 자동 설정 메뉴 경로
+        private const string MenuPath = ProjectJEditorMenuPaths.ItemEffects + "/아이템 28종 데이터와 P0 효과 구성 (Day 42일차)"; // 42일차 자동 설정 메뉴 경로
         private const string ItemDataFolderPath = "Assets/_ProjectJ/Data/Definitions/Item"; // 28종 아이템 데이터 저장 폴더 경로
         private const string StatusViewName = "ItemUseStatusText"; // 아이템 사용 결과 HUD 오브젝트 이름
 

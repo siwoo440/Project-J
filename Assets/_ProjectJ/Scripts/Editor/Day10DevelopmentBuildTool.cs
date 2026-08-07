@@ -15,11 +15,11 @@ namespace ProjectJ.Editor // 프로젝트 에디터 전용 네임스페이스 �
 {
     public static class Day10DevelopmentBuildTool // 10일차 Windows 개발 Build Profile 구성과 빌드 도구 선언
     {
-        private const string ConfigureMenuPath = "Project J/Day 10/Configure Development Profile"; // 개발 Build Profile 자동 구성 메뉴 경로 선언
-        private const string ValidateMenuPath = "Project J/Day 10/Validate Development Profile"; // 개발 Build Profile 검증 메뉴 경로 선언
-        private const string BuildMenuPath = "Project J/Day 10/Build Development Client"; // 개발 클라이언트 빌드 메뉴 경로 선언
-        private const string BuildAndRunMenuPath = "Project J/Day 10/Build and Run Development Client"; // 개발 클라이언트 빌드 후 실행 메뉴 경로 선언
-        private const string OpenSummaryMenuPath = "Project J/Day 10/Open Latest Build Summary"; // 최신 빌드 요약 로그 열기 메뉴 경로 선언
+        private const string ConfigureMenuPath = ProjectJEditorMenuPaths.DevelopmentBuild + "/개발 Build Profile 구성 (Day 10일차)"; // 개발 Build Profile 자동 구성 메뉴 경로 선언
+        private const string ValidateMenuPath = ProjectJEditorMenuPaths.DevelopmentBuild + "/개발 Build Profile 검증 (Day 10일차)"; // 개발 Build Profile 검증 메뉴 경로 선언
+        private const string BuildMenuPath = ProjectJEditorMenuPaths.DevelopmentBuild + "/개발 클라이언트 빌드 (Day 10일차)"; // 개발 클라이언트 빌드 메뉴 경로 선언
+        private const string BuildAndRunMenuPath = ProjectJEditorMenuPaths.DevelopmentBuild + "/개발 클라이언트 빌드 후 실행 (Day 10일차)"; // 개발 클라이언트 빌드 후 실행 메뉴 경로 선언
+        private const string OpenSummaryMenuPath = ProjectJEditorMenuPaths.DevelopmentBuild + "/최신 빌드 요약 열기 (Day 10일차)"; // 최신 빌드 요약 로그 열기 메뉴 경로 선언
 
         [MenuItem(ConfigureMenuPath)] // Unity 상단 메뉴에 개발 Build Profile 구성 항목 등록
         private static void ConfigureDevelopmentProfile() // 기존 Windows Build Profile 에셋에 10일차 개발 설정 적용

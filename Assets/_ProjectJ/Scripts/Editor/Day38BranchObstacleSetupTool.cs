@@ -9,7 +9,7 @@ namespace ProjectJ.Editor // 프로젝트 Editor 기능 네임스페이스 선�
 { // 프로젝트 Editor 기능 묶음
     internal static class Day38BranchObstacleSetupTool // 38일차 분기 장애물 설정 도구 선언
     { // 38일차 분기 장애물 설정 도구 묶음
-        private const string MenuPath = "Project J/Day 38/Configure Branch Obstacles"; // 분기 장애물 구성 메뉴 경로
+        private const string MenuPath = ProjectJEditorMenuPaths.MapObstacles + "/분기 장애물 구성 (Day 38일차)"; // 분기 장애물 구성 메뉴 경로
         private const string ObstacleDataFolder = "Assets/_ProjectJ/Data/Definitions/Obstacle"; // 장애물 데이터 에셋 폴더 경로
         private const string ObstaclePrefabFolder = "Assets/_ProjectJ/Prefabs/Obstacles"; // 장애물 Prefab 폴더 경로
         private const string ObstacleDataPath = ObstacleDataFolder + "/OBS-038_PrototypeBlock.asset"; // 38일차 장애물 데이터 경로

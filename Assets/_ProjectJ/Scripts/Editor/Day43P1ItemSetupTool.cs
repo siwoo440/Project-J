@@ -10,7 +10,7 @@ namespace ProjectJ.Editor // 프로젝트 Editor 기능 네임스페이스 선�
 { // 프로젝트 Editor 기능 묶음
     internal static class Day43P1ItemSetupTool // 43일차 P1 아이템 11종 자동 설정 도구 선언
     { // 43일차 자동 설정 도구 묶음
-        private const string MenuPath = "Project J/Day 43/Configure P1 11 Item Effects"; // 43일차 자동 설정 메뉴 경로
+        private const string MenuPath = ProjectJEditorMenuPaths.ItemEffects + "/P1 아이템 11종 효과 구성 (Day 43일차)"; // 43일차 자동 설정 메뉴 경로
         private const string ItemDataFolderPath = "Assets/_ProjectJ/Data/Definitions/Item"; // 아이템 데이터 저장 폴더 경로
         private const string NewPufferAssetPath = ItemDataFolderPath + "/ITM-014_PufferBalloonSuit.asset"; // 새 복어 풍선옷 에셋 경로
 

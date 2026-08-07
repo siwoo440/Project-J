@@ -7,7 +7,7 @@ namespace ProjectJ.Editor // 프로젝트 Editor 기능 네임스페이스 선�
 { // 프로젝트 Editor 기능 묶음
     internal static class Day32BranchedMapSetupTool // 32일차 분기 맵 구성 도구 선언
     { // 32일차 분기 맵 구성 도구 묶음
-        private const string MenuPath = "Project J/Day 32/Create Or Update Branched Map Generation"; // 분기 맵 구성 메뉴 경로
+        private const string MenuPath = ProjectJEditorMenuPaths.MapGeneration + "/분기·합류 맵 생성 구성 (Day 32일차)"; // 분기 맵 구성 메뉴 경로
         private const string DataFolderPath = "Assets/_ProjectJ/Data/Definitions/Map"; // 맵 데이터 폴더 경로
         private const string SettingsAssetPath = DataFolderPath + "/MAP-GEN-001_DefaultGenerationSettings.asset"; // 기본 생성 설정 에셋 경로
         private const string ProfileAssetPath = DataFolderPath + "/MAP-TRV-001_DefaultTraversal.asset"; // 기본 이동 능력 에셋 경로

@@ -7,8 +7,8 @@ namespace ProjectJ.Editor // 프로젝트 에디터 전용 네임스페이스 �
 {
     internal static class Day08PhysicsLayerSetupTool // 8일차 물리 레이어와 충돌 행렬 자동 구성 메뉴 선언
     {
-        private const string ConfigureMenuPath = "Project J/Day 08/Configure Physics Layers"; // 물리 레이어 자동 구성 메뉴 경로 선언
-        private const string ValidateMenuPath = "Project J/Day 08/Validate Physics Layers"; // 물리 레이어 검증 메뉴 경로 선언
+        private const string ConfigureMenuPath = ProjectJEditorMenuPaths.ProjectSettingsPhysics + "/물리 레이어 구성 (Day 08일차)"; // 물리 레이어 자동 구성 메뉴 경로 선언
+        private const string ValidateMenuPath = ProjectJEditorMenuPaths.ProjectSettingsPhysics + "/물리 레이어 검증 (Day 08일차)"; // 물리 레이어 검증 메뉴 경로 선언
 
         [MenuItem(ConfigureMenuPath)] // Unity 상단 메뉴에 물리 레이어 구성 항목 등록
         private static void ConfigurePhysicsLayers() // Project J 전용 물리 레이어와 충돌 행렬 자동 구성

@@ -22,7 +22,7 @@ namespace ProjectJ.Editor // 프로젝트 Editor 도구 네임스페이스 선�
         private static readonly Color GreenColor = new Color(0.2f, 0.8f, 0.35f, 1f); // 스태미나 강조 색상
         private static readonly Color CyanColor = new Color(0.2f, 1f, 0.9f, 1f); // 로컬 플레이어 강조 색상
 
-        [MenuItem("Project J/Day 40/Configure Canvas UI In Game Scene")] // Unity 상단 자동 설정 메뉴 등록
+        [MenuItem(ProjectJEditorMenuPaths.GameUI + "/Game Scene Canvas UI 구성 (Day 40일차)")] // Unity 상단 자동 설정 메뉴 등록
         public static void ConfigureCanvasUiInGameScene() // Game Scene Canvas HUD와 팝업 전체 자동 구성
         { // Game Scene Canvas UI 자동 구성 처리
             Scene activeScene = SceneManager.GetActiveScene(); // 현재 열린 Scene 조회

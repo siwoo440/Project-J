@@ -13,8 +13,8 @@ namespace ProjectJ.Editor // 프로젝트 Editor 기능 네임스페이스 선�
 { // 45일차 아이템 검증 도구 정의
     internal static class Day45ItemIntegrationValidationTool // 아이템 28종 통합 검증과 기준표 내보내기 도구 선언
     { // 데이터 검증과 CSV 기록 기능 정의
-        private const string ValidateMenuPath = "Project J/Day 45/Validate 28 Item Integration"; // 45일차 통합 검증 메뉴 경로
-        private const string ExportMenuPath = "Project J/Day 45/Export Item Balance Baseline CSV"; // 45일차 밸런스 기준표 메뉴 경로
+        private const string ValidateMenuPath = ProjectJEditorMenuPaths.ItemValidation + "/아이템 28종 통합 검증 (Day 45일차)"; // 45일차 통합 검증 메뉴 경로
+        private const string ExportMenuPath = ProjectJEditorMenuPaths.ItemValidation + "/아이템 밸런스 기준 CSV 내보내기 (Day 45일차)"; // 45일차 밸런스 기준표 메뉴 경로
         private const string ItemDataFolderPath = "Assets/_ProjectJ/Data/Definitions/Item"; // 아이템 데이터 폴더 경로
         private const string DocumentationFolderPath = "Assets/_ProjectJ/Documentation"; // 프로젝트 문서 폴더 경로
         private const string BalanceCsvPath = "Assets/_ProjectJ/Documentation/Day45_ItemBalanceBaseline.csv"; // 밸런스 기준 CSV 경로

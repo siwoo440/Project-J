@@ -12,8 +12,8 @@ namespace ProjectJ.Editor // 프로젝트 에디터 전용 네임스페이스 �
 {
     internal static class Day09TestFrameworkSetupTool // 9일차 테스트 프레임워크 자동 구성과 검증 메뉴 선언
     {
-        private const string ConfigureMenuPath = "Project J/Day 09/Configure Test Framework"; // 테스트 프레임워크 구성 메뉴 경로 선언
-        private const string ValidateMenuPath = "Project J/Day 09/Validate Test Framework"; // 테스트 프레임워크 검증 메뉴 경로 선언
+        private const string ConfigureMenuPath = ProjectJEditorMenuPaths.TestFramework + "/테스트 프레임워크 구성 (Day 09일차)"; // 테스트 프레임워크 구성 메뉴 경로 선언
+        private const string ValidateMenuPath = ProjectJEditorMenuPaths.TestFramework + "/테스트 프레임워크 검증 (Day 09일차)"; // 테스트 프레임워크 검증 메뉴 경로 선언
         private const string EditModeAssemblyPath = "Assets/_ProjectJ/Tests/EditMode/ProjectJ.Tests.EditMode.asmdef"; // EditMode 테스트 어셈블리 경로 선언
         private const string PlayModeAssemblyPath = "Assets/_ProjectJ/Tests/PlayMode/ProjectJ.Tests.PlayMode.asmdef"; // PlayMode 테스트 어셈블리 경로 선언
 

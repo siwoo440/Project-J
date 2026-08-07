@@ -6,8 +6,8 @@ namespace ProjectJ.Editor // 프로젝트 에디터 전용 네임스페이스 �
 {
     internal static class Day06DataSetupTool // 6일차 공통 데이터 ID 구조 자동 구성 도구 선언
     {
-        private const string CreateMenuPath = "Project J/Day 06/Create Sample Data Assets"; // 샘플 데이터 에셋 생성 메뉴 경로 선언
-        private const string ValidateMenuPath = "Project J/Day 06/Validate All Data Assets"; // 전체 데이터 검증 메뉴 경로 선언
+        private const string CreateMenuPath = ProjectJEditorMenuPaths.DataBase + "/샘플 데이터 에셋 생성 (Day 06일차)"; // 샘플 데이터 에셋 생성 메뉴 경로 선언
+        private const string ValidateMenuPath = ProjectJEditorMenuPaths.DataBase + "/전체 데이터 에셋 검증 (Day 06일차)"; // 전체 데이터 검증 메뉴 경로 선언
         private static readonly ProjectDataVersion InitialVersion = new ProjectDataVersion(1, 0, 0); // 신규 샘플 데이터 초기 버전 선언
 
         [MenuItem(CreateMenuPath)] // Unity 상단 메뉴에 샘플 데이터 생성 항목 등록

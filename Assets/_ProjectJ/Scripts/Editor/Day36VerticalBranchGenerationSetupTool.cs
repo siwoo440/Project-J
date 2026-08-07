@@ -6,7 +6,7 @@ namespace ProjectJ.Editor // 프로젝트 Editor 기능 네임스페이스 선�
 { // 프로젝트 Editor 기능 묶음
     internal static class Day36VerticalBranchGenerationSetupTool // 36일차 수직 분기 설정 도구 선언
     { // 36일차 수직 분기 설정 도구 묶음
-        private const string MenuPath = "Project J/Day 36/Configure Vertical Branch Generation"; // 수직 분기 구성 메뉴 경로
+        private const string MenuPath = ProjectJEditorMenuPaths.MapGeneration + "/수직 분기 맵 생성 구성 (Day 36일차)"; // 수직 분기 구성 메뉴 경로
         private const string SettingsAssetPath = "Assets/_ProjectJ/Data/Definitions/Map/MAP-GEN-001_DefaultGenerationSettings.asset"; // 기본 생성 설정 에셋 경로
 
         private static readonly string[] ModulePrefabPaths = // 기본 생성 후보 Prefab 경로 목록 선언

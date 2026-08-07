@@ -7,7 +7,7 @@ namespace ProjectJ.Editor // 프로젝트 Editor 기능 네임스페이스 선�
 { // 프로젝트 Editor 기능 묶음
     internal static class Day31ProceduralMapSetupTool // 31일차 맵 생성기 구성 도구 선언
     { // 31일차 맵 생성기 구성 도구 묶음
-        private const string MenuPath = "Project J/Day 31/Create Or Update Procedural Map Generator"; // 맵 생성기 구성 메뉴 경로
+        private const string MenuPath = ProjectJEditorMenuPaths.MapGeneration + "/절차적 맵 생성기 구성 (Day 31일차)"; // 맵 생성기 구성 메뉴 경로
         private const string SettingsAssetPath = "Assets/_ProjectJ/Data/Definitions/Map/MAP-GEN-001_DefaultGenerationSettings.asset"; // 기본 생성 설정 에셋 경로
         private const string FixedPrefabPath = "Assets/_ProjectJ/Prefabs/Map/Modules/MAP-001_FixedStraight.prefab"; // 고정 발판 Prefab 경로
         private const string LowPassagePrefabPath = "Assets/_ProjectJ/Prefabs/Map/Modules/MAP-002_LowPassage.prefab"; // 낮은 통로 Prefab 경로

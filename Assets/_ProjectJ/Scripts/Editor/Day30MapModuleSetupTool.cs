@@ -6,7 +6,7 @@ namespace ProjectJ.Editor // 프로젝트 Editor 기능 네임스페이스 선�
 { // 프로젝트 Editor 기능 묶음
     internal static class Day30MapModuleSetupTool // 30일차 기본 맵 모듈 구성 도구 선언
     { // 30일차 기본 맵 모듈 구성 도구 묶음
-        private const string MenuPath = "Project J/Day 30/Create Or Update Basic Map Modules"; // 기본 맵 모듈 생성 메뉴 경로
+        private const string MenuPath = ProjectJEditorMenuPaths.MapModules + "/기본 맵 모듈 생성 (Day 30일차)"; // 기본 맵 모듈 생성 메뉴 경로
         private const string DataFolderPath = "Assets/_ProjectJ/Data/Definitions/Map"; // 맵 데이터 폴더 경로
         private const string ProfileAssetPath = DataFolderPath + "/MAP-TRV-001_DefaultTraversal.asset"; // 기본 이동 능력 에셋 경로
         private const string PrefabFolderPath = "Assets/_ProjectJ/Prefabs/Map/Modules"; // 맵 모듈 Prefab 폴더 경로

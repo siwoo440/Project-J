@@ -10,7 +10,7 @@ namespace ProjectJ.Editor // 프로젝트 Editor 기능 네임스페이스 선�
 { // 프로젝트 Editor 기능 묶음
     internal static class Day44P2ItemSetupTool // 44일차 P2 아이템 7종 자동 설정 도구 선언
     { // 44일차 자동 설정 도구 묶음
-        private const string MenuPath = "Project J/Day 44/Configure P2 7 Item Effects"; // 44일차 자동 설정 메뉴 경로
+        private const string MenuPath = ProjectJEditorMenuPaths.ItemEffects + "/P2 아이템 7종 효과 구성 (Day 44일차)"; // 44일차 자동 설정 메뉴 경로
         private const string ItemDataFolderPath = "Assets/_ProjectJ/Data/Definitions/Item"; // 아이템 데이터 저장 폴더 경로
         private const string CartRouteName = "Day44_CartRoute"; // 테스트용 카트 경로 루트 이름
 

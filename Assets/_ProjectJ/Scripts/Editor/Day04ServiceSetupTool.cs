@@ -9,7 +9,7 @@ namespace ProjectJ.Editor // 프로젝트 에디터 전용 네임스페이스 �
 {
     internal static class Day04ServiceSetupTool // 4일차 공통 서비스 Bootstrap 구성 도구 선언
     {
-        private const string MenuPath = "Project J/Day 04/Configure Common Services"; // Unity 상단 메뉴 경로 선언
+        private const string MenuPath = ProjectJEditorMenuPaths.ProjectSettingsServices + "/공통 서비스 구성 (Day 04일차)"; // Unity 상단 메뉴 경로 선언
         private const string BootstrapObjectName = "ProjectJ_Bootstrap"; // Bootstrap 루트 게임 오브젝트 이름 선언
 
         [MenuItem(MenuPath)] // Unity 상단 메뉴에 공통 서비스 구성 항목 등록

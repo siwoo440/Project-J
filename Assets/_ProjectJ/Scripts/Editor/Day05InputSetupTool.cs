@@ -10,9 +10,9 @@ namespace ProjectJ.Editor // 프로젝트 에디터 전용 네임스페이스 �
 {
     internal static class Day05InputSetupTool // 5일차 입력 검증 씬 자동 구성 도구 선언
     {
-        private const string ConfigureMenuPath = "Project J/Day 05/Configure Input Debug"; // 입력 검증 구성 메뉴 경로 선언
-        private const string UseTestsStartMenuPath = "Project J/Day 05/Use Tests As Play Mode Start Scene"; // Tests Play Mode 시작 설정 메뉴 경로 선언
-        private const string RestoreBootstrapMenuPath = "Project J/Day 05/Restore Bootstrap As Play Mode Start Scene"; // Bootstrap Play Mode 시작 복원 메뉴 경로 선언
+        private const string ConfigureMenuPath = ProjectJEditorMenuPaths.PlayerInput + "/입력 디버그 구성 (Day 05일차)"; // 입력 검증 구성 메뉴 경로 선언
+        private const string UseTestsStartMenuPath = ProjectJEditorMenuPaths.PlayerPlayMode + "/Tests 씬을 Play Mode 시작 씬으로 설정 (Day 05일차)"; // Tests Play Mode 시작 설정 메뉴 경로 선언
+        private const string RestoreBootstrapMenuPath = ProjectJEditorMenuPaths.PlayerPlayMode + "/Bootstrap 씬을 Play Mode 시작 씬으로 복원 (Day 05일차)"; // Bootstrap Play Mode 시작 복원 메뉴 경로 선언
         private const string DebugObjectName = "ProjectJ_InputDebug"; // 입력 검증 게임 오브젝트 이름 선언
 
         [MenuItem(ConfigureMenuPath)] // Unity 상단 메뉴에 입력 검증 구성 항목 등록

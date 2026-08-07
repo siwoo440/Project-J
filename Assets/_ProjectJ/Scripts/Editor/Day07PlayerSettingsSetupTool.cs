@@ -6,8 +6,8 @@ namespace ProjectJ.Editor // 프로젝트 에디터 전용 네임스페이스 �
 {
     internal static class Day07PlayerSettingsSetupTool // 7일차 기본 플레이어 설정 에셋 구성 도구 선언
     {
-        private const string ConfigureMenuPath = "Project J/Day 07/Configure Default Player Settings"; // 기본 플레이어 설정 구성 메뉴 경로 선언
-        private const string SelectMenuPath = "Project J/Day 07/Select Default Player Settings"; // 기본 플레이어 설정 선택 메뉴 경로 선언
+        private const string ConfigureMenuPath = ProjectJEditorMenuPaths.PlayerSettings + "/기본 플레이어 설정 구성 (Day 07일차)"; // 기본 플레이어 설정 구성 메뉴 경로 선언
+        private const string SelectMenuPath = ProjectJEditorMenuPaths.PlayerSettings + "/기본 플레이어 설정 선택 (Day 07일차)"; // 기본 플레이어 설정 선택 메뉴 경로 선언
         private const string DefaultPlayerFolderPath = "Assets/_ProjectJ/Data/Definitions/Player"; // 기본 플레이어 데이터 폴더 경로 선언
         private const string DefaultPlayerAssetPath = DefaultPlayerFolderPath + "/PLY-001_DefaultPlayer.asset"; // 기본 플레이어 데이터 에셋 경로 선언
         private static readonly ProjectDataVersion PlayerSettingsVersion = new ProjectDataVersion(1, 1, 0); // 플레이어 설정 필드 추가 버전 선언

@@ -9,7 +9,7 @@ namespace ProjectJ.Editor // 프로젝트 에디터 전용 네임스페이스 �
 {
     internal static class Day03SceneSetupTool // 3일차 씬 구조 자동 생성 도구 선언
     {
-        private const string MenuPath = "Project J/Day 03/Create Scene Flow Skeleton"; // Unity 메뉴 경로 선언
+        private const string MenuPath = ProjectJEditorMenuPaths.ProjectSettingsScenes + "/씬 흐름 뼈대 생성 (Day 03일차)"; // Unity 메뉴 경로 선언
         private const string BootstrapObjectName = "ProjectJ_Bootstrap"; // Bootstrap 루트 게임 오브젝트 이름 선언
         private const string DebugObjectName = "ProjectJ_SceneFlowDebug"; // 개발용 씬 이동 패널 게임 오브젝트 이름 선언
 

@@ -11,7 +11,7 @@ namespace ProjectJ.Editor // 프로젝트 에디터 전용 네임스페이스 �
         internal const string ResourcesRootPath = "Assets/_ProjectJ/Resources"; // 프로젝트 Resources 폴더 경로 선언
         internal const string CatalogAssetPath = ResourcesRootPath + "/ProjectDataCatalog.asset"; // 런타임 카탈로그 에셋 경로 선언
 
-        [MenuItem("Project J/Day 17/Rebuild Runtime Data Catalog")] // 17일차 카탈로그 수동 갱신 메뉴 등록
+        [MenuItem(ProjectJEditorMenuPaths.DataCatalog + "/런타임 데이터 카탈로그 재생성 (Day 17일차)")] // 17일차 카탈로그 수동 갱신 메뉴 등록
         private static void RebuildFromMenu() // 메뉴를 통한 런타임 데이터 카탈로그 갱신
         {
             ProjectDataValidationReport report = RebuildAndValidate(true); // 카탈로그 갱신과 전체 데이터 검증 실행

@@ -1,8 +1,8 @@
 ﻿<Solution>
-  <Project Path="ProjectJ.Tests.EditMode.csproj" />
   <Project Path="ProjectJ.Runtime.csproj" />
   <Project Path="ProjectJ.Editor.csproj" />
-  <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="ProjectJ.Tests.EditMode.csproj" />
   <Project Path="ProjectJ.Tests.PlayMode.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
 </Solution>

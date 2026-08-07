@@ -11,11 +11,15 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
 { // 프로젝트 아이템 기능 묶음
     [DisallowMultipleComponent] // 플레이어당 아이템 사용 관리자 한 개만 허용
     [RequireComponent(typeof(PlayerItemInventory))] // 2슬롯 인벤토리 필수 지정
-    [RequireComponent(typeof(PlayerItemEffectController))] // 지속형 효과 관리자 필수 지정
-    public sealed class PlayerItemUseController : MonoBehaviour // 슬롯 선택과 P0와 P1 아이템 사용 관리자 선언
+    [RequireComponent(typeof(PlayerItemEffectController))] // P0와 P1 지속형 효과 관리자 필수 지정
+    [RequireComponent(typeof(PlayerP2ItemEffectController))] // P2 효과 관리자 필수 지정
+    [RequireComponent(typeof(PlayerSniperWaterGunController))] // 저격 물총 조준 관리자 필수 지정
+    public sealed class PlayerItemUseController : MonoBehaviour // 슬롯 선택과 P0와 P1과 P2 아이템 사용 관리자 선언
     { // 플레이어 아이템 사용 관리자 묶음
         [SerializeField] private PlayerItemInventory inventory; // 두 슬롯 아이템 제공자 저장
-        [SerializeField] private PlayerItemEffectController effectController; // 지속형 효과 적용 대상 저장
+        [SerializeField] private PlayerItemEffectController effectController; // P0와 P1 지속형 효과 적용 대상 저장
+        [SerializeField] private PlayerP2ItemEffectController p2EffectController; // P2 지속 효과와 추적 효과 적용 대상 저장
+        [SerializeField] private PlayerSniperWaterGunController sniperController; // 저격 물총 조준과 발사 관리자 저장
         [SerializeField] private PlayerStateController playerStateController; // 행동 가능 상태 제공자 저장
         [SerializeField] private PrototypeMatchController matchController; // 경기 종료 상태 제공자 저장
         [SerializeField] private ItemPlacementValidator placementValidator; // 설치 위치 공통 검사기 저장
@@ -40,6 +44,11 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
         { // 아이템 입력 프레임 처리
             UpdateMessageTime(); // 사용 결과 문구 남은 시간 갱신
 
+            if (sniperController != null && sniperController.IsAiming) // 저격 물총 조준 중 여부 확인
+            { // 조준 중 일반 슬롯과 사용 입력 차단 처리
+                return; // 조준 관리자가 발사와 배율과 취소 입력을 처리하도록 종료
+            } // 조준 중 일반 슬롯과 사용 입력 차단 처리 종료
+
             if (Keyboard.current != null) // 키보드 연결 여부 확인
             { // 슬롯 선택 키 입력 처리
                 if (Keyboard.current.qKey.wasPressedThisFrame) // Q 첫 슬롯 선택 입력 확인
@@ -55,7 +64,10 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
                 } // 둘째 슬롯 선택 처리 종료
             } // 슬롯 선택 키 입력 처리 종료
 
-            if (Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame) // 우클릭 아이템 사용 입력 확인
+            bool mouseUsePressed = Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame; // 우클릭 아이템 사용 입력 여부 계산
+            bool gamepadAimPressed = Gamepad.current != null && Gamepad.current.leftTrigger.wasPressedThisFrame && inventory != null && inventory.SelectedItem != null && inventory.SelectedItem.EffectType == ItemEffectType.SniperWaterGun; // 저격 물총 선택 중 LT 조준 입력 여부 계산
+
+            if (mouseUsePressed || gamepadAimPressed) // 우클릭 일반 사용 또는 LT 저격 조준 입력 확인
             { // 선택 아이템 사용 처리
                 TryUseSelectedItem(); // 현재 선택 슬롯 아이템 사용 시도
             } // 선택 아이템 사용 처리 종료
@@ -75,6 +87,12 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
                 return false; // 아이템 사용 실패 반환
             } // 행동 차단 상태 처리 종료
 
+            if (p2EffectController != null && (p2EffectController.IsRewinding || p2EffectController.IsCartRiding)) // 되감기 또는 카트 특수 이동 진행 여부 확인
+            { // 특수 이동 중 추가 사용 차단 처리
+                ShowMessage("되감기 또는 카트 이동 중에는 다른 아이템을 사용할 수 없습니다."); // 특수 이동 중 실패 사유 표시
+                return false; // 아이템 사용 실패 반환
+            } // 특수 이동 중 추가 사용 차단 처리 종료
+
             ItemDataDefinition itemData = inventory == null ? null : inventory.SelectedItem; // 현재 선택 아이템 조회
 
             if (itemData == null) // 선택 슬롯 비어 있음 여부 확인
@@ -83,13 +101,18 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
                 return false; // 아이템 사용 실패 반환
             } // 빈 슬롯 사용 처리 종료
 
-            if (itemData.ImplementationPriority == ItemImplementationPriority.P2) // 44일차 구현 대상 여부 확인
-            { // P2 아이템 사용 차단 처리
-                ShowMessage($"{itemData.DisplayName} 효과는 44일차에 구현됩니다."); // P2 구현 예정 문구 표시
-                return false; // 아이템을 보존한 채 사용 실패 반환
-            } // P2 아이템 사용 차단 처리 종료
+            if (itemData.ImplementationPriority == ItemImplementationPriority.P2 && itemData.EffectType == ItemEffectType.SniperWaterGun) // 저격 물총의 소비 전 조준 모드 진입 여부 확인
+            { // 저격 물총 조준 시작 처리
+                if (sniperController == null || !sniperController.TryBeginAim(itemData, inventory.SelectedSlotIndex, itemUseOrigin, effectCollisionLayers, ShowMessage)) // 저격 조준 관리자와 시작 성공 여부 확인
+                { // 저격 물총 조준 실패 처리
+                    ShowMessage("저격 물총 조준을 시작할 수 없습니다."); // 조준 시작 실패 사유 표시
+                    return false; // 아이템을 보존한 채 조준 실패 반환
+                } // 저격 물총 조준 실패 처리 종료
 
-            bool executed = itemData.ImplementationPriority == ItemImplementationPriority.P0 ? TryExecuteP0Item(itemData) : TryExecuteP1Item(itemData); // 우선순위 기반 실제 효과 실행
+                return true; // 실제 발사 전 아이템을 소비하지 않은 조준 성공 반환
+            } // 저격 물총 조준 시작 처리 종료
+
+            bool executed = itemData.ImplementationPriority == ItemImplementationPriority.P0 ? TryExecuteP0Item(itemData) : itemData.ImplementationPriority == ItemImplementationPriority.P1 ? TryExecuteP1Item(itemData) : TryExecuteP2Item(itemData); // 우선순위 기반 실제 효과 실행
 
             if (!executed) // 아이템 효과 실행 실패 여부 확인
             { // 실행 실패 처리
@@ -178,6 +201,56 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
                     return false; // P1 아이템 사용 실패 반환
             } // P1 아이템 효과 종류 분기 종료
         } // P1 아이템 효과 분기 처리 종료
+
+        private bool TryExecuteP2Item(ItemDataDefinition itemData) // P2 7종 실제 효과 실행
+        { // P2 아이템 효과 분기 처리
+            if (p2EffectController == null) // P2 효과 관리자 누락 여부 확인
+            { // P2 효과 관리자 누락 처리
+                ShowMessage("P2 아이템 효과 관리자를 찾을 수 없습니다."); // 누락 참조 실패 사유 표시
+                return false; // 아이템을 보존한 채 실행 실패 반환
+            } // P2 효과 관리자 누락 처리 종료
+
+            switch (itemData.EffectType) // P2 아이템 효과 종류 선택
+            { // P2 아이템 효과 종류 분기
+                case ItemEffectType.RewindClock: // 되감기 시계 효과 확인
+                    if (!p2EffectController.TryActivateRewind(itemData.EffectDuration, itemData.PrimaryValue > 0f ? itemData.PrimaryValue : P2ItemRules.RewindPlaybackDuration)) // 최근 안전 위치 되감기 시작 여부 확인
+                    { // 되감기 기록 부족 처리
+                        ShowMessage("되감기에 필요한 안전 위치 기록이 부족합니다."); // 기록 부족 실패 문구 표시
+                        return false; // 아이템을 보존한 채 실행 실패 반환
+                    } // 되감기 기록 부족 처리 종료
+
+                    return true; // 되감기 시계 사용 성공 반환
+                case ItemEffectType.HomingMissile: // 유도탄 효과 확인
+                case ItemEffectType.Drone: // 드론 효과 확인
+                    if (!p2EffectController.TrySpawnHomingEffect(itemData, GetUseOriginPosition(), GetUseDirection())) // 전방 추적 효과와 최초 목표 생성 여부 확인
+                    { // 추적 대상 없음 처리
+                        ShowMessage(itemData.EffectType == ItemEffectType.Drone ? "드론이 추적할 1위 대상을 찾지 못했습니다." : "유도탄이 추적할 대상을 찾지 못했습니다."); // 효과 종류에 맞는 목표 없음 문구 표시
+                        return false; // 아이템을 보존한 채 실행 실패 반환
+                    } // 추적 대상 없음 처리 종료
+
+                    return true; // 유도탄 또는 드론 사용 성공 반환
+                case ItemEffectType.MiniaturePotion: // 소형화 물약 효과 확인
+                    p2EffectController.ActivateMiniature(itemData.EffectDuration, itemData.PrimaryValue); // 외형과 CharacterController 축소 활성화
+                    return true; // 소형화 물약 사용 성공 반환
+                case ItemEffectType.InvisibilityCloak: // 투명 망토 효과 확인
+                    p2EffectController.ActivateInvisibility(itemData.EffectDuration); // 외형 숨김과 추적 대상 제외 활성화
+                    return true; // 투명 망토 사용 성공 반환
+                case ItemEffectType.Cart: // 카트 효과 확인
+                    if (!p2EffectController.TryActivateCart(itemData.EffectDuration, itemData.PrimaryValue > 0f ? itemData.PrimaryValue : P2ItemRules.CartSpeed, itemData.EffectRange > 0f ? itemData.EffectRange : P2ItemRules.CartRouteSearchRange)) // 가까운 연결 경로 자동 주행 시작 여부 확인
+                    { // 카트 경로 없음 처리
+                        ShowMessage("가까운 카트 경로 또는 다음 경로 지점을 찾지 못했습니다."); // 경로 없음 실패 문구 표시
+                        return false; // 아이템을 보존한 채 실행 실패 반환
+                    } // 카트 경로 없음 처리 종료
+
+                    return true; // 카트 사용 성공 반환
+                case ItemEffectType.SniperWaterGun: // 저격 물총 효과 확인
+                    ShowMessage("저격 물총은 조준 모드에서 사용해야 합니다."); // 잘못된 직접 실행 안내 표시
+                    return false; // 조준 없는 직접 실행 실패 반환
+                default: // P2 외 효과 또는 잘못된 데이터 처리
+                    ShowMessage("P2 실행 대상이 아닌 아이템입니다."); // 실행 대상 오류 문구 표시
+                    return false; // P2 아이템 사용 실패 반환
+            } // P2 아이템 효과 종류 분기 종료
+        } // P2 아이템 효과 분기 처리 종료
 
         private bool TryPlaceItem(ItemDataDefinition itemData) // 설치 위치 공통 검사 뒤 설치 아이템 생성
         { // 설치형 아이템 사용 처리
@@ -450,6 +523,8 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
         { // 누락 참조 자동 연결 처리
             inventory = inventory == null ? GetComponent<PlayerItemInventory>() : inventory; // 같은 오브젝트 인벤토리 저장
             effectController = effectController == null ? GetComponent<PlayerItemEffectController>() : effectController; // 같은 오브젝트 지속 효과 관리자 저장
+            p2EffectController = p2EffectController == null ? GetComponent<PlayerP2ItemEffectController>() : p2EffectController; // 같은 오브젝트 P2 효과 관리자 저장
+            sniperController = sniperController == null ? GetComponent<PlayerSniperWaterGunController>() : sniperController; // 같은 오브젝트 저격 조준 관리자 저장
             playerStateController = playerStateController == null ? GetComponent<PlayerStateController>() : playerStateController; // 같은 오브젝트 플레이어 상태 관리자 저장
             matchController = matchController == null ? FindFirstObjectByType<PrototypeMatchController>() : matchController; // 현재 Scene 경기 관리자 저장
             placementValidator = placementValidator == null ? FindFirstObjectByType<ItemPlacementValidator>() : placementValidator; // 현재 Scene 설치 검사기 저장
@@ -469,6 +544,12 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
             placementForwardDistance = Mathf.Max(0.1f, newPlacementForwardDistance); // 설치 거리 보정 후 저장
             messageDuration = Mathf.Max(0.1f, newMessageDuration); // 문구 시간 보정 후 저장
         } // 자동 설정 도구용 아이템 사용 참조 연결 처리 종료
+
+        public void ConfigureP2ForEditor(PlayerP2ItemEffectController newP2EffectController, PlayerSniperWaterGunController newSniperController) // 44일차 자동 설정 도구용 P2 실행 참조 연결
+        { // P2 실행 참조 연결 처리
+            p2EffectController = newP2EffectController; // P2 지속 효과와 추적 효과 관리자 저장
+            sniperController = newSniperController; // 저격 물총 조준 관리자 저장
+        } // P2 실행 참조 연결 처리 종료
 #endif // Editor 전용 설정 종료
     } // 플레이어 아이템 사용 관리자 묶음 종료
 } // 프로젝트 아이템 기능 묶음 종료

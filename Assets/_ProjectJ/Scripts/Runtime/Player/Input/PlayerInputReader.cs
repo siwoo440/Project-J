@@ -20,13 +20,14 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
         private InputAction crouchAction; // 앉기 액션
         private InputAction pushAction; // 밀치기 액션
         private bool itemMovementRestricted; // 비눗방울 이동 입력 제한 상태
+        private bool p2MovementRestricted; // 되감기와 카트 이동 입력 제한 상태
 
-        public Vector2 MoveValue => !itemMovementRestricted && moveAction != null ? moveAction.ReadValue<Vector2>() : Vector2.zero; // 제한 상태를 반영한 현재 이동 입력
+        public Vector2 MoveValue => !IsItemMovementRestricted && moveAction != null ? moveAction.ReadValue<Vector2>() : Vector2.zero; // 모든 아이템 제한 상태를 반영한 현재 이동 입력
         public Vector2 LookValue => lookAction != null ? lookAction.ReadValue<Vector2>() : Vector2.zero; // 현재 시점 입력
-        public bool IsSprintPressed => !itemMovementRestricted && sprintAction != null && sprintAction.IsPressed(); // 제한 상태를 반영한 달리기 누름 상태
-        public bool IsCrouchPressed => !itemMovementRestricted && crouchAction != null && crouchAction.IsPressed(); // 제한 상태를 반영한 앉기 누름 상태
+        public bool IsSprintPressed => !IsItemMovementRestricted && sprintAction != null && sprintAction.IsPressed(); // 모든 아이템 제한 상태를 반영한 달리기 누름 상태
+        public bool IsCrouchPressed => !IsItemMovementRestricted && crouchAction != null && crouchAction.IsPressed(); // 모든 아이템 제한 상태를 반영한 앉기 누름 상태
         public bool IsLookFromMouse => lookAction != null && lookAction.activeControl != null && lookAction.activeControl.device is Mouse; // 마우스 시점 입력 여부
-        public bool IsItemMovementRestricted => itemMovementRestricted; // 비눗방울 이동 입력 제한 여부 반환
+        public bool IsItemMovementRestricted => itemMovementRestricted || p2MovementRestricted; // 비눗방울과 P2 이동 입력 제한 여부 반환
 
         private void Awake() // 런타임 입력과 저장된 재지정 준비
         { // 메서드 범위
@@ -97,6 +98,11 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
         { // 아이템 이동 입력 제한 처리
             itemMovementRestricted = isRestricted; // 새 입력 제한 상태 저장
         } // 아이템 이동 입력 제한 처리 종료
+
+        public void SetP2MovementRestricted(bool isRestricted) // 되감기와 카트 기반 이동과 달리기와 앉기 입력 제한 설정
+        { // P2 이동 입력 제한 처리
+            p2MovementRestricted = isRestricted; // 새 P2 입력 제한 상태 저장
+        } // P2 이동 입력 제한 처리 종료
 
         public bool TryApplyBindingOverride(string actionName, int bindingIndex, string controlPath) // 지정 액션 바인딩 재지정과 저장 시도
         { // 메서드 범위

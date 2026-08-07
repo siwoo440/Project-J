@@ -16,10 +16,10 @@ MonoBehaviour:
   displayName: "\uD22C\uBA85 \uB9DD\uD1A0"
   version:
     major: 1
-    minor: 1
+    minor: 3
     patch: 0
-  description: "5\uCD08 \uB3D9\uC548 \uB2E4\uB978 \uD654\uBA74\uC5D0\uC11C \uD22C\uBA85\uD574\uC9C0\uACE0
-    \uCD94\uC801 \uB300\uC0C1\uC5D0\uC11C \uC81C\uC678"
+  description: "5\uCD08 \uB3D9\uC548 \uC678\uD615\uC744 \uC228\uAE30\uACE0 \uC720\uB3C4\uD0C4\uACFC
+    \uB4DC\uB860\uC758 \uCD94\uC801 \uB300\uC0C1\uC5D0\uC11C \uC81C\uC678"
   inventoryIcon: {fileID: 0}
   pickupColor: {r: 0.65, g: 0.65, b: 0.8, a: 0.65}
   pickupVisualScale: 0.75
@@ -29,7 +29,7 @@ MonoBehaviour:
   spawnWeight: 3
   maximumStackCount: 1
   effectDuration: 5
-  primaryValue: 0
+  primaryValue: 0.2
   secondaryValue: 0
   effectRange: 0
   effectRadius: 0

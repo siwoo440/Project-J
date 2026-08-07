@@ -144,7 +144,7 @@ namespace ProjectJ.Editor // 프로젝트 Editor 기능 네임스페이스 선�
             messageText.fontStyle = FontStyles.Bold; // 안내 문구 굵은 글꼴 적용
             messageText.alignment = TextAlignmentOptions.Center; // 안내 문구 가운데 정렬 적용
             messageText.color = Color.white; // 안내 문구 흰색 적용
-            messageText.enableWordWrapping = false; // 한 줄 안내 유지
+            messageText.textWrappingMode = TextWrappingModes.NoWrap; // 한 줄 안내 유지
             ItemUseStatusView statusView = Undo.AddComponent<ItemUseStatusView>(statusObject); // 사용 결과 이벤트 표시 기능 추가
             statusView.ConfigureForEditor(useController, messageText); // 아이템 사용 관리자와 TextMeshPro 연결
             EditorUtility.SetDirty(statusView); // 사용 안내 표시 변경 상태 저장

@@ -156,7 +156,7 @@ namespace ProjectJ.UI // 프로젝트 Canvas UI 네임스페이스 선언
             text.fontStyle = fontStyle; // 전달된 글자 스타일 적용
             text.alignment = alignment; // 전달된 글자 정렬 적용
             text.color = Color.white; // 흰색 글자 적용
-            text.enableWordWrapping = true; // 긴 오류 문구 자동 줄바꿈 활성화
+            text.textWrappingMode = TextWrappingModes.Normal; // 긴 오류 문구 자동 줄바꿈 활성화
             text.raycastTarget = false; // 텍스트의 불필요한 입력 차단 해제
             return text; // 구성된 TextMeshPro 반환
         } // 런타임 TextMeshPro 생성 처리 종료

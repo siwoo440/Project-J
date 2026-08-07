@@ -40,22 +40,29 @@ namespace ProjectJ.Tests.EditMode // 프로젝트 EditMode 테스트 네임스�
         } // 상자 획득 성공 테스트 처리 종료
 
         [Test] // Unity Test Runner 테스트 지정
-        public void FullInventoryKeepsChestAvailable() // 인벤토리가 가득 차면 상자가 유지되는지 확인
-        { // 가득 찬 인벤토리 상자 테스트 처리
+        public void FullInventoryReplacesCurrentlySelectedSlotAndConsumesChest() // 인벤토리가 가득 차면 현재 선택 슬롯을 교체하는지 확인
+        { // 가득 찬 인벤토리 선택 슬롯 교체 테스트 처리
             PlayerItemInventory inventory = CreateInventory(); // 빈 플레이어 인벤토리 생성
-            inventory.TryAddItem(CreateItem("ITM-C01", "Chest Item A"), out int firstSlotIndex); // 첫 슬롯 채우기
-            inventory.TryAddItem(CreateItem("ITM-C02", "Chest Item B"), out int secondSlotIndex); // 두 번째 슬롯 채우기
-            ItemChestPickup chest = CreateChest(CreateItem("ITM-C03", "Chest Item C")); // 세 번째 아이템 상자 생성
+            ItemDataDefinition firstItem = CreateItem("ITM-C01", "Chest Item A"); // 첫 슬롯 아이템 생성
+            ItemDataDefinition secondItem = CreateItem("ITM-C02", "Chest Item B"); // 둘째 슬롯 아이템 생성
+            ItemDataDefinition replacementItem = CreateItem("ITM-C03", "Chest Item C"); // 교체용 새 아이템 생성
+            Assert.IsTrue(inventory.TryAddItem(firstItem, out int firstSlotIndex)); // 첫 슬롯 채우기 성공 확인
+            Assert.IsTrue(inventory.TryAddItem(secondItem, out int secondSlotIndex)); // 둘째 슬롯 채우기 성공 확인
+            Assert.IsTrue(inventory.SelectSlot(1)); // 최신 규칙 검증용 둘째 슬롯 선택
+            ItemChestPickup chest = CreateChest(replacementItem); // 세 번째 아이템 상자 생성
 
             bool collected = chest.TryCollect(inventory); // 가득 찬 인벤토리로 상자 획득 시도
 
             Assert.AreEqual(0, firstSlotIndex); // 첫 슬롯 번호 확인
             Assert.AreEqual(1, secondSlotIndex); // 두 번째 슬롯 번호 확인
-            Assert.IsFalse(collected); // 세 번째 상자 획득 실패 확인
-            Assert.IsFalse(chest.IsCollected); // 상자 미획득 상태 유지 확인
-            Assert.IsTrue(chest.gameObject.activeSelf); // 실패한 상자 활성 상태 유지 확인
-            Assert.AreEqual(2, inventory.ItemCount); // 기존 두 아이템 유지 확인
-        } // 가득 찬 인벤토리 상자 테스트 처리 종료
+            Assert.IsTrue(collected); // 선택 슬롯 교체를 통한 상자 획득 성공 확인
+            Assert.IsTrue(chest.IsCollected); // 상자 획득 완료 상태 확인
+            Assert.IsFalse(chest.gameObject.activeSelf); // 획득 완료 상자 비활성화 확인
+            Assert.AreEqual(2, inventory.ItemCount); // 두 슬롯 점유 상태 유지 확인
+            Assert.AreSame(firstItem, inventory.GetItemAt(0)); // 선택하지 않은 첫 슬롯 기존 아이템 유지 확인
+            Assert.AreSame(replacementItem, inventory.GetItemAt(1)); // 선택한 둘째 슬롯 새 아이템 교체 확인
+            Assert.AreEqual(1, inventory.GetQuantityAt(1)); // 교체된 아이템 수량 한 개 확인
+        } // 가득 찬 인벤토리 선택 슬롯 교체 테스트 처리 종료
 
         [Test] // Unity Test Runner 테스트 지정
         public void MissingInventoryDoesNotConsumeChest() // 인벤토리 누락 시 상자가 소비되지 않는지 확인

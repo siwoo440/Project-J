@@ -302,7 +302,7 @@ namespace ProjectJ.Editor // 프로젝트 Editor 도구 네임스페이스 선�
             text.fontStyle = fontStyle; // 전달된 글자 스타일 적용
             text.alignment = alignment; // 전달된 글자 정렬 적용
             text.color = color; // 전달된 글자 색상 적용
-            text.enableWordWrapping = false; // HUD 한 줄 문구 자동 줄바꿈 비활성화
+            text.textWrappingMode = TextWrappingModes.NoWrap; // HUD 한 줄 문구 자동 줄바꿈 비활성화
             text.overflowMode = TextOverflowModes.Ellipsis; // 영역 초과 문구 말줄임 처리
             text.raycastTarget = false; // Text의 불필요한 Raycast 비활성화
 

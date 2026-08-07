@@ -5,7 +5,7 @@ using UnityEngine; // Unity 투사체 이동과 물리 기능 참조
 namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선언
 { // 프로젝트 아이템 기능 묶음
     [DisallowMultipleComponent] // 투사체당 효과 한 개만 허용
-    public sealed class ItemProjectileEffect : MonoBehaviour // 눈덩이와 풀 공 투사체 효과 선언
+    public sealed class ItemProjectileEffect : MonoBehaviour // 직선 아이템 투사체 효과 선언
     { // 아이템 투사체 효과 묶음
         [SerializeField] private LayerMask collisionLayers = ~0; // 투사체 충돌 검사 Layer 저장
 
@@ -13,18 +13,18 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
         private Transform ownerRoot; // 투사체 사용자 루트 저장
         private Vector3 direction; // 투사체 진행 방향 저장
         private float speed; // 투사체 초당 이동 거리 저장
-        private float forceOrMultiplier; // 밀치기 힘 또는 감속 배율 저장
+        private float primaryValue; // 밀치기와 상태 핵심 수치 저장
         private float statusDuration; // 상태 이상 유지 시간 저장
         private float remainingLifeTime; // 투사체 남은 수명 저장
         private float radius; // 투사체 충돌 반지름 저장
 
-        public void Configure(ItemEffectType newEffectType, Transform newOwnerRoot, Vector3 newDirection, float newSpeed, float newForceOrMultiplier, float newStatusDuration, float newLifeTime, float newRadius, Color visualColor, LayerMask newCollisionLayers) // 투사체 이동과 효과와 표시 구성
+        public void Configure(ItemEffectType newEffectType, Transform newOwnerRoot, Vector3 newDirection, float newSpeed, float newPrimaryValue, float newStatusDuration, float newLifeTime, float newRadius, Color visualColor, LayerMask newCollisionLayers) // 투사체 이동과 효과와 표시 구성
         { // 투사체 구성 처리
             effectType = newEffectType; // 투사체 아이템 효과 종류 저장
             ownerRoot = newOwnerRoot; // 투사체 사용자 루트 저장
             direction = newDirection.sqrMagnitude <= 0.0001f ? Vector3.forward : newDirection.normalized; // 안전한 진행 방향 저장
             speed = Mathf.Max(0f, newSpeed); // 음수가 없는 투사체 속도 저장
-            forceOrMultiplier = newForceOrMultiplier; // 효과 핵심 수치 저장
+            primaryValue = newPrimaryValue; // 효과 핵심 수치 저장
             statusDuration = Mathf.Max(0f, newStatusDuration); // 상태 이상 시간 저장
             remainingLifeTime = Mathf.Max(0.1f, newLifeTime); // 최소 투사체 수명 저장
             radius = Mathf.Max(0.05f, newRadius); // 최소 충돌 반지름 저장
@@ -86,17 +86,25 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
                 return; // 적중 효과 적용 생략
             } // 적중 효과 불가 처리 종료
 
+            PlayerItemEffectController targetEffectController = hitCollider.GetComponentInParent<PlayerItemEffectController>(); // 대상 플레이어 효과 관리자 조회
+
             if (effectType == ItemEffectType.Snowball) // 눈덩이 투사체 여부 확인
             { // 눈덩이 감속 처리
-                PlayerItemEffectController effectController = hitCollider.GetComponentInParent<PlayerItemEffectController>(); // 대상 플레이어 효과 관리자 조회
-
-                if (effectController != null) // 감속 가능한 플레이어 여부 확인
-                { // 눈덩이 감속 적용 처리
-                    effectController.ApplySlow(statusDuration, forceOrMultiplier); // 데이터 기반 감속 시간과 배율 적용
-                } // 눈덩이 감속 적용 처리 종료
-
-                return; // 풀 공 밀치기 처리 생략
+                targetEffectController?.ApplySlow(statusDuration, primaryValue); // 데이터 기반 감속 시간과 배율 적용
+                return; // 다른 투사체 효과 처리 생략
             } // 눈덩이 감속 처리 종료
+
+            if (effectType == ItemEffectType.InkOctopus) // 먹물 문어 투사체 여부 확인
+            { // 먹물 화면 방해 처리
+                targetEffectController?.ApplyInk(statusDuration, primaryValue); // 화면 중앙 먹물 가림 효과 적용
+                return; // 다른 투사체 효과 처리 생략
+            } // 먹물 화면 방해 처리 종료
+
+            if (effectType == ItemEffectType.SoapBubble) // 비눗방울 투사체 여부 확인
+            { // 비눗방울 조작 제한 처리
+                targetEffectController?.ApplySoapBubble(Mathf.RoundToInt(primaryValue)); // A와 D 교대 탈출 횟수 적용
+                return; // 다른 투사체 효과 처리 생략
+            } // 비눗방울 조작 제한 처리 종료
 
             if (effectType == ItemEffectType.Ball) // 풀 공 투사체 여부 확인
             { // 풀 공 약한 밀치기 처리
@@ -104,7 +112,7 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
 
                 if (receiver != null && receiver.CanReceivePush) // 유효한 밀치기 대상 여부 확인
                 { // 풀 공 밀치기 적용 처리
-                    receiver.TryReceiveExternalForce(direction, Mathf.Max(0f, forceOrMultiplier)); // 진행 방향 약한 공통 밀치기 힘 적용
+                    receiver.TryReceiveExternalForce(direction, Mathf.Max(0f, primaryValue)); // 진행 방향 약한 공통 밀치기 힘 적용
                 } // 풀 공 밀치기 적용 처리 종료
             } // 풀 공 약한 밀치기 처리 종료
         } // 투사체 적중 효과 처리 종료

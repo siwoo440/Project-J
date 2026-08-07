@@ -19,12 +19,14 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
         private InputAction sprintAction; // 달리기 액션
         private InputAction crouchAction; // 앉기 액션
         private InputAction pushAction; // 밀치기 액션
+        private bool itemMovementRestricted; // 비눗방울 이동 입력 제한 상태
 
-        public Vector2 MoveValue => moveAction != null ? moveAction.ReadValue<Vector2>() : Vector2.zero; // 현재 이동 입력
+        public Vector2 MoveValue => !itemMovementRestricted && moveAction != null ? moveAction.ReadValue<Vector2>() : Vector2.zero; // 제한 상태를 반영한 현재 이동 입력
         public Vector2 LookValue => lookAction != null ? lookAction.ReadValue<Vector2>() : Vector2.zero; // 현재 시점 입력
-        public bool IsSprintPressed => sprintAction != null && sprintAction.IsPressed(); // 달리기 누름 상태
-        public bool IsCrouchPressed => crouchAction != null && crouchAction.IsPressed(); // 앉기 누름 상태
+        public bool IsSprintPressed => !itemMovementRestricted && sprintAction != null && sprintAction.IsPressed(); // 제한 상태를 반영한 달리기 누름 상태
+        public bool IsCrouchPressed => !itemMovementRestricted && crouchAction != null && crouchAction.IsPressed(); // 제한 상태를 반영한 앉기 누름 상태
         public bool IsLookFromMouse => lookAction != null && lookAction.activeControl != null && lookAction.activeControl.device is Mouse; // 마우스 시점 입력 여부
+        public bool IsItemMovementRestricted => itemMovementRestricted; // 비눗방울 이동 입력 제한 여부 반환
 
         private void Awake() // 런타임 입력과 저장된 재지정 준비
         { // 메서드 범위
@@ -90,6 +92,11 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스
         { // 메서드 범위
             return pushAction != null && pushAction.WasPressedThisFrame(); // 현재 프레임 밀치기 입력 반환
         } // 메서드 범위
+
+        public void SetItemMovementRestricted(bool isRestricted) // 아이템 효과 기반 이동과 달리기와 앉기 입력 제한 설정
+        { // 아이템 이동 입력 제한 처리
+            itemMovementRestricted = isRestricted; // 새 입력 제한 상태 저장
+        } // 아이템 이동 입력 제한 처리 종료
 
         public bool TryApplyBindingOverride(string actionName, int bindingIndex, string controlPath) // 지정 액션 바인딩 재지정과 저장 시도
         { // 메서드 범위

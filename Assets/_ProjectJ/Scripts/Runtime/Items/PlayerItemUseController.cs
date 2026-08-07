@@ -12,7 +12,7 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
     [DisallowMultipleComponent] // 플레이어당 아이템 사용 관리자 한 개만 허용
     [RequireComponent(typeof(PlayerItemInventory))] // 2슬롯 인벤토리 필수 지정
     [RequireComponent(typeof(PlayerItemEffectController))] // 지속형 효과 관리자 필수 지정
-    public sealed class PlayerItemUseController : MonoBehaviour // 슬롯 선택과 P0 아이템 사용 관리자 선언
+    public sealed class PlayerItemUseController : MonoBehaviour // 슬롯 선택과 P0와 P1 아이템 사용 관리자 선언
     { // 플레이어 아이템 사용 관리자 묶음
         [SerializeField] private PlayerItemInventory inventory; // 두 슬롯 아이템 제공자 저장
         [SerializeField] private PlayerItemEffectController effectController; // 지속형 효과 적용 대상 저장
@@ -83,16 +83,18 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
                 return false; // 아이템 사용 실패 반환
             } // 빈 슬롯 사용 처리 종료
 
-            if (itemData.ImplementationPriority != ItemImplementationPriority.P0) // 후속 일차 아이템 여부 확인
-            { // 미구현 아이템 사용 차단 처리
-                ShowMessage($"{itemData.DisplayName} 효과는 후속 일차에 구현됩니다."); // P1 또는 P2 구현 예정 문구 표시
+            if (itemData.ImplementationPriority == ItemImplementationPriority.P2) // 44일차 구현 대상 여부 확인
+            { // P2 아이템 사용 차단 처리
+                ShowMessage($"{itemData.DisplayName} 효과는 44일차에 구현됩니다."); // P2 구현 예정 문구 표시
                 return false; // 아이템을 보존한 채 사용 실패 반환
-            } // 미구현 아이템 사용 차단 처리 종료
+            } // P2 아이템 사용 차단 처리 종료
 
-            if (!TryExecuteP0Item(itemData)) // P0 아이템 실제 효과 실행 여부 확인
-            { // P0 효과 실행 실패 처리
+            bool executed = itemData.ImplementationPriority == ItemImplementationPriority.P0 ? TryExecuteP0Item(itemData) : TryExecuteP1Item(itemData); // 우선순위 기반 실제 효과 실행
+
+            if (!executed) // 아이템 효과 실행 실패 여부 확인
+            { // 실행 실패 처리
                 return false; // 아이템을 보존한 채 사용 실패 반환
-            } // P0 효과 실행 실패 처리 종료
+            } // 실행 실패 처리 종료
 
             if (!inventory.TryConsumeSelectedItem(out ItemDataDefinition unusedConsumedItem)) // 성공 효과의 선택 아이템 한 개 소비 시도
             { // 예상하지 못한 소비 실패 처리
@@ -109,10 +111,10 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
             switch (itemData.EffectType) // 아이템 효과 종류 선택
             { // P0 아이템 효과 종류 분기
                 case ItemEffectType.SpringShoes: // 스프링 신발 효과 확인
-                    effectController.ActivateSpringShoes(itemData.EffectDuration, itemData.PrimaryValue); // 8초 추가 점프 효과 활성화
+                    effectController.ActivateSpringShoes(itemData.EffectDuration, itemData.PrimaryValue); // 추가 점프 효과 활성화
                     return true; // 스프링 신발 사용 성공 반환
                 case ItemEffectType.JellyShield: // 젤리 보호막 효과 확인
-                    effectController.ActivateJellyShield(itemData.EffectDuration); // 4초 외부 힘 방어 활성화
+                    effectController.ActivateJellyShield(itemData.EffectDuration); // 외부 힘 방어 활성화
                     return true; // 젤리 보호막 사용 성공 반환
                 case ItemEffectType.BananaCushion: // 바나나 쿠션 효과 확인
                 case ItemEffectType.Mine: // 지뢰 효과 확인
@@ -127,19 +129,57 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
                     StartCoroutine(UseFirework(itemData)); // 준비 시간 뒤 범위 밀치기 시작
                     return true; // 폭죽 사용 성공 반환
                 case ItemEffectType.FeatherShoes: // 깃털 신발 효과 확인
-                    effectController.ActivateFeatherShoes(itemData.EffectDuration, itemData.PrimaryValue); // 7초 이동 속도 강화 활성화
+                    effectController.ActivateFeatherShoes(itemData.EffectDuration, itemData.PrimaryValue); // 이동 속도 강화 활성화
                     return true; // 깃털 신발 사용 성공 반환
                 case ItemEffectType.Snowball: // 눈덩이 효과 확인
                 case ItemEffectType.Ball: // 풀 공 효과 확인
-                    SpawnProjectile(itemData); // 직선 투사체 생성
+                    SpawnStraightProjectile(itemData); // 직선 투사체 생성
                     return true; // 투사체 아이템 사용 성공 반환
                 default: // P0 외 효과 또는 잘못된 데이터 처리
-                    ShowMessage("42일차 실행 대상이 아닌 아이템입니다."); // 실행 대상 오류 문구 표시
+                    ShowMessage("P0 실행 대상이 아닌 아이템입니다."); // 실행 대상 오류 문구 표시
                     return false; // P0 아이템 사용 실패 반환
             } // P0 아이템 효과 종류 분기 종료
         } // P0 아이템 효과 분기 처리 종료
 
-        private bool TryPlaceItem(ItemDataDefinition itemData) // 설치 위치 공통 검사 뒤 바나나 쿠션 또는 지뢰 설치
+        private bool TryExecuteP1Item(ItemDataDefinition itemData) // P1 11종 실제 효과 실행
+        { // P1 아이템 효과 분기 처리
+            switch (itemData.EffectType) // P1 아이템 효과 종류 선택
+            { // P1 아이템 효과 종류 분기
+                case ItemEffectType.Jetpack: // 제트팩 효과 확인
+                    effectController.ActivateJetpack(itemData.EffectDuration, itemData.PrimaryValue); // Space 유지 상승 효과 활성화
+                    return true; // 제트팩 사용 성공 반환
+                case ItemEffectType.Hammer: // 망치 효과 확인
+                    effectController.ActivateHammer(itemData.EffectDuration, itemData.PrimaryValue, itemData.EffectRange); // 밀치기 힘과 사거리 강화 활성화
+                    return true; // 망치 사용 성공 반환
+                case ItemEffectType.Bomb: // 폭탄 효과 확인
+                    SpawnThrownItem(itemData, itemData.EffectDuration); // 2.5초 시한 폭탄 투척
+                    return true; // 폭탄 사용 성공 반환
+                case ItemEffectType.PufferBalloonSuit: // 복어 풍선옷 효과 확인
+                    effectController.ActivatePufferBalloonSuit(itemData.EffectDuration, itemData.PrimaryValue, itemData.EffectRadius, itemData.Cooldown); // 접촉 대상 반복 밀치기 활성화
+                    return true; // 복어 풍선옷 사용 성공 반환
+                case ItemEffectType.InkOctopus: // 먹물 문어 효과 확인
+                case ItemEffectType.SoapBubble: // 비눗방울 효과 확인
+                    SpawnStraightProjectile(itemData); // 상태 이상 직선 투사체 생성
+                    return true; // 상태 이상 투사체 사용 성공 반환
+                case ItemEffectType.FishingRod: // 낚시대 효과 확인
+                    return TryUseFishingRod(itemData); // 조준 대상 끌어당기기 결과 반환
+                case ItemEffectType.GrapplingHook: // 갈고리 효과 확인
+                    return TryUseGrapplingHook(itemData); // 조준 구조물 이동 결과 반환
+                case ItemEffectType.SmokeGrenade: // 연막탄 효과 확인
+                    SpawnThrownItem(itemData, 0.6f); // 짧은 작동 시간 뒤 연막 생성
+                    return true; // 연막탄 사용 성공 반환
+                case ItemEffectType.Trampoline: // 트램폴린 효과 확인
+                    return TryPlaceItem(itemData); // 공통 설치 검사 뒤 사용자 전용 발판 생성
+                case ItemEffectType.GiantBalloon: // 거대 풍선 효과 확인
+                    effectController.ActivateGiantBalloon(itemData.EffectDuration, itemData.PrimaryValue); // 자동 상승 효과 활성화
+                    return true; // 거대 풍선 사용 성공 반환
+                default: // P1 외 효과 또는 잘못된 데이터 처리
+                    ShowMessage("P1 실행 대상이 아닌 아이템입니다."); // 실행 대상 오류 문구 표시
+                    return false; // P1 아이템 사용 실패 반환
+            } // P1 아이템 효과 종류 분기 종료
+        } // P1 아이템 효과 분기 처리 종료
+
+        private bool TryPlaceItem(ItemDataDefinition itemData) // 설치 위치 공통 검사 뒤 설치 아이템 생성
         { // 설치형 아이템 사용 처리
             if (placementValidator == null) // 공통 설치 검사기 누락 여부 확인
             { // 설치 검사기 누락 처리
@@ -148,8 +188,10 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
             } // 설치 검사기 누락 처리 종료
 
             Vector3 forward = GetUseDirection(); // 현재 플레이어 전방 방향 계산
-            Vector3 requestedPosition = transform.position + Vector3.ProjectOnPlane(forward, Vector3.up).normalized * placementForwardDistance; // 플레이어 앞 설치 후보 위치 계산
-            Quaternion rotation = Quaternion.LookRotation(Vector3.ProjectOnPlane(forward, Vector3.up).normalized, Vector3.up); // 플레이어 전방 기반 설치 회전 계산
+            Vector3 horizontalForward = Vector3.ProjectOnPlane(forward, Vector3.up); // 지면 설치용 수평 전방 계산
+            horizontalForward = horizontalForward.sqrMagnitude <= 0.0001f ? transform.forward : horizontalForward.normalized; // 안전한 수평 설치 방향 보정
+            Vector3 requestedPosition = transform.position + horizontalForward * placementForwardDistance; // 플레이어 앞 설치 후보 위치 계산
+            Quaternion rotation = Quaternion.LookRotation(horizontalForward, Vector3.up); // 플레이어 전방 기반 설치 회전 계산
 
             if (!placementValidator.TryValidate(requestedPosition, itemData.PlacementHalfExtents, rotation, transform, out ItemPlacementResult placementResult)) // 지면과 경사와 장애물 공통 검사 실행
             { // 설치 위치 검사 실패 처리
@@ -162,7 +204,8 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
             placedObject.transform.rotation = rotation; // 플레이어 전방 설치 회전 적용
             PlacedItemEffect placedEffect = placedObject.AddComponent<PlacedItemEffect>(); // 설치형 실제 효과 기능 추가
             float lifeTime = itemData.EffectDuration > 0f ? itemData.EffectDuration : 20f; // 데이터 시간 또는 안전 기본 수명 선택
-            placedEffect.Configure(itemData.EffectType, transform, forward, itemData.PrimaryValue, lifeTime, itemData.PlacementHalfExtents, itemData.PickupColor); // 설치 효과와 표시 데이터 연결
+            int maximumUses = itemData.EffectType == ItemEffectType.Trampoline ? Mathf.Max(1, Mathf.RoundToInt(itemData.SecondaryValue)) : 1; // 트램폴린 최대 세 번 사용 횟수 계산
+            placedEffect.Configure(itemData.EffectType, transform, forward, itemData.PrimaryValue, lifeTime, itemData.PlacementHalfExtents, itemData.PickupColor, maximumUses); // 설치 효과와 표시와 사용 횟수 연결
             return true; // 설치 성공 반환
         } // 설치형 아이템 사용 처리 종료
 
@@ -196,7 +239,7 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
             } // 현재 Collider 부채꼴 판정 처리 종료
         } // 전방 부채꼴 밀치기 처리 종료
 
-        private IEnumerator UseWaterGun(ItemDataDefinition itemData) // 2.5초 동안 직선 물줄기 연속 밀치기
+        private IEnumerator UseWaterGun(ItemDataDefinition itemData) // 데이터 시간 동안 직선 물줄기 연속 밀치기
         { // 물총 지속 효과 처리
             float remainingDuration = itemData.EffectDuration; // 물총 남은 사용 시간 초기화
             float interval = Mathf.Max(0.05f, itemData.Cooldown); // 최소 물줄기 판정 간격 계산
@@ -249,16 +292,97 @@ namespace ProjectJ.Items // 프로젝트 아이템 기능 네임스페이스 선
             } // 현재 폭발 대상 처리 종료
         } // 방사형 밀치기 처리 종료
 
-        private void SpawnProjectile(ItemDataDefinition itemData) // 눈덩이 또는 풀 공 직선 투사체 생성
+        private void SpawnStraightProjectile(ItemDataDefinition itemData) // 눈덩이와 풀 공과 먹물과 비눗방울 직선 투사체 생성
         { // 직선 투사체 생성 처리
             GameObject projectileObject = new GameObject($"Projectile_{itemData.DataId}_{itemData.DisplayName}"); // 아이템 ID 기반 투사체 루트 생성
             projectileObject.transform.position = GetUseOriginPosition(); // 현재 아이템 사용 시작 위치 적용
             projectileObject.transform.rotation = Quaternion.LookRotation(GetUseDirection(), Vector3.up); // 현재 조준 방향 회전 적용
             ItemProjectileEffect projectile = projectileObject.AddComponent<ItemProjectileEffect>(); // 투사체 이동과 적중 효과 기능 추가
             float projectileRadius = Mathf.Max(0.1f, itemData.EffectRadius); // 데이터 기반 안전 충돌 반지름 계산
-            float lifeTime = itemData.EffectRange <= 0f || itemData.ProjectileSpeed <= 0f ? 3f : itemData.EffectRange / itemData.ProjectileSpeed; // 최대 거리 기반 투사체 수명 계산
-            projectile.Configure(itemData.EffectType, transform, GetUseDirection(), itemData.ProjectileSpeed, itemData.PrimaryValue, itemData.EffectDuration, lifeTime, projectileRadius, itemData.PickupColor, effectCollisionLayers); // 이동과 눈덩이 또는 풀 공 효과 데이터 연결
+            float lifeTime = P1ItemRules.CalculateProjectileLifeTime(itemData.EffectRange, itemData.ProjectileSpeed, 3f); // 최대 거리 기반 투사체 수명 계산
+            projectile.Configure(itemData.EffectType, transform, GetUseDirection(), itemData.ProjectileSpeed, itemData.PrimaryValue, itemData.EffectDuration, lifeTime, projectileRadius, itemData.PickupColor, effectCollisionLayers); // 이동과 적중 효과 데이터 연결
         } // 직선 투사체 생성 처리 종료
+
+        private void SpawnThrownItem(ItemDataDefinition itemData, float fuseTime) // 폭탄 또는 연막탄 곡선 투척물 생성
+        { // 투척 아이템 생성 처리
+            GameObject thrownObject = new GameObject($"Thrown_{itemData.DataId}_{itemData.DisplayName}"); // 아이템 ID 기반 투척물 루트 생성
+            ThrownItemEffect thrownEffect = thrownObject.AddComponent<ThrownItemEffect>(); // 곡선 이동과 작동 효과 기능 추가
+            float effectDuration = itemData.EffectType == ItemEffectType.SmokeGrenade ? itemData.EffectDuration : 0.1f; // 연막 유지 시간 또는 폭탄 안전 기본값 선택
+            thrownEffect.Configure(itemData.EffectType, transform, GetUseOriginPosition(), GetUseDirection(), itemData.ProjectileSpeed, 3.5f, -18f, fuseTime, effectDuration, itemData.EffectRadius, itemData.PrimaryValue, 0.3f, itemData.PickupColor, effectCollisionLayers); // 투척 이동과 폭발 또는 연막 데이터 연결
+        } // 투척 아이템 생성 처리 종료
+
+        private bool TryUseFishingRod(ItemDataDefinition itemData) // 최대 거리 안 첫 대상 사용자 방향 끌어당기기
+        { // 낚시대 사용 처리
+            if (!TryFindFirstAimedHit(itemData.EffectRange, 0.2f, out RaycastHit hit)) // 조준선 첫 충돌 검색 여부 확인
+            { // 낚시대 대상 없음 처리
+                ShowMessage("낚시대로 당길 대상을 찾지 못했습니다."); // 대상 없음 실패 문구 표시
+                return false; // 아이템 보존 사용 실패 반환
+            } // 낚시대 대상 없음 처리 종료
+
+            ExternalForceReceiver receiver = hit.collider == null ? null : hit.collider.GetComponentInParent<ExternalForceReceiver>(); // 첫 충돌 외부 힘 대상 조회
+
+            if (receiver == null || receiver.transform == transform || !receiver.CanReceivePush) // 당길 수 있는 상대 여부 확인
+            { // 낚시대 무효 대상 처리
+                ShowMessage("조준한 물체는 낚시대로 당길 수 없습니다."); // 무효 대상 실패 문구 표시
+                return false; // 아이템 보존 사용 실패 반환
+            } // 낚시대 무효 대상 처리 종료
+
+            Vector3 pullDirection = transform.position - receiver.ForceReceiverTransform.position; // 대상에서 사용자 방향 계산
+            pullDirection = Vector3.ProjectOnPlane(pullDirection, Vector3.up); // 수평 끌어당기기 방향으로 보정
+
+            if (!receiver.TryReceiveExternalForce(pullDirection, itemData.PrimaryValue)) // 데이터 기반 끌어당기기 적용 시도
+            { // 낚시대 힘 적용 실패 처리
+                ShowMessage("현재 대상은 끌어당길 수 없습니다."); // 대상 상태 실패 문구 표시
+                return false; // 아이템 보존 사용 실패 반환
+            } // 낚시대 힘 적용 실패 처리 종료
+
+            return true; // 낚시대 사용 성공 반환
+        } // 낚시대 사용 처리 종료
+
+        private bool TryUseGrapplingHook(ItemDataDefinition itemData) // 최대 거리 안 구조물 목표 이동 시작
+        { // 갈고리 사용 처리
+            if (!TryFindFirstAimedHit(itemData.EffectRange, 0.15f, out RaycastHit hit)) // 갈고리 조준선 첫 충돌 검색 여부 확인
+            { // 갈고리 구조물 없음 처리
+                ShowMessage("갈고리를 걸 구조물을 찾지 못했습니다."); // 구조물 없음 실패 문구 표시
+                return false; // 아이템 보존 사용 실패 반환
+            } // 갈고리 구조물 없음 처리 종료
+
+            ExternalForceReceiver receiver = hit.collider == null ? null : hit.collider.GetComponentInParent<ExternalForceReceiver>(); // 첫 충돌 이동 대상 여부 조회
+
+            if (receiver != null) // 구조물이 아닌 플레이어 또는 더미 여부 확인
+            { // 갈고리 대상 종류 차단 처리
+                ShowMessage("갈고리는 구조물에만 걸 수 있습니다."); // 잘못된 대상 실패 문구 표시
+                return false; // 아이템 보존 사용 실패 반환
+            } // 갈고리 대상 종류 차단 처리 종료
+
+            effectController.ActivateGrapplingHook(hit.point, itemData.PrimaryValue); // 구조물 충돌 지점 방향 이동 활성화
+            return true; // 갈고리 사용 성공 반환
+        } // 갈고리 사용 처리 종료
+
+        private bool TryFindFirstAimedHit(float range, float radius, out RaycastHit closestHit) // 사용자 자신을 제외한 조준선 첫 충돌 검색
+        { // 조준선 첫 충돌 검색 처리
+            RaycastHit[] hits = Physics.SphereCastAll(GetUseOriginPosition(), Mathf.Max(0.01f, radius), GetUseDirection(), Mathf.Max(0f, range), effectCollisionLayers, QueryTriggerInteraction.Ignore); // 조준 거리 안 모든 구체 충돌 수집
+            float closestDistance = float.PositiveInfinity; // 가장 가까운 충돌 거리 초기화
+            closestHit = default; // 충돌 없음 기본 결과 설정
+
+            for (int index = 0; index < hits.Length; index++) // 모든 조준 충돌 순회
+            { // 현재 조준 충돌 확인
+                RaycastHit hit = hits[index]; // 현재 충돌 결과 조회
+
+                if (hit.collider == null || hit.collider.transform == transform || hit.collider.transform.IsChildOf(transform)) // 누락 충돌과 사용자 자신 여부 확인
+                { // 무시할 조준 충돌 처리
+                    continue; // 현재 충돌 제외
+                } // 무시할 조준 충돌 처리 종료
+
+                if (hit.distance < closestDistance) // 더 가까운 충돌 여부 확인
+                { // 가장 가까운 조준 충돌 갱신
+                    closestDistance = hit.distance; // 새 가장 가까운 거리 저장
+                    closestHit = hit; // 새 가장 가까운 충돌 저장
+                } // 가장 가까운 조준 충돌 갱신 종료
+            } // 현재 조준 충돌 확인 종료
+
+            return closestDistance < float.PositiveInfinity; // 유효한 첫 충돌 존재 여부 반환
+        } // 조준선 첫 충돌 검색 처리 종료
 
         private bool IsValidTarget(ExternalForceReceiver receiver, HashSet<int> affectedIds) // 범위 효과 대상 유효성과 중복 여부 확인
         { // 범위 효과 대상 검사 처리

@@ -780,7 +780,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &30951784
 Transform:
   m_ObjectHideFlags: 0
@@ -790,7 +790,7 @@ Transform:
   m_GameObject: {fileID: 30951783}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 1.25}
+  m_LocalPosition: {x: 50, y: 1.89, z: 11.57}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2488,6 +2488,7 @@ GameObject:
   - component: {fileID: 223122795}
   - component: {fileID: 223122797}
   - component: {fileID: 223122796}
+  - component: {fileID: 223122798}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -2772,6 +2773,23 @@ MonoBehaviour:
   externalForceController: {fileID: 223122790}
   respawnController: {fileID: 223122787}
   matchController: {fileID: 805130841}
+  inputReader: {fileID: 223122786}
+  screenObscureView: {fileID: 223122798}
+  proximityEffectLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+--- !u!114 &223122798
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 223122780}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ff5a1447f8999045b4a716df60cfabd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Items.PlayerScreenObscureView
 --- !u!1 &243690371
 GameObject:
   m_ObjectHideFlags: 0
@@ -4543,7 +4561,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &471940680
 Transform:
   m_ObjectHideFlags: 0
@@ -4553,7 +4571,7 @@ Transform:
   m_GameObject: {fileID: 471940679}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -10.5, y: 1.4, z: 1.25}
+  m_LocalPosition: {x: 55.9, y: 1.89, z: 12.14}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -15932,7 +15950,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1967499719
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15989,7 +16007,7 @@ Transform:
   m_GameObject: {fileID: 1967499718}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -16.5, y: 3.33, z: 0}
+  m_LocalPosition: {x: 50, y: 2.18, z: 9.2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

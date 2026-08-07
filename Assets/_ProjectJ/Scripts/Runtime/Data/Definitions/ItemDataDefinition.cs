@@ -32,7 +32,7 @@ namespace ProjectJ.Data // 프로젝트 데이터 네임스페이스 선언
         Jetpack, // 제트팩
         Hammer, // 망치
         Bomb, // 폭탄
-        PufferArmor, // 복어 갑옷
+        PufferBalloonSuit, // 복어 풍선옷
         InkOctopus, // 먹물 문어
         FishingRod, // 낚시대
         GrapplingHook, // 갈고리

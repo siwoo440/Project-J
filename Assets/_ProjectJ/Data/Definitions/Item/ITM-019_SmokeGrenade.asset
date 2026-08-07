@@ -16,10 +16,10 @@ MonoBehaviour:
   displayName: "\uC5F0\uB9C9\uD0C4"
   version:
     major: 1
-    minor: 1
+    minor: 2
     patch: 0
-  description: "\uBC18\uACBD 5m\uC5D0 6\uCD08 \uB3D9\uC548 \uC2DC\uC57C \uBC29\uD574
-    \uAD6C\uC5ED \uC0DD\uC131"
+  description: "\uD22C\uCC99 \uC9C0\uC810 \uBC18\uACBD 5m\uC5D0 6\uCD08 \uB3D9\uC548
+    \uC2DC\uC57C \uBC29\uD574 \uAD6C\uC5ED \uC0DD\uC131"
   inventoryIcon: {fileID: 0}
   pickupColor: {r: 0.35, g: 0.35, b: 0.38, a: 1}
   pickupVisualScale: 0.75
@@ -34,5 +34,5 @@ MonoBehaviour:
   effectRange: 0
   effectRadius: 5
   cooldown: 0
-  projectileSpeed: 0
+  projectileSpeed: 10
   placementHalfExtents: {x: 0.5, y: 0.5, z: 0.5}

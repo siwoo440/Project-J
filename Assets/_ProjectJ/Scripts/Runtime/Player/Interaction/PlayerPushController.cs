@@ -1,3 +1,4 @@
+using ProjectJ.Items; // 망치 강화 효과 기능 참조
 using UnityEngine; // Unity 충돌과 벡터 기능 참조
 
 namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
@@ -21,6 +22,7 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
         private readonly Collider[] overlapBuffer = new Collider[HitBufferCapacity]; // 시작 지점 겹침 결과 버퍼
         private PlayerInputReader inputReader; // 플레이어 입력 제공자
         private PlayerStateController stateController; // 플레이어 상태 관리자
+        private PlayerItemEffectController itemEffectController; // 망치 사거리와 힘 배율 제공자
 
         public ExternalForceReceiver CurrentTarget { get; private set; } // 현재 밀치기 가능한 가장 가까운 대상
         public float CurrentTargetDistance { get; private set; } = float.PositiveInfinity; // 현재 대상까지의 판정 거리
@@ -33,6 +35,7 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
         { // 밀치기 참조 준비 처리
             inputReader = GetComponent<PlayerInputReader>(); // 입력 컴포넌트 조회
             stateController = GetComponent<PlayerStateController>(); // 상태 컴포넌트 조회
+            itemEffectController = GetComponent<PlayerItemEffectController>(); // 같은 플레이어 아이템 효과 관리자 조회
 
             if (pushOrigin == null) // 판정 시작 위치 누락 확인
             { // 판정 시작점 대체 처리
@@ -76,8 +79,9 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
             Vector3 direction = GetPushDirection(); // 판정 방향 계산
             Gizmos.color = CurrentTarget == null ? Color.yellow : Color.cyan; // 현재 대상 존재 여부 기반 판정 색상 선택
             Gizmos.DrawWireSphere(origin, pushRadius); // 판정 시작 구체 표시
-            Gizmos.DrawLine(origin, origin + direction * pushRange); // 판정 중심선 표시
-            Gizmos.DrawWireSphere(origin + direction * pushRange, pushRadius); // 판정 종료 구체 표시
+            float effectivePushRange = itemEffectController == null ? pushRange : Mathf.Max(pushRange, itemEffectController.CurrentPushRange); // 망치 효과를 반영한 기즈모 사거리 계산
+            Gizmos.DrawLine(origin, origin + direction * effectivePushRange); // 판정 중심선 표시
+            Gizmos.DrawWireSphere(origin + direction * effectivePushRange, pushRadius); // 판정 종료 구체 표시
         } // 밀치기 기즈모 표시 종료
 
         private void FindClosestTarget() // 전방에서 가장 가까운 외부 힘 대상 검색
@@ -95,7 +99,8 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
                 EvaluatePushCollider(overlapCollider, 0f, ref closestTarget, ref closestDistance, ref closestObstacleDistance); // 시작 지점 충돌체 평가
             } // 겹침 결과 평가 처리 종료
 
-            int hitCount = Physics.SphereCastNonAlloc(origin, pushRadius, direction, hitBuffer, pushRange, collisionLayers, QueryTriggerInteraction.Ignore); // 전방 구체 판정 실행
+            float effectivePushRange = itemEffectController == null ? pushRange : Mathf.Max(pushRange, itemEffectController.CurrentPushRange); // 망치 효과를 반영한 현재 밀치기 사거리 계산
+            int hitCount = Physics.SphereCastNonAlloc(origin, pushRadius, direction, hitBuffer, effectivePushRange, collisionLayers, QueryTriggerInteraction.Ignore); // 전방 구체 판정 실행
 
             for (int index = 0; index < hitCount; index++) // 전방 판정 결과 순회
             { // 전방 결과 평가 처리
@@ -129,7 +134,8 @@ namespace ProjectJ.Player // 플레이어 기능 네임스페이스 선언
                 pushDirection = GetPushDirection(); // 플레이어 전방 대체 적용
             } // 밀치기 방향 대체 처리 종료
 
-            ExternalForceRequest request = ExternalForceRequest.CreatePush(pushDirection, pushForce); // 원인과 결합 방식을 포함한 밀치기 요청 생성
+            float pushMultiplier = itemEffectController == null ? 1f : itemEffectController.CurrentPushForceMultiplier; // 망치 효과 기반 현재 밀치기 힘 배율 계산
+            ExternalForceRequest request = ExternalForceRequest.CreatePush(pushDirection, pushForce * pushMultiplier); // 원인과 결합 방식을 포함한 강화 밀치기 요청 생성
             CurrentTarget.TryReceiveExternalForce(request); // 현재 대상에 통합 외부 힘 요청 적용
         } // 현재 대상 밀치기 처리 종료
 

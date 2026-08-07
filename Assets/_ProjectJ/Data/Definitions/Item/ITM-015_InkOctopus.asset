@@ -16,9 +16,9 @@ MonoBehaviour:
   displayName: "\uBA39\uBB3C \uBB38\uC5B4"
   version:
     major: 1
-    minor: 1
+    minor: 2
     patch: 0
-  description: "\uC801\uC911\uD55C \uC0C1\uB300\uC758 \uD654\uBA74 \uC911\uC559\uC744
+  description: "\uC801\uC911\uD55C \uC0C1\uB300\uC758 \uD654\uBA74 \uC911\uC559 65\uD37C\uC13C\uD2B8\uB97C
     3.5\uCD08 \uB3D9\uC548 \uAC00\uB9BC"
   inventoryIcon: {fileID: 0}
   pickupColor: {r: 0.18, g: 0.08, b: 0.25, a: 1}
@@ -29,10 +29,10 @@ MonoBehaviour:
   spawnWeight: 6
   maximumStackCount: 1
   effectDuration: 3.5
-  primaryValue: 0
+  primaryValue: 0.65
   secondaryValue: 0
-  effectRange: 0
-  effectRadius: 0
+  effectRange: 24
+  effectRadius: 0.25
   cooldown: 0
-  projectileSpeed: 0
+  projectileSpeed: 14
   placementHalfExtents: {x: 0.5, y: 0.5, z: 0.5}

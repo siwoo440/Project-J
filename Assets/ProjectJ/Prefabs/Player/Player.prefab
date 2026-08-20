@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 1183548076633328924}
   - component: {fileID: 461988848307614122}
   - component: {fileID: 2561167816664897171}
+  - component: {fileID: 5573816731697181523}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -38,6 +39,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1732366784567697177}
+  - {fileID: 1691881227439330900}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &6778428085801515444
@@ -256,6 +258,22 @@ MonoBehaviour:
   liftDuration: 0.2
   forwardDuration: 0.2
   liftClearance: 0.08
+--- !u!114 &5573816731697181523
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5004573433238649458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86392e6355447854dae50bcc4a794964, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Player.PlayerHeightTracker
+  heightReferenceFoot: {fileID: 1691881227439330900}
+  rawHeight: 0
+  currentHeightCentimeters: 0
+  highestHeightCentimeters: 0
 --- !u!1 &6255624159156887663
 GameObject:
   m_ObjectHideFlags: 0
@@ -346,3 +364,34 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &8757058394664897733
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1691881227439330900}
+  m_Layer: 0
+  m_Name: HeightReference_Foot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1691881227439330900
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8757058394664897733}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -1, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1643883588576465460}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

@@ -22,6 +22,7 @@ GameObject:
   - component: {fileID: 7450761224545744870}
   - component: {fileID: 4262717392992014944}
   - component: {fileID: 8179296837730883763}
+  - component: {fileID: 627233017470694266}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -341,6 +342,22 @@ MonoBehaviour:
   checkpointTracker: {fileID: 7450761224545744870}
   fallTracker: {fileID: 4262717392992014944}
   respawnCount: 0
+--- !u!114 &627233017470694266
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5004573433238649458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cc959fe60414eeb9f552f3d2a5b23e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Checkpoint.PlayerRespawnProtection
+  protectionDuration: 3
+  respawnController: {fileID: 8179296837730883763}
+  isProtected: 0
+  remainingProtectionTime: 0
 --- !u!1 &6255624159156887663
 GameObject:
   m_ObjectHideFlags: 0

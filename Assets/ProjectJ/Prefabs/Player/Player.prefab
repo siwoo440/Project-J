@@ -21,6 +21,7 @@ GameObject:
   - component: {fileID: 5418694615779033069}
   - component: {fileID: 7450761224545744870}
   - component: {fileID: 4262717392992014944}
+  - component: {fileID: 8179296837730883763}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -324,6 +325,22 @@ MonoBehaviour:
   fallLimitSet: {fileID: 0}
   isFallen: 0
   activeFallLimitY: 0
+--- !u!114 &8179296837730883763
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5004573433238649458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a515689d95da41a9bcac08c77d7b0a13, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Checkpoint.PlayerRespawnController
+  body: {fileID: 1453315611713375265}
+  checkpointTracker: {fileID: 7450761224545744870}
+  fallTracker: {fileID: 4262717392992014944}
+  respawnCount: 0
 --- !u!1 &6255624159156887663
 GameObject:
   m_ObjectHideFlags: 0

@@ -232,13 +232,13 @@ namespace ProjectJ.Tests.EditMode
         }
 
         [Test]
-        public void AirborneJump_DoesNotApplySecondJump()
+        public void AirborneWithoutValidJump_AppliesGravity()
         {
             float velocity =
                 PlayerCameraRelativeMovement.CalculateVerticalVelocity(
                     -2f,
                     false,
-                    true,
+                    false,
                     8f,
                     -22f,
                     0.02f
@@ -296,6 +296,140 @@ namespace ProjectJ.Tests.EditMode
 
             Assert.That(velocity, Is.LessThan(7f));
             Assert.That(velocity, Is.GreaterThan(0f));
+        }
+
+        [Test]
+        public void CoyoteTimer_RefreshesWhileGrounded()
+        {
+            float timer =
+                PlayerCameraRelativeMovement.CalculateCoyoteTimer(
+                    0f,
+                    true,
+                    0.12f,
+                    0.02f
+                );
+
+            Assert.That(timer, Is.EqualTo(0.12f).Within(0.0001f));
+        }
+
+        [Test]
+        public void CoyoteTimer_CountsDownAfterLeavingGround()
+        {
+            float timer =
+                PlayerCameraRelativeMovement.CalculateCoyoteTimer(
+                    0.12f,
+                    false,
+                    0.12f,
+                    0.02f
+                );
+
+            Assert.That(timer, Is.EqualTo(0.10f).Within(0.0001f));
+        }
+
+        [Test]
+        public void CoyoteTimer_StopsAtZero()
+        {
+            float timer =
+                PlayerCameraRelativeMovement.CalculateCoyoteTimer(
+                    0.01f,
+                    false,
+                    0.12f,
+                    0.02f
+                );
+
+            Assert.That(timer, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void JumpBufferTimer_CountsDown()
+        {
+            float timer =
+                PlayerCameraRelativeMovement.CalculateJumpBufferTimer(
+                    0.12f,
+                    0.02f
+                );
+
+            Assert.That(timer, Is.EqualTo(0.10f).Within(0.0001f));
+        }
+
+        [Test]
+        public void JumpBufferTimer_StopsAtZero()
+        {
+            float timer =
+                PlayerCameraRelativeMovement.CalculateJumpBufferTimer(
+                    0.01f,
+                    0.02f
+                );
+
+            Assert.That(timer, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void BufferedJump_RequiresCoyoteAndBufferTime()
+        {
+            bool canJump =
+                PlayerCameraRelativeMovement.CanUseBufferedJump(
+                    0.10f,
+                    0.08f
+                );
+
+            Assert.That(canJump, Is.True);
+        }
+
+        [Test]
+        public void BufferedJump_FailsAfterCoyoteExpires()
+        {
+            bool canJump =
+                PlayerCameraRelativeMovement.CanUseBufferedJump(
+                    0f,
+                    0.08f
+                );
+
+            Assert.That(canJump, Is.False);
+        }
+
+        [Test]
+        public void BufferedJump_FailsAfterBufferExpires()
+        {
+            bool canJump =
+                PlayerCameraRelativeMovement.CanUseBufferedJump(
+                    0.10f,
+                    0f
+                );
+
+            Assert.That(canJump, Is.False);
+        }
+
+        [Test]
+        public void CoyoteJump_CanApplyJumpVelocityOffGround()
+        {
+            float velocity =
+                PlayerCameraRelativeMovement.CalculateVerticalVelocity(
+                    -0.5f,
+                    false,
+                    true,
+                    8f,
+                    -22f,
+                    0.02f
+                );
+
+            Assert.That(velocity, Is.EqualTo(8f));
+        }
+
+        [Test]
+        public void BufferedLandingJump_CanApplyJumpVelocity()
+        {
+            float velocity =
+                PlayerCameraRelativeMovement.CalculateVerticalVelocity(
+                    -4f,
+                    true,
+                    true,
+                    8f,
+                    -22f,
+                    0.02f
+                );
+
+            Assert.That(velocity, Is.EqualTo(8f));
         }
     }
 }

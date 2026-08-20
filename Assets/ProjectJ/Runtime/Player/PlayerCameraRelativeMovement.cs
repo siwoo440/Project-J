@@ -29,6 +29,14 @@ namespace ProjectJ.Player
 
         [SerializeField]
         [Min(0f)]
+        private float coyoteTime = 0.12f;
+
+        [SerializeField]
+        [Min(0f)]
+        private float jumpBufferTime = 0.12f;
+
+        [SerializeField]
+        [Min(0f)]
         private float groundCheckRadius = 0.22f;
 
         [SerializeField]
@@ -47,7 +55,8 @@ namespace ProjectJ.Player
         private InputAction moveAction;
         private InputAction jumpAction;
         private Vector2 moveInput;
-        private bool jumpRequested;
+        private float coyoteTimer;
+        private float jumpBufferTimer;
 
         public bool IsGrounded { get; private set; }
 
@@ -87,7 +96,8 @@ namespace ProjectJ.Player
             }
 
             moveInput = Vector2.zero;
-            jumpRequested = false;
+            coyoteTimer = 0f;
+            jumpBufferTimer = 0f;
         }
 
         private void FixedUpdate()
@@ -112,6 +122,33 @@ namespace ProjectJ.Player
 
             Vector3 currentVelocity = body.linearVelocity;
 
+            bool groundedForJump =
+                IsGrounded &&
+                currentVelocity.y <= 0.1f;
+
+            coyoteTimer = CalculateCoyoteTimer(
+                coyoteTimer,
+                groundedForJump,
+                coyoteTime,
+                Time.fixedDeltaTime
+            );
+
+            jumpBufferTimer = CalculateJumpBufferTimer(
+                jumpBufferTimer,
+                Time.fixedDeltaTime
+            );
+
+            bool shouldJump = CanUseBufferedJump(
+                coyoteTimer,
+                jumpBufferTimer
+            );
+
+            if (shouldJump)
+            {
+                coyoteTimer = 0f;
+                jumpBufferTimer = 0f;
+            }
+
             Vector3 horizontalVelocity = CalculateHorizontalVelocity(
                 currentVelocity,
                 moveDirection,
@@ -124,13 +161,11 @@ namespace ProjectJ.Player
             float verticalVelocity = CalculateVerticalVelocity(
                 currentVelocity.y,
                 IsGrounded,
-                jumpRequested,
+                shouldJump,
                 jumpVelocity,
                 gravity,
                 Time.fixedDeltaTime
             );
-
-            jumpRequested = false;
 
             body.linearVelocity = new Vector3(
                 horizontalVelocity.x,
@@ -156,7 +191,7 @@ namespace ProjectJ.Player
 
         private void OnJumpPerformed(InputAction.CallbackContext context)
         {
-            jumpRequested = true;
+            jumpBufferTimer = Mathf.Max(0f, jumpBufferTime);
         }
 
         private bool CheckGrounded()
@@ -187,6 +222,16 @@ namespace ProjectJ.Player
             if (gravity >= 0f)
             {
                 gravity = -22f;
+            }
+
+            if (coyoteTime <= 0f)
+            {
+                coyoteTime = 0.12f;
+            }
+
+            if (jumpBufferTime <= 0f)
+            {
+                jumpBufferTime = 0.12f;
             }
 
             if (groundCheckRadius <= 0f)
@@ -324,10 +369,52 @@ namespace ProjectJ.Player
             );
         }
 
+        public static float CalculateCoyoteTimer(
+            float currentTimer,
+            bool isGrounded,
+            float coyoteTime,
+            float deltaTime
+        )
+        {
+            float safeCoyoteTime = Mathf.Max(0f, coyoteTime);
+
+            if (isGrounded)
+            {
+                return safeCoyoteTime;
+            }
+
+            return Mathf.MoveTowards(
+                Mathf.Max(0f, currentTimer),
+                0f,
+                Mathf.Max(0f, deltaTime)
+            );
+        }
+
+        public static float CalculateJumpBufferTimer(
+            float currentTimer,
+            float deltaTime
+        )
+        {
+            return Mathf.MoveTowards(
+                Mathf.Max(0f, currentTimer),
+                0f,
+                Mathf.Max(0f, deltaTime)
+            );
+        }
+
+        public static bool CanUseBufferedJump(
+            float coyoteTimer,
+            float jumpBufferTimer
+        )
+        {
+            return coyoteTimer > 0f &&
+                jumpBufferTimer > 0f;
+        }
+
         public static float CalculateVerticalVelocity(
             float currentVerticalVelocity,
             bool isGrounded,
-            bool jumpRequested,
+            bool shouldJump,
             float jumpVelocity,
             float gravity,
             float deltaTime
@@ -337,17 +424,17 @@ namespace ProjectJ.Player
             float safeGravity = Mathf.Min(0f, gravity);
             float safeDeltaTime = Mathf.Max(0f, deltaTime);
 
+            if (shouldJump)
+            {
+                return safeJumpVelocity;
+            }
+
             bool canUseGroundState =
                 isGrounded &&
                 currentVerticalVelocity <= 0.1f;
 
             if (canUseGroundState)
             {
-                if (jumpRequested)
-                {
-                    return safeJumpVelocity;
-                }
-
                 return 0f;
             }
 

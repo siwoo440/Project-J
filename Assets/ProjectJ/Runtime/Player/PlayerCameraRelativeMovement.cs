@@ -6,6 +6,7 @@ namespace ProjectJ.Player
     [RequireComponent(typeof(Rigidbody))]
     [RequireComponent(typeof(PlayerInput))]
     [RequireComponent(typeof(Collider))]
+    [RequireComponent(typeof(CapsuleCollider))]
     public sealed class PlayerCameraRelativeMovement : MonoBehaviour
     {
         [SerializeField]
@@ -15,6 +16,14 @@ namespace ProjectJ.Player
         [SerializeField]
         [Min(0f)]
         private float sprintSpeed = 9f;
+
+        [SerializeField]
+        [Min(0f)]
+        private float crouchSpeed = 3.5f;
+
+        [SerializeField]
+        [Min(0f)]
+        private float crouchHeight = 1.2f;
 
         [SerializeField]
         [Min(0f)]
@@ -76,18 +85,25 @@ namespace ProjectJ.Player
         private Rigidbody body;
         private PlayerInput playerInput;
         private Collider groundCollider;
+        private CapsuleCollider capsuleCollider;
         private InputAction moveAction;
         private InputAction jumpAction;
         private InputAction sprintAction;
+        private InputAction crouchAction;
         private Vector2 moveInput;
         private float coyoteTimer;
         private float jumpBufferTimer;
+        private float standingColliderHeight;
+        private Vector3 standingColliderCenter;
         private bool sprintHeld;
         private bool sprintExhausted;
+        private bool crouchHeld;
 
         public bool IsGrounded { get; private set; }
 
         public bool IsSprinting { get; private set; }
+
+        public bool IsCrouching { get; private set; }
 
         public float CurrentStamina { get; private set; }
 
@@ -104,6 +120,10 @@ namespace ProjectJ.Player
             body = GetComponent<Rigidbody>();
             playerInput = GetComponent<PlayerInput>();
             groundCollider = GetComponent<Collider>();
+            capsuleCollider = GetComponent<CapsuleCollider>();
+
+            standingColliderHeight = capsuleCollider.height;
+            standingColliderCenter = capsuleCollider.center;
 
             body.useGravity = false;
 
@@ -118,6 +138,7 @@ namespace ProjectJ.Player
             moveAction = playerInput.actions.FindAction("Move", true);
             jumpAction = playerInput.actions.FindAction("Jump", true);
             sprintAction = playerInput.actions.FindAction("Sprint", true);
+            crouchAction = playerInput.actions.FindAction("Crouch", true);
 
             moveAction.performed += OnMoveChanged;
             moveAction.canceled += OnMoveChanged;
@@ -126,6 +147,9 @@ namespace ProjectJ.Player
 
             sprintAction.performed += OnSprintChanged;
             sprintAction.canceled += OnSprintChanged;
+
+            crouchAction.performed += OnCrouchChanged;
+            crouchAction.canceled += OnCrouchChanged;
         }
 
         private void OnDisable()
@@ -147,12 +171,21 @@ namespace ProjectJ.Player
                 sprintAction.canceled -= OnSprintChanged;
             }
 
+            if (crouchAction != null)
+            {
+                crouchAction.performed -= OnCrouchChanged;
+                crouchAction.canceled -= OnCrouchChanged;
+            }
+
             moveInput = Vector2.zero;
             coyoteTimer = 0f;
             jumpBufferTimer = 0f;
             sprintHeld = false;
             sprintExhausted = false;
+            crouchHeld = false;
             IsSprinting = false;
+
+            ApplyCrouchState(false);
         }
 
         private void FixedUpdate()
@@ -161,6 +194,8 @@ namespace ProjectJ.Player
             {
                 TryFindCamera();
             }
+
+            ApplyCrouchState(crouchHeld);
 
             Vector3 moveDirection = Vector3.zero;
 
@@ -215,7 +250,8 @@ namespace ProjectJ.Player
                 moveInput,
                 isAirborne,
                 CurrentStamina,
-                sprintExhausted
+                sprintExhausted,
+                IsCrouching
             );
 
             float nextStamina = CalculateStamina(
@@ -238,8 +274,14 @@ namespace ProjectJ.Player
                 sprintAllowed &&
                 CurrentStamina > 0f;
 
+            bool useCrouchSpeed =
+                IsCrouching &&
+                !isAirborne;
+
             float targetMoveSpeed = SelectMoveSpeed(
+                useCrouchSpeed,
                 IsSprinting,
+                crouchSpeed,
                 moveSpeed,
                 sprintSpeed
             );
@@ -308,6 +350,46 @@ namespace ProjectJ.Player
             }
         }
 
+        private void OnCrouchChanged(InputAction.CallbackContext context)
+        {
+            crouchHeld = context.ReadValueAsButton();
+        }
+
+        private void ApplyCrouchState(bool shouldCrouch)
+        {
+            if (capsuleCollider == null)
+            {
+                return;
+            }
+
+            IsCrouching = shouldCrouch;
+
+            if (!shouldCrouch)
+            {
+                capsuleCollider.height = standingColliderHeight;
+                capsuleCollider.center = standingColliderCenter;
+                return;
+            }
+
+            float minimumHeight = capsuleCollider.radius * 2f;
+            float targetHeight = Mathf.Clamp(
+                crouchHeight,
+                minimumHeight,
+                standingColliderHeight
+            );
+
+            capsuleCollider.height = targetHeight;
+
+            Vector3 crouchCenter = standingColliderCenter;
+            crouchCenter.y = CalculateCrouchCenterY(
+                standingColliderCenter.y,
+                standingColliderHeight,
+                targetHeight
+            );
+
+            capsuleCollider.center = crouchCenter;
+        }
+
         private bool CheckGrounded()
         {
             Bounds bounds = groundCollider.bounds;
@@ -331,6 +413,16 @@ namespace ProjectJ.Player
             if (sprintSpeed <= 0f)
             {
                 sprintSpeed = 9f;
+            }
+
+            if (crouchSpeed <= 0f)
+            {
+                crouchSpeed = 3.5f;
+            }
+
+            if (crouchHeight <= 0f)
+            {
+                crouchHeight = 1.2f;
             }
 
             if (airAcceleration <= 0f)
@@ -489,7 +581,8 @@ namespace ProjectJ.Player
             Vector2 moveInput,
             bool isAirborne,
             float currentStamina,
-            bool sprintExhausted
+            bool sprintExhausted,
+            bool isCrouching
         )
         {
             bool hasMoveInput =
@@ -499,18 +592,46 @@ namespace ProjectJ.Player
                 hasMoveInput &&
                 !isAirborne &&
                 currentStamina > 0f &&
-                !sprintExhausted;
+                !sprintExhausted &&
+                !isCrouching;
         }
 
         public static float SelectMoveSpeed(
+            bool isCrouching,
             bool isSprinting,
+            float crouchMoveSpeed,
             float normalMoveSpeed,
             float sprintMoveSpeed
         )
         {
+            if (isCrouching)
+            {
+                return Mathf.Max(0f, crouchMoveSpeed);
+            }
+
             return isSprinting
                 ? Mathf.Max(0f, sprintMoveSpeed)
                 : Mathf.Max(0f, normalMoveSpeed);
+        }
+
+        public static float CalculateCrouchCenterY(
+            float standingCenterY,
+            float standingHeight,
+            float crouchingHeight
+        )
+        {
+            float safeStandingHeight = Mathf.Max(0f, standingHeight);
+            float safeCrouchingHeight = Mathf.Clamp(
+                crouchingHeight,
+                0f,
+                safeStandingHeight
+            );
+
+            float heightDifference =
+                safeStandingHeight - safeCrouchingHeight;
+
+            return standingCenterY -
+                heightDifference * 0.5f;
         }
 
         public static float CalculateStamina(

@@ -602,6 +602,7 @@ namespace ProjectJ.Tests.EditMode
                     Vector2.up,
                     false,
                     100f,
+                    false,
                     false
                 );
 
@@ -617,6 +618,7 @@ namespace ProjectJ.Tests.EditMode
                     Vector2.zero,
                     false,
                     100f,
+                    false,
                     false
                 );
 
@@ -632,6 +634,7 @@ namespace ProjectJ.Tests.EditMode
                     Vector2.up,
                     true,
                     100f,
+                    false,
                     false
                 );
 
@@ -647,6 +650,7 @@ namespace ProjectJ.Tests.EditMode
                     Vector2.up,
                     false,
                     0f,
+                    false,
                     false
                 );
 
@@ -662,6 +666,23 @@ namespace ProjectJ.Tests.EditMode
                     Vector2.up,
                     false,
                     50f,
+                    true,
+                    false
+                );
+
+            Assert.That(canSprint, Is.False);
+        }
+
+        [Test]
+        public void Sprint_DoesNotStartWhileCrouching()
+        {
+            bool canSprint =
+                PlayerCameraRelativeMovement.CanSprint(
+                    true,
+                    Vector2.up,
+                    false,
+                    100f,
+                    false,
                     true
                 );
 
@@ -673,7 +694,9 @@ namespace ProjectJ.Tests.EditMode
         {
             float speed =
                 PlayerCameraRelativeMovement.SelectMoveSpeed(
+                    false,
                     true,
+                    3.5f,
                     6f,
                     9f
                 );
@@ -687,11 +710,69 @@ namespace ProjectJ.Tests.EditMode
             float speed =
                 PlayerCameraRelativeMovement.SelectMoveSpeed(
                     false,
+                    false,
+                    3.5f,
                     6f,
                     9f
                 );
 
             Assert.That(speed, Is.EqualTo(6f));
+        }
+
+        [Test]
+        public void Crouch_SelectsCrouchMoveSpeed()
+        {
+            float speed =
+                PlayerCameraRelativeMovement.SelectMoveSpeed(
+                    true,
+                    true,
+                    3.5f,
+                    6f,
+                    9f
+                );
+
+            Assert.That(speed, Is.EqualTo(3.5f));
+        }
+
+        [Test]
+        public void CrouchCenter_PreservesStandingBottom()
+        {
+            float crouchCenterY =
+                PlayerCameraRelativeMovement.CalculateCrouchCenterY(
+                    0f,
+                    2f,
+                    1.2f
+                );
+
+            float standingBottom = 0f - 2f * 0.5f;
+            float crouchingBottom =
+                crouchCenterY - 1.2f * 0.5f;
+
+            Assert.That(
+                crouchCenterY,
+                Is.EqualTo(-0.4f).Within(0.0001f)
+            );
+
+            Assert.That(
+                crouchingBottom,
+                Is.EqualTo(standingBottom).Within(0.0001f)
+            );
+        }
+
+        [Test]
+        public void CrouchCenter_NoHeightChangeKeepsCenter()
+        {
+            float crouchCenterY =
+                PlayerCameraRelativeMovement.CalculateCrouchCenterY(
+                    0.25f,
+                    2f,
+                    2f
+                );
+
+            Assert.That(
+                crouchCenterY,
+                Is.EqualTo(0.25f).Within(0.0001f)
+            );
         }
 
         [Test]
@@ -777,6 +858,28 @@ namespace ProjectJ.Tests.EditMode
             Assert.That(
                 velocity.magnitude,
                 Is.EqualTo(9f).Within(0.0001f)
+            );
+        }
+
+        [Test]
+        public void Crouch_DiagonalTargetDoesNotExceedCrouchSpeed()
+        {
+            Vector3 diagonalDirection =
+                new Vector3(1f, 0f, 1f).normalized;
+
+            Vector3 velocity =
+                PlayerCameraRelativeMovement.CalculateHorizontalVelocity(
+                    Vector3.zero,
+                    diagonalDirection,
+                    3.5f,
+                    1000f,
+                    40f,
+                    0.02f
+                );
+
+            Assert.That(
+                velocity.magnitude,
+                Is.EqualTo(3.5f).Within(0.0001f)
             );
         }
 

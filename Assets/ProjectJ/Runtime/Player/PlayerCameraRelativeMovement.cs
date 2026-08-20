@@ -12,6 +12,14 @@ namespace ProjectJ.Player
         private float moveSpeed = 6f;
 
         [SerializeField]
+        [Min(0f)]
+        private float acceleration = 30f;
+
+        [SerializeField]
+        [Min(0f)]
+        private float deceleration = 40f;
+
+        [SerializeField]
         private Transform cameraReference;
 
         private Rigidbody body;
@@ -65,10 +73,19 @@ namespace ProjectJ.Player
 
             Vector3 currentVelocity = body.linearVelocity;
 
+            Vector3 horizontalVelocity = CalculateHorizontalVelocity(
+                currentVelocity,
+                moveDirection,
+                moveSpeed,
+                acceleration,
+                deceleration,
+                Time.fixedDeltaTime
+            );
+
             body.linearVelocity = new Vector3(
-                moveDirection.x * moveSpeed,
+                horizontalVelocity.x,
                 currentVelocity.y,
-                moveDirection.z * moveSpeed
+                horizontalVelocity.z
             );
 
             if (moveDirection.sqrMagnitude > 0.0001f)
@@ -133,6 +150,46 @@ namespace ProjectJ.Player
             }
 
             return moveDirection;
+        }
+
+        public static Vector3 CalculateHorizontalVelocity(
+            Vector3 currentVelocity,
+            Vector3 moveDirection,
+            float moveSpeed,
+            float acceleration,
+            float deceleration,
+            float deltaTime
+        )
+        {
+            Vector3 currentHorizontalVelocity = new Vector3(
+                currentVelocity.x,
+                0f,
+                currentVelocity.z
+            );
+
+            Vector3 clampedDirection = Vector3.ClampMagnitude(
+                moveDirection,
+                1f
+            );
+
+            Vector3 targetVelocity =
+                clampedDirection * Mathf.Max(0f, moveSpeed);
+
+            bool hasMoveInput =
+                clampedDirection.sqrMagnitude > 0.0001f;
+
+            float changeRate = hasMoveInput
+                ? Mathf.Max(0f, acceleration)
+                : Mathf.Max(0f, deceleration);
+
+            float maxVelocityChange =
+                changeRate * Mathf.Max(0f, deltaTime);
+
+            return Vector3.MoveTowards(
+                currentHorizontalVelocity,
+                targetVelocity,
+                maxVelocityChange
+            );
         }
     }
 }

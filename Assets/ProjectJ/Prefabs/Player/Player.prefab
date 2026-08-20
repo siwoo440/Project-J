@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 1453315611713375265}
   - component: {fileID: 6129174852033885732}
   - component: {fileID: 1183548076633328924}
+  - component: {fileID: 461988848307614122}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -188,16 +189,57 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Player.PlayerCameraRelativeMovement
   moveSpeed: 6
+  sprintSpeed: 9
+  crouchSpeed: 3.5
+  crouchHeight: 1.2
+  standingSpaceCheckPadding: 0.02
+  maxSlopeAngle: 45
+  groundProbeDistance: 0.6
+  groundSnapDistance: 0.25
+  groundSnapSpeed: 4
+  maxStepHeight: 0.4
+  stepCheckDistance: 0.6
+  stepUpSpeed: 3
   acceleration: 30
   deceleration: 40
+  airAcceleration: 12
+  airDeceleration: 6
+  maxStamina: 100
+  staminaDrainRate: 25
+  staminaRecoveryRate: 20
   jumpVelocity: 8
   gravity: -22
+  coyoteTime: 0.12
+  jumpBufferTime: 0.12
   groundCheckRadius: 0.22
   groundCheckOffset: 0.08
   groundLayers:
     serializedVersion: 2
     m_Bits: 1536
   cameraReference: {fileID: 0}
+--- !u!114 &461988848307614122
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5004573433238649458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 727a9d4c67b75894092709eabaf23026, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Player.PlayerLedgeDetector
+  minLedgeHeight: 0.45
+  maxLedgeHeight: 1.4
+  wallCheckDistance: 0.8
+  topProbeForwardOffset: 0.2
+  topProbeExtraHeight: 0.2
+  topSurfaceMaxAngle: 45
+  landingForwardOffset: 0.35
+  landingClearancePadding: 0.03
+  ledgeLayers:
+    serializedVersion: 2
+    m_Bits: 0
 --- !u!1 &6255624159156887663
 GameObject:
   m_ObjectHideFlags: 0

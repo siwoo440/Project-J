@@ -2,7 +2,8 @@
     "name": "ProjectJ.Tests.EditMode",
     "rootNamespace": "ProjectJ.Tests.EditMode",
     "references": [
-        "ProjectJ.Runtime"
+        "ProjectJ.Runtime",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [
         "Editor"

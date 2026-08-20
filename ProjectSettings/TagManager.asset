@@ -13,10 +13,11 @@ TagManager:
   - UI
   - 
   - 
-  - 
-  - 
-  - 
-  - 
+  - Player
+  - World
+  - Obstacle
+  - GameplayTrigger
+  - Item
   - 
   - 
   - 

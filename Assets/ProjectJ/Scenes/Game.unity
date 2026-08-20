@@ -119,6 +119,59 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &234866127
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 234866129}
+  - component: {fileID: 234866128}
+  m_Layer: 0
+  m_Name: === Match State ===
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &234866128
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 234866127}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b5e3f74da0a4df2a2736cc5b94b8fad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Match.MatchStateController
+  countdownStepDuration: 1.25
+  readySettleDuration: 0.5
+  autoReadyInOfflineMode: 1
+  currentState: 0
+  readySignalReceived: 0
+  readySettleRemaining: 0
+  countdownRemaining: 0
+  countdownDisplayNumber: 0
+  countdownStepRemaining: 0
+--- !u!4 &234866129
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 234866127}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &429162316
 GameObject:
   m_ObjectHideFlags: 0
@@ -767,3 +820,4 @@ SceneRoots:
   - {fileID: 1384966952}
   - {fileID: 460396297}
   - {fileID: 1986542864}
+  - {fileID: 234866129}

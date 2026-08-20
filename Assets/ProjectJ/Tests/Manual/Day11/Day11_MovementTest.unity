@@ -8313,12 +8313,18 @@ MonoBehaviour:
   maxPitch: 70
   targetHeight: 1.5
   cameraDistance: 7.5
+  minimumCameraDistance: 3.5
+  maximumCameraDistance: 10
+  zoomStep: 0.75
   collisionRadius: 0.25
   collisionPadding: 0.15
   cameraReturnSpeed: 12
   collisionLayers:
     serializedVersion: 2
     m_Bits: 1536
+  normalFov: 60
+  sprintFov: 68
+  fovChangeSpeed: 8
   lockCursorOnPlay: 1
 --- !u!4 &1233944633
 Transform:

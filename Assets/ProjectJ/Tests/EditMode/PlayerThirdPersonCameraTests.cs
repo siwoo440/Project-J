@@ -55,21 +55,15 @@ namespace ProjectJ.Tests.EditMode
         [Test]
         public void Pitch_ClampsAtMinimum()
         {
-            Vector2 angles =
-                PlayerThirdPersonCamera.CalculateNextAngles(
-                    0f,
-                    -44f,
-                    new Vector2(
-                        0f,
-                        100f
-                    ),
-                    0.15f,
+            float pitch =
+                PlayerThirdPersonCamera.ClampPitch(
+                    -60f,
                     -45f,
                     70f
                 );
 
             Assert.That(
-                angles.y,
+                pitch,
                 Is.EqualTo(-45f)
             );
         }
@@ -77,70 +71,90 @@ namespace ProjectJ.Tests.EditMode
         [Test]
         public void Pitch_ClampsAtMaximum()
         {
-            Vector2 angles =
-                PlayerThirdPersonCamera.CalculateNextAngles(
-                    0f,
-                    69f,
-                    new Vector2(
-                        0f,
-                        -100f
-                    ),
-                    0.15f,
+            float pitch =
+                PlayerThirdPersonCamera.ClampPitch(
+                    90f,
                     -45f,
                     70f
                 );
 
             Assert.That(
-                angles.y,
+                pitch,
                 Is.EqualTo(70f)
             );
         }
 
         [Test]
-        public void Yaw_WrapsToSignedRange()
+        public void Zoom_WheelUpMovesCameraCloser()
         {
-            Vector2 angles =
-                PlayerThirdPersonCamera.CalculateNextAngles(
-                    179f,
-                    0f,
-                    new Vector2(
-                        20f,
-                        0f
-                    ),
-                    0.15f,
-                    -45f,
-                    70f
+            float distance =
+                PlayerThirdPersonCamera.CalculateZoomDistance(
+                    7.5f,
+                    120f,
+                    0.75f,
+                    3.5f,
+                    10f
                 );
 
             Assert.That(
-                angles.x,
-                Is.EqualTo(-178f)
+                distance,
+                Is.EqualTo(6.75f)
                     .Within(0.0001f)
             );
         }
 
         [Test]
-        public void RigPosition_AddsTargetHeight()
+        public void Zoom_WheelDownMovesCameraFarther()
         {
-            Vector3 position =
-                PlayerThirdPersonCamera.CalculateRigPosition(
-                    new Vector3(
-                        2f,
-                        3f,
-                        4f
-                    ),
-                    1.5f
+            float distance =
+                PlayerThirdPersonCamera.CalculateZoomDistance(
+                    7.5f,
+                    -120f,
+                    0.75f,
+                    3.5f,
+                    10f
                 );
 
             Assert.That(
-                position,
-                Is.EqualTo(
-                    new Vector3(
-                        2f,
-                        4.5f,
-                        4f
-                    )
-                )
+                distance,
+                Is.EqualTo(8.25f)
+                    .Within(0.0001f)
+            );
+        }
+
+        [Test]
+        public void Zoom_DoesNotPassMinimum()
+        {
+            float distance =
+                PlayerThirdPersonCamera.CalculateZoomDistance(
+                    3.5f,
+                    120f,
+                    0.75f,
+                    3.5f,
+                    10f
+                );
+
+            Assert.That(
+                distance,
+                Is.EqualTo(3.5f)
+            );
+        }
+
+        [Test]
+        public void Zoom_DoesNotPassMaximum()
+        {
+            float distance =
+                PlayerThirdPersonCamera.CalculateZoomDistance(
+                    10f,
+                    -120f,
+                    0.75f,
+                    3.5f,
+                    10f
+                );
+
+            Assert.That(
+                distance,
+                Is.EqualTo(10f)
             );
         }
 
@@ -152,25 +166,25 @@ namespace ProjectJ.Tests.EditMode
                     false,
                     0f,
                     0.15f,
-                    7.5f
+                    10f
                 );
 
             Assert.That(
                 distance,
-                Is.EqualTo(7.5f)
+                Is.EqualTo(10f)
                     .Within(0.0001f)
             );
         }
 
         [Test]
-        public void CameraCollision_WallPullsCameraForward()
+        public void CameraCollision_WallOverridesZoomDistance()
         {
             float distance =
                 PlayerThirdPersonCamera.CalculateCollisionAdjustedDistance(
                     true,
                     4f,
                     0.15f,
-                    7.5f
+                    10f
                 );
 
             Assert.That(
@@ -199,20 +213,77 @@ namespace ProjectJ.Tests.EditMode
         }
 
         [Test]
-        public void CameraCollision_HitBeyondDesiredClampsToDesired()
+        public void Fov_NormalStateUsesNormalValue()
         {
-            float distance =
-                PlayerThirdPersonCamera.CalculateCollisionAdjustedDistance(
-                    true,
-                    10f,
-                    0.15f,
-                    7.5f
+            float fov =
+                PlayerThirdPersonCamera.CalculateTargetFov(
+                    false,
+                    60f,
+                    68f
                 );
 
             Assert.That(
-                distance,
-                Is.EqualTo(7.5f)
+                fov,
+                Is.EqualTo(60f)
+            );
+        }
+
+        [Test]
+        public void Fov_SprintStateUsesSprintValue()
+        {
+            float fov =
+                PlayerThirdPersonCamera.CalculateTargetFov(
+                    true,
+                    60f,
+                    68f
+                );
+
+            Assert.That(
+                fov,
+                Is.EqualTo(68f)
+            );
+        }
+
+        [Test]
+        public void Fov_ChangesTowardTarget()
+        {
+            float fov =
+                PlayerThirdPersonCamera.MoveFovTowards(
+                    60f,
+                    68f,
+                    8f,
+                    0.5f
+                );
+
+            Assert.That(
+                fov,
+                Is.EqualTo(64f)
                     .Within(0.0001f)
+            );
+        }
+
+        [Test]
+        public void RigPosition_AddsTargetHeight()
+        {
+            Vector3 position =
+                PlayerThirdPersonCamera.CalculateRigPosition(
+                    new Vector3(
+                        2f,
+                        3f,
+                        4f
+                    ),
+                    1.5f
+                );
+
+            Assert.That(
+                position,
+                Is.EqualTo(
+                    new Vector3(
+                        2f,
+                        4.5f,
+                        4f
+                    )
+                )
             );
         }
     }

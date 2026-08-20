@@ -1,3 +1,4 @@
+using ProjectJ.Player;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -37,6 +38,18 @@ namespace ProjectJ.CameraSystem
         private float cameraDistance = 7.5f;
 
         [SerializeField]
+        [Min(0.1f)]
+        private float minimumCameraDistance = 3.5f;
+
+        [SerializeField]
+        [Min(0.1f)]
+        private float maximumCameraDistance = 10f;
+
+        [SerializeField]
+        [Min(0.01f)]
+        private float zoomStep = 0.75f;
+
+        [SerializeField]
         [Min(0.01f)]
         private float collisionRadius = 0.25f;
 
@@ -52,9 +65,22 @@ namespace ProjectJ.CameraSystem
         private LayerMask collisionLayers;
 
         [SerializeField]
+        [Range(1f, 179f)]
+        private float normalFov = 60f;
+
+        [SerializeField]
+        [Range(1f, 179f)]
+        private float sprintFov = 68f;
+
+        [SerializeField]
+        [Min(0.01f)]
+        private float fovChangeSpeed = 8f;
+
+        [SerializeField]
         private bool lockCursorOnPlay = true;
 
         private InputAction lookAction;
+        private PlayerCameraRelativeMovement movementSource;
         private float yaw;
         private float pitch;
         private float currentCameraDistance;
@@ -75,6 +101,14 @@ namespace ProjectJ.CameraSystem
             }
         }
 
+        public float DesiredCameraDistance
+        {
+            get
+            {
+                return cameraDistance;
+            }
+        }
+
         public float CurrentCameraDistance
         {
             get
@@ -86,6 +120,7 @@ namespace ProjectJ.CameraSystem
         private void Awake()
         {
             ApplyFallbackSettings();
+            CacheMovementSource();
             InitializeAngles();
 
             currentCameraDistance =
@@ -94,6 +129,12 @@ namespace ProjectJ.CameraSystem
             ApplyCameraPosition(
                 currentCameraDistance
             );
+
+            if (targetCamera != null)
+            {
+                targetCamera.fieldOfView =
+                    normalFov;
+            }
         }
 
         private void OnEnable()
@@ -133,23 +174,8 @@ namespace ProjectJ.CameraSystem
                 return;
             }
 
-            Vector2 lookDelta =
-                lookAction != null
-                    ? lookAction.ReadValue<Vector2>()
-                    : Vector2.zero;
-
-            Vector2 nextAngles =
-                CalculateNextAngles(
-                    yaw,
-                    pitch,
-                    lookDelta,
-                    mouseSensitivity,
-                    minPitch,
-                    maxPitch
-                );
-
-            yaw = nextAngles.x;
-            pitch = nextAngles.y;
+            UpdateLook();
+            UpdateZoomInput();
 
             transform.position =
                 CalculateRigPosition(
@@ -172,6 +198,7 @@ namespace ProjectJ.CameraSystem
                 );
 
             UpdateCameraCollision();
+            UpdateCameraFov();
         }
 
         public void Configure(
@@ -187,6 +214,7 @@ namespace ProjectJ.CameraSystem
             targetCamera = newTargetCamera;
 
             ApplyFallbackSettings();
+            CacheMovementSource();
             InitializeAngles();
 
             currentCameraDistance =
@@ -196,18 +224,71 @@ namespace ProjectJ.CameraSystem
                 currentCameraDistance
             );
 
+            if (targetCamera != null)
+            {
+                targetCamera.fieldOfView =
+                    normalFov;
+            }
+
             if (isActiveAndEnabled)
             {
                 BindLookAction();
             }
         }
 
+        private void UpdateLook()
+        {
+            Vector2 lookDelta =
+                lookAction != null
+                    ? lookAction.ReadValue<Vector2>()
+                    : Vector2.zero;
+
+            Vector2 nextAngles =
+                CalculateNextAngles(
+                    yaw,
+                    pitch,
+                    lookDelta,
+                    mouseSensitivity,
+                    minPitch,
+                    maxPitch
+                );
+
+            yaw = nextAngles.x;
+            pitch = nextAngles.y;
+        }
+
+        private void UpdateZoomInput()
+        {
+            if (Mouse.current == null)
+            {
+                return;
+            }
+
+            float scrollY =
+                Mouse.current.scroll.ReadValue().y;
+
+            if (Mathf.Abs(scrollY) <= 0.01f)
+            {
+                return;
+            }
+
+            cameraDistance =
+                CalculateZoomDistance(
+                    cameraDistance,
+                    scrollY,
+                    zoomStep,
+                    minimumCameraDistance,
+                    maximumCameraDistance
+                );
+        }
+
         private void UpdateCameraCollision()
         {
             float desiredDistance =
-                Mathf.Max(
-                    0.1f,
-                    cameraDistance
+                Mathf.Clamp(
+                    cameraDistance,
+                    minimumCameraDistance,
+                    maximumCameraDistance
                 );
 
             Vector3 origin =
@@ -238,6 +319,7 @@ namespace ProjectJ.CameraSystem
                 );
 
             if (
+                hasHit &&
                 allowedDistance <
                 currentCameraDistance
             )
@@ -261,6 +343,28 @@ namespace ProjectJ.CameraSystem
             );
         }
 
+        private void UpdateCameraFov()
+        {
+            bool isSprinting =
+                movementSource != null &&
+                movementSource.IsSprinting;
+
+            float targetFov =
+                CalculateTargetFov(
+                    isSprinting,
+                    normalFov,
+                    sprintFov
+                );
+
+            targetCamera.fieldOfView =
+                MoveFovTowards(
+                    targetCamera.fieldOfView,
+                    targetFov,
+                    fovChangeSpeed,
+                    Time.deltaTime
+                );
+        }
+
         private void ApplyCameraPosition(
             float distance
         )
@@ -282,6 +386,19 @@ namespace ProjectJ.CameraSystem
 
             targetCamera.transform.localRotation =
                 Quaternion.identity;
+        }
+
+        private void CacheMovementSource()
+        {
+            movementSource = null;
+
+            if (target == null)
+            {
+                return;
+            }
+
+            movementSource =
+                target.GetComponent<PlayerCameraRelativeMovement>();
         }
 
         private void BindLookAction()
@@ -348,9 +465,46 @@ namespace ProjectJ.CameraSystem
                 targetHeight = 0f;
             }
 
+            if (minimumCameraDistance <= 0f)
+            {
+                minimumCameraDistance = 3.5f;
+            }
+
+            if (maximumCameraDistance <= 0f)
+            {
+                maximumCameraDistance = 10f;
+            }
+
+            if (
+                maximumCameraDistance <
+                minimumCameraDistance
+            )
+            {
+                float previousMinimum =
+                    minimumCameraDistance;
+
+                minimumCameraDistance =
+                    maximumCameraDistance;
+
+                maximumCameraDistance =
+                    previousMinimum;
+            }
+
             if (cameraDistance <= 0f)
             {
                 cameraDistance = 7.5f;
+            }
+
+            cameraDistance =
+                Mathf.Clamp(
+                    cameraDistance,
+                    minimumCameraDistance,
+                    maximumCameraDistance
+                );
+
+            if (zoomStep <= 0f)
+            {
+                zoomStep = 0.75f;
             }
 
             if (collisionRadius <= 0f)
@@ -375,6 +529,25 @@ namespace ProjectJ.CameraSystem
                         "World",
                         "Obstacle"
                     );
+            }
+
+            normalFov =
+                Mathf.Clamp(
+                    normalFov,
+                    1f,
+                    179f
+                );
+
+            sprintFov =
+                Mathf.Clamp(
+                    sprintFov,
+                    1f,
+                    179f
+                );
+
+            if (fovChangeSpeed <= 0f)
+            {
+                fovChangeSpeed = 8f;
             }
         }
 
@@ -479,6 +652,52 @@ namespace ProjectJ.CameraSystem
                 );
         }
 
+        public static float CalculateZoomDistance(
+            float currentDistance,
+            float scrollY,
+            float step,
+            float minimumDistance,
+            float maximumDistance
+        )
+        {
+            float safeMin =
+                Mathf.Min(
+                    minimumDistance,
+                    maximumDistance
+                );
+
+            float safeMax =
+                Mathf.Max(
+                    minimumDistance,
+                    maximumDistance
+                );
+
+            float safeStep =
+                Mathf.Max(
+                    0f,
+                    step
+                );
+
+            float direction = 0f;
+
+            if (scrollY > 0.01f)
+            {
+                direction = -1f;
+            }
+            else if (scrollY < -0.01f)
+            {
+                direction = 1f;
+            }
+
+            return Mathf.Clamp(
+                currentDistance +
+                direction *
+                safeStep,
+                safeMin,
+                safeMax
+            );
+        }
+
         public static float CalculateCollisionAdjustedDistance(
             bool hasHit,
             float hitDistance,
@@ -514,6 +733,46 @@ namespace ProjectJ.CameraSystem
                 safePadding,
                 0.05f,
                 safeDesiredDistance
+            );
+        }
+
+        public static float CalculateTargetFov(
+            bool isSprinting,
+            float normalFieldOfView,
+            float sprintFieldOfView
+        )
+        {
+            return Mathf.Clamp(
+                isSprinting
+                    ? sprintFieldOfView
+                    : normalFieldOfView,
+                1f,
+                179f
+            );
+        }
+
+        public static float MoveFovTowards(
+            float currentFieldOfView,
+            float targetFieldOfView,
+            float changeSpeed,
+            float deltaTime
+        )
+        {
+            return Mathf.MoveTowards(
+                currentFieldOfView,
+                Mathf.Clamp(
+                    targetFieldOfView,
+                    1f,
+                    179f
+                ),
+                Mathf.Max(
+                    0f,
+                    changeSpeed
+                ) *
+                Mathf.Max(
+                    0f,
+                    deltaTime
+                )
             );
         }
     }

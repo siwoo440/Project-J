@@ -130,6 +130,7 @@ namespace ProjectJ.Player
         private bool sprintHeld;
         private bool sprintExhausted;
         private bool crouchHeld;
+        private PlayerLedgeClimber ledgeClimber;
 
         public bool IsGrounded { get; private set; }
 
@@ -153,6 +154,7 @@ namespace ProjectJ.Player
             playerInput = GetComponent<PlayerInput>();
             groundCollider = GetComponent<Collider>();
             capsuleCollider = GetComponent<CapsuleCollider>();
+            ledgeClimber = GetComponent<PlayerLedgeClimber>();
 
             standingColliderHeight = capsuleCollider.height;
             standingColliderCenter = capsuleCollider.center;
@@ -222,6 +224,13 @@ namespace ProjectJ.Player
 
         private void FixedUpdate()
         {
+            if (ledgeClimber != null && ledgeClimber.IsClimbing)
+            {
+                IsGrounded = false;
+                IsSprinting = false;
+                return;
+            }
+
             if (cameraReference == null)
             {
                 TryFindCamera();
@@ -462,6 +471,28 @@ namespace ProjectJ.Player
 
         private void OnJumpPerformed(InputAction.CallbackContext context)
         {
+            if (ledgeClimber != null)
+            {
+                if (ledgeClimber.IsClimbing)
+                {
+                    jumpBufferTimer = 0f;
+                    return;
+                }
+
+                bool climbStarted =
+                    ledgeClimber.TryStartClimb(
+                        IsCrouching
+                    );
+
+                if (climbStarted)
+                {
+                    coyoteTimer = 0f;
+                    jumpBufferTimer = 0f;
+                    IsSprinting = false;
+                    return;
+                }
+            }
+
             jumpBufferTimer = Mathf.Max(
                 0f,
                 jumpBufferTime

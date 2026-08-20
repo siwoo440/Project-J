@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 6129174852033885732}
   - component: {fileID: 1183548076633328924}
   - component: {fileID: 461988848307614122}
+  - component: {fileID: 2561167816664897171}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -240,6 +241,21 @@ MonoBehaviour:
   ledgeLayers:
     serializedVersion: 2
     m_Bits: 0
+--- !u!114 &2561167816664897171
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5004573433238649458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d53f9d318555656438e7fe1e5d2ff5d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Player.PlayerLedgeClimber
+  liftDuration: 0.2
+  forwardDuration: 0.2
+  liftClearance: 0.08
 --- !u!1 &6255624159156887663
 GameObject:
   m_ObjectHideFlags: 0

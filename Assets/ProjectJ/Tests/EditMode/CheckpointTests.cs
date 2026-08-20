@@ -57,7 +57,7 @@ namespace ProjectJ.Tests.EditMode
         }
 
         [Test]
-        public void ActivateCheckpoint_SavesIdAndRespawnPoint()
+        public void HigherCheckpoint_SavesIdAndRespawnPoint()
         {
             CheckpointComponent checkpoint =
                 CreateCheckpoint(
@@ -94,7 +94,44 @@ namespace ProjectJ.Tests.EditMode
         }
 
         [Test]
-        public void LaterCheckpoint_ReplacesCurrentCheckpoint()
+        public void SkippingLowerCheckpoints_IsAllowed()
+        {
+            CheckpointComponent cp3 =
+                CreateCheckpoint(
+                    CheckpointId.CP3,
+                    new Vector3(
+                        0f,
+                        30f,
+                        0f
+                    )
+                );
+
+            bool activated =
+                tracker.ActivateCheckpoint(
+                    cp3
+                );
+
+            Assert.IsTrue(
+                activated
+            );
+
+            Assert.AreEqual(
+                CheckpointId.CP3,
+                tracker.CurrentCheckpointId
+            );
+
+            Assert.AreEqual(
+                cp3.RespawnPosition,
+                tracker.RespawnPosition
+            );
+
+            Object.DestroyImmediate(
+                cp3.gameObject
+            );
+        }
+
+        [Test]
+        public void HigherCheckpoint_ReplacesCurrentCheckpoint()
         {
             CheckpointComponent cp1 =
                 CreateCheckpoint(
@@ -102,9 +139,9 @@ namespace ProjectJ.Tests.EditMode
                     Vector3.zero
                 );
 
-            CheckpointComponent cp2 =
+            CheckpointComponent cp3 =
                 CreateCheckpoint(
-                    CheckpointId.CP2,
+                    CheckpointId.CP3,
                     Vector3.one
                 );
 
@@ -112,12 +149,17 @@ namespace ProjectJ.Tests.EditMode
                 cp1
             );
 
-            tracker.ActivateCheckpoint(
-                cp2
+            bool activated =
+                tracker.ActivateCheckpoint(
+                    cp3
+                );
+
+            Assert.IsTrue(
+                activated
             );
 
             Assert.AreEqual(
-                CheckpointId.CP2,
+                CheckpointId.CP3,
                 tracker.CurrentCheckpointId
             );
 
@@ -126,36 +168,70 @@ namespace ProjectJ.Tests.EditMode
             );
 
             Object.DestroyImmediate(
-                cp2.gameObject
+                cp3.gameObject
             );
         }
 
         [Test]
-        public void BasicDay30Rule_AllowsDirectReplacement()
+        public void LowerCheckpoint_CannotReplaceHighestCheckpoint()
         {
             CheckpointComponent cp4 =
                 CreateCheckpoint(
                     CheckpointId.CP4,
-                    Vector3.zero
+                    new Vector3(
+                        0f,
+                        40f,
+                        0f
+                    )
                 );
 
             CheckpointComponent cp1 =
                 CreateCheckpoint(
                     CheckpointId.CP1,
-                    Vector3.one
+                    new Vector3(
+                        0f,
+                        10f,
+                        0f
+                    )
                 );
 
             tracker.ActivateCheckpoint(
                 cp4
             );
 
-            tracker.ActivateCheckpoint(
-                cp1
+            Vector3 savedRespawnPosition =
+                tracker.RespawnPosition;
+
+            Quaternion savedRespawnRotation =
+                tracker.RespawnRotation;
+
+            bool activated =
+                tracker.ActivateCheckpoint(
+                    cp1
+                );
+
+            Assert.IsFalse(
+                activated
             );
 
             Assert.AreEqual(
-                CheckpointId.CP1,
+                CheckpointId.CP4,
                 tracker.CurrentCheckpointId
+            );
+
+            Assert.AreSame(
+                cp4,
+                tracker.CurrentCheckpoint
+            );
+
+            Assert.AreEqual(
+                savedRespawnPosition,
+                tracker.RespawnPosition
+            );
+
+            Assert.AreEqual(
+                savedRespawnRotation,
+                tracker.RespawnRotation
             );
 
             Object.DestroyImmediate(
@@ -164,6 +240,84 @@ namespace ProjectJ.Tests.EditMode
 
             Object.DestroyImmediate(
                 cp1.gameObject
+            );
+        }
+
+        [Test]
+        public void SameCheckpoint_DoesNotActivateTwice()
+        {
+            CheckpointComponent cp2 =
+                CreateCheckpoint(
+                    CheckpointId.CP2,
+                    Vector3.zero
+                );
+
+            int eventCount = 0;
+
+            tracker.CheckpointChanged +=
+                id =>
+                {
+                    eventCount++;
+                };
+
+            bool firstActivation =
+                tracker.ActivateCheckpoint(
+                    cp2
+                );
+
+            bool secondActivation =
+                tracker.ActivateCheckpoint(
+                    cp2
+                );
+
+            Assert.IsTrue(
+                firstActivation
+            );
+
+            Assert.IsFalse(
+                secondActivation
+            );
+
+            Assert.AreEqual(
+                1,
+                eventCount
+            );
+
+            Assert.AreEqual(
+                CheckpointId.CP2,
+                tracker.CurrentCheckpointId
+            );
+
+            Object.DestroyImmediate(
+                cp2.gameObject
+            );
+        }
+
+        [Test]
+        public void DirectStartToCp4_IsAllowed()
+        {
+            CheckpointComponent cp4 =
+                CreateCheckpoint(
+                    CheckpointId.CP4,
+                    Vector3.zero
+                );
+
+            bool activated =
+                tracker.ActivateCheckpoint(
+                    cp4
+                );
+
+            Assert.IsTrue(
+                activated
+            );
+
+            Assert.AreEqual(
+                CheckpointId.CP4,
+                tracker.CurrentCheckpointId
+            );
+
+            Object.DestroyImmediate(
+                cp4.gameObject
             );
         }
 
@@ -182,6 +336,52 @@ namespace ProjectJ.Tests.EditMode
             Assert.AreEqual(
                 CheckpointId.Start,
                 tracker.CurrentCheckpointId
+            );
+        }
+
+        [TestCase(
+            CheckpointId.CP1,
+            CheckpointId.Start,
+            true
+        )]
+        [TestCase(
+            CheckpointId.CP3,
+            CheckpointId.CP1,
+            true
+        )]
+        [TestCase(
+            CheckpointId.CP4,
+            CheckpointId.CP3,
+            true
+        )]
+        [TestCase(
+            CheckpointId.CP2,
+            CheckpointId.CP2,
+            false
+        )]
+        [TestCase(
+            CheckpointId.CP1,
+            CheckpointId.CP3,
+            false
+        )]
+        [TestCase(
+            CheckpointId.Start,
+            CheckpointId.CP1,
+            false
+        )]
+        public void IsHigherCheckpoint_ReturnsExpectedResult(
+            CheckpointId candidate,
+            CheckpointId current,
+            bool expected
+        )
+        {
+            Assert.AreEqual(
+                expected,
+                PlayerCheckpointTracker
+                    .IsHigherCheckpoint(
+                        candidate,
+                        current
+                    )
             );
         }
 

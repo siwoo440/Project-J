@@ -77,6 +77,16 @@ namespace ProjectJ.Checkpoint
                 return false;
             }
 
+            if (
+                !IsHigherCheckpoint(
+                    checkpoint.Id,
+                    currentCheckpointId
+                )
+            )
+            {
+                return false;
+            }
+
             currentCheckpoint =
                 checkpoint;
 
@@ -108,6 +118,16 @@ namespace ProjectJ.Checkpoint
 
             respawnRotation =
                 transform.rotation;
+        }
+
+        public static bool IsHigherCheckpoint(
+            CheckpointId candidate,
+            CheckpointId current
+        )
+        {
+            return
+                (int)candidate >
+                (int)current;
         }
     }
 }

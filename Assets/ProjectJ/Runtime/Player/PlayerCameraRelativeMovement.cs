@@ -14,6 +14,10 @@ namespace ProjectJ.Player
 
         [SerializeField]
         [Min(0f)]
+        private float sprintSpeed = 9f;
+
+        [SerializeField]
+        [Min(0f)]
         private float acceleration = 30f;
 
         [SerializeField]
@@ -27,6 +31,18 @@ namespace ProjectJ.Player
         [SerializeField]
         [Min(0f)]
         private float airDeceleration = 6f;
+
+        [SerializeField]
+        [Min(0f)]
+        private float maxStamina = 100f;
+
+        [SerializeField]
+        [Min(0f)]
+        private float staminaDrainRate = 25f;
+
+        [SerializeField]
+        [Min(0f)]
+        private float staminaRecoveryRate = 20f;
 
         [SerializeField]
         [Min(0f)]
@@ -62,11 +78,26 @@ namespace ProjectJ.Player
         private Collider groundCollider;
         private InputAction moveAction;
         private InputAction jumpAction;
+        private InputAction sprintAction;
         private Vector2 moveInput;
         private float coyoteTimer;
         private float jumpBufferTimer;
+        private bool sprintHeld;
+        private bool sprintExhausted;
 
         public bool IsGrounded { get; private set; }
+
+        public bool IsSprinting { get; private set; }
+
+        public float CurrentStamina { get; private set; }
+
+        public float MaxStamina
+        {
+            get
+            {
+                return maxStamina;
+            }
+        }
 
         private void Awake()
         {
@@ -77,6 +108,8 @@ namespace ProjectJ.Player
             body.useGravity = false;
 
             ApplyFallbackSettings();
+            CurrentStamina = maxStamina;
+
             TryFindCamera();
         }
 
@@ -84,10 +117,15 @@ namespace ProjectJ.Player
         {
             moveAction = playerInput.actions.FindAction("Move", true);
             jumpAction = playerInput.actions.FindAction("Jump", true);
+            sprintAction = playerInput.actions.FindAction("Sprint", true);
 
             moveAction.performed += OnMoveChanged;
             moveAction.canceled += OnMoveChanged;
+
             jumpAction.performed += OnJumpPerformed;
+
+            sprintAction.performed += OnSprintChanged;
+            sprintAction.canceled += OnSprintChanged;
         }
 
         private void OnDisable()
@@ -103,9 +141,18 @@ namespace ProjectJ.Player
                 jumpAction.performed -= OnJumpPerformed;
             }
 
+            if (sprintAction != null)
+            {
+                sprintAction.performed -= OnSprintChanged;
+                sprintAction.canceled -= OnSprintChanged;
+            }
+
             moveInput = Vector2.zero;
             coyoteTimer = 0f;
             jumpBufferTimer = 0f;
+            sprintHeld = false;
+            sprintExhausted = false;
+            IsSprinting = false;
         }
 
         private void FixedUpdate()
@@ -163,6 +210,40 @@ namespace ProjectJ.Player
                 shouldJump
             );
 
+            bool sprintAllowed = CanSprint(
+                sprintHeld,
+                moveInput,
+                isAirborne,
+                CurrentStamina,
+                sprintExhausted
+            );
+
+            float nextStamina = CalculateStamina(
+                CurrentStamina,
+                maxStamina,
+                sprintAllowed,
+                staminaDrainRate,
+                staminaRecoveryRate,
+                Time.fixedDeltaTime
+            );
+
+            if (sprintAllowed && nextStamina <= 0f)
+            {
+                sprintExhausted = true;
+            }
+
+            CurrentStamina = nextStamina;
+
+            IsSprinting =
+                sprintAllowed &&
+                CurrentStamina > 0f;
+
+            float targetMoveSpeed = SelectMoveSpeed(
+                IsSprinting,
+                moveSpeed,
+                sprintSpeed
+            );
+
             Vector2 horizontalChangeRates =
                 SelectHorizontalChangeRates(
                     isAirborne,
@@ -175,7 +256,7 @@ namespace ProjectJ.Player
             Vector3 horizontalVelocity = CalculateHorizontalVelocity(
                 currentVelocity,
                 moveDirection,
-                moveSpeed,
+                targetMoveSpeed,
                 horizontalChangeRates.x,
                 horizontalChangeRates.y,
                 Time.fixedDeltaTime
@@ -217,6 +298,16 @@ namespace ProjectJ.Player
             jumpBufferTimer = Mathf.Max(0f, jumpBufferTime);
         }
 
+        private void OnSprintChanged(InputAction.CallbackContext context)
+        {
+            sprintHeld = context.ReadValueAsButton();
+
+            if (!sprintHeld)
+            {
+                sprintExhausted = false;
+            }
+        }
+
         private bool CheckGrounded()
         {
             Bounds bounds = groundCollider.bounds;
@@ -237,6 +328,11 @@ namespace ProjectJ.Player
 
         private void ApplyFallbackSettings()
         {
+            if (sprintSpeed <= 0f)
+            {
+                sprintSpeed = 9f;
+            }
+
             if (airAcceleration <= 0f)
             {
                 airAcceleration = 12f;
@@ -245,6 +341,21 @@ namespace ProjectJ.Player
             if (airDeceleration <= 0f)
             {
                 airDeceleration = 6f;
+            }
+
+            if (maxStamina <= 0f)
+            {
+                maxStamina = 100f;
+            }
+
+            if (staminaDrainRate <= 0f)
+            {
+                staminaDrainRate = 25f;
+            }
+
+            if (staminaRecoveryRate <= 0f)
+            {
+                staminaRecoveryRate = 20f;
             }
 
             if (jumpVelocity <= 0f)
@@ -371,6 +482,64 @@ namespace ProjectJ.Player
             return shouldJump ||
                 !isGrounded ||
                 currentVerticalVelocity > 0.1f;
+        }
+
+        public static bool CanSprint(
+            bool sprintHeld,
+            Vector2 moveInput,
+            bool isAirborne,
+            float currentStamina,
+            bool sprintExhausted
+        )
+        {
+            bool hasMoveInput =
+                moveInput.sqrMagnitude > 0.0001f;
+
+            return sprintHeld &&
+                hasMoveInput &&
+                !isAirborne &&
+                currentStamina > 0f &&
+                !sprintExhausted;
+        }
+
+        public static float SelectMoveSpeed(
+            bool isSprinting,
+            float normalMoveSpeed,
+            float sprintMoveSpeed
+        )
+        {
+            return isSprinting
+                ? Mathf.Max(0f, sprintMoveSpeed)
+                : Mathf.Max(0f, normalMoveSpeed);
+        }
+
+        public static float CalculateStamina(
+            float currentStamina,
+            float maxStamina,
+            bool isSprinting,
+            float drainRate,
+            float recoveryRate,
+            float deltaTime
+        )
+        {
+            float safeMaxStamina = Mathf.Max(0f, maxStamina);
+            float safeCurrentStamina = Mathf.Clamp(
+                currentStamina,
+                0f,
+                safeMaxStamina
+            );
+
+            float safeDeltaTime = Mathf.Max(0f, deltaTime);
+
+            float staminaChange = isSprinting
+                ? -Mathf.Max(0f, drainRate) * safeDeltaTime
+                : Mathf.Max(0f, recoveryRate) * safeDeltaTime;
+
+            return Mathf.Clamp(
+                safeCurrentStamina + staminaChange,
+                0f,
+                safeMaxStamina
+            );
         }
 
         public static Vector2 SelectHorizontalChangeRates(

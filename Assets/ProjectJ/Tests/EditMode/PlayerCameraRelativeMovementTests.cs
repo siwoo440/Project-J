@@ -592,5 +592,209 @@ namespace ProjectJ.Tests.EditMode
                 Is.EqualTo(6f).Within(0.0001f)
             );
         }
+
+        [Test]
+        public void Sprint_RequiresHeldInputGroundAndStamina()
+        {
+            bool canSprint =
+                PlayerCameraRelativeMovement.CanSprint(
+                    true,
+                    Vector2.up,
+                    false,
+                    100f,
+                    false
+                );
+
+            Assert.That(canSprint, Is.True);
+        }
+
+        [Test]
+        public void Sprint_DoesNotStartWithoutMoveInput()
+        {
+            bool canSprint =
+                PlayerCameraRelativeMovement.CanSprint(
+                    true,
+                    Vector2.zero,
+                    false,
+                    100f,
+                    false
+                );
+
+            Assert.That(canSprint, Is.False);
+        }
+
+        [Test]
+        public void Sprint_DoesNotStartInAir()
+        {
+            bool canSprint =
+                PlayerCameraRelativeMovement.CanSprint(
+                    true,
+                    Vector2.up,
+                    true,
+                    100f,
+                    false
+                );
+
+            Assert.That(canSprint, Is.False);
+        }
+
+        [Test]
+        public void Sprint_DoesNotStartAtZeroStamina()
+        {
+            bool canSprint =
+                PlayerCameraRelativeMovement.CanSprint(
+                    true,
+                    Vector2.up,
+                    false,
+                    0f,
+                    false
+                );
+
+            Assert.That(canSprint, Is.False);
+        }
+
+        [Test]
+        public void Sprint_DoesNotRestartWhileExhausted()
+        {
+            bool canSprint =
+                PlayerCameraRelativeMovement.CanSprint(
+                    true,
+                    Vector2.up,
+                    false,
+                    50f,
+                    true
+                );
+
+            Assert.That(canSprint, Is.False);
+        }
+
+        [Test]
+        public void Sprint_SelectsSprintMoveSpeed()
+        {
+            float speed =
+                PlayerCameraRelativeMovement.SelectMoveSpeed(
+                    true,
+                    6f,
+                    9f
+                );
+
+            Assert.That(speed, Is.EqualTo(9f));
+        }
+
+        [Test]
+        public void Walk_SelectsNormalMoveSpeed()
+        {
+            float speed =
+                PlayerCameraRelativeMovement.SelectMoveSpeed(
+                    false,
+                    6f,
+                    9f
+                );
+
+            Assert.That(speed, Is.EqualTo(6f));
+        }
+
+        [Test]
+        public void Sprint_DrainsStamina()
+        {
+            float stamina =
+                PlayerCameraRelativeMovement.CalculateStamina(
+                    100f,
+                    100f,
+                    true,
+                    25f,
+                    20f,
+                    1f
+                );
+
+            Assert.That(stamina, Is.EqualTo(75f));
+        }
+
+        [Test]
+        public void NonSprint_RecoversStamina()
+        {
+            float stamina =
+                PlayerCameraRelativeMovement.CalculateStamina(
+                    50f,
+                    100f,
+                    false,
+                    25f,
+                    20f,
+                    1f
+                );
+
+            Assert.That(stamina, Is.EqualTo(70f));
+        }
+
+        [Test]
+        public void Stamina_DoesNotGoBelowZero()
+        {
+            float stamina =
+                PlayerCameraRelativeMovement.CalculateStamina(
+                    5f,
+                    100f,
+                    true,
+                    25f,
+                    20f,
+                    1f
+                );
+
+            Assert.That(stamina, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void Stamina_DoesNotExceedMaximum()
+        {
+            float stamina =
+                PlayerCameraRelativeMovement.CalculateStamina(
+                    95f,
+                    100f,
+                    false,
+                    25f,
+                    20f,
+                    1f
+                );
+
+            Assert.That(stamina, Is.EqualTo(100f));
+        }
+
+        [Test]
+        public void Sprint_DiagonalTargetDoesNotExceedSprintSpeed()
+        {
+            Vector3 diagonalDirection =
+                new Vector3(1f, 0f, 1f).normalized;
+
+            Vector3 velocity =
+                PlayerCameraRelativeMovement.CalculateHorizontalVelocity(
+                    Vector3.zero,
+                    diagonalDirection,
+                    9f,
+                    1000f,
+                    40f,
+                    0.02f
+                );
+
+            Assert.That(
+                velocity.magnitude,
+                Is.EqualTo(9f).Within(0.0001f)
+            );
+        }
+
+        [Test]
+        public void SprintJump_AirControlPreservesMomentumGradually()
+        {
+            Vector3 velocity =
+                PlayerCameraRelativeMovement.CalculateHorizontalVelocity(
+                    Vector3.forward * 9f,
+                    Vector3.forward,
+                    6f,
+                    12f,
+                    6f,
+                    0.02f
+                );
+
+            Assert.That(velocity.z, Is.LessThan(9f));
+            Assert.That(velocity.z, Is.GreaterThan(6f));
+        }
     }
 }

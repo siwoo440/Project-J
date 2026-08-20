@@ -431,5 +431,166 @@ namespace ProjectJ.Tests.EditMode
 
             Assert.That(velocity, Is.EqualTo(8f));
         }
+
+        [Test]
+        public void AirControl_JumpFrameIsAirborne()
+        {
+            bool isAirborne =
+                PlayerCameraRelativeMovement.IsAirborneForHorizontalControl(
+                    true,
+                    0f,
+                    true
+                );
+
+            Assert.That(isAirborne, Is.True);
+        }
+
+        [Test]
+        public void AirControl_NotGroundedIsAirborne()
+        {
+            bool isAirborne =
+                PlayerCameraRelativeMovement.IsAirborneForHorizontalControl(
+                    false,
+                    -2f,
+                    false
+                );
+
+            Assert.That(isAirborne, Is.True);
+        }
+
+        [Test]
+        public void AirControl_RisingGroundOverlapIsAirborne()
+        {
+            bool isAirborne =
+                PlayerCameraRelativeMovement.IsAirborneForHorizontalControl(
+                    true,
+                    7f,
+                    false
+                );
+
+            Assert.That(isAirborne, Is.True);
+        }
+
+        [Test]
+        public void AirControl_StandingGroundStateIsNotAirborne()
+        {
+            bool isAirborne =
+                PlayerCameraRelativeMovement.IsAirborneForHorizontalControl(
+                    true,
+                    0f,
+                    false
+                );
+
+            Assert.That(isAirborne, Is.False);
+        }
+
+        [Test]
+        public void AirControl_SelectsAirChangeRates()
+        {
+            Vector2 rates =
+                PlayerCameraRelativeMovement.SelectHorizontalChangeRates(
+                    true,
+                    30f,
+                    40f,
+                    12f,
+                    6f
+                );
+
+            Assert.That(rates.x, Is.EqualTo(12f));
+            Assert.That(rates.y, Is.EqualTo(6f));
+        }
+
+        [Test]
+        public void AirControl_SelectsGroundChangeRates()
+        {
+            Vector2 rates =
+                PlayerCameraRelativeMovement.SelectHorizontalChangeRates(
+                    false,
+                    30f,
+                    40f,
+                    12f,
+                    6f
+                );
+
+            Assert.That(rates.x, Is.EqualTo(30f));
+            Assert.That(rates.y, Is.EqualTo(40f));
+        }
+
+        [Test]
+        public void AirAcceleration_IsSlowerThanGroundAcceleration()
+        {
+            Vector3 groundVelocity =
+                PlayerCameraRelativeMovement.CalculateHorizontalVelocity(
+                    Vector3.zero,
+                    Vector3.forward,
+                    6f,
+                    30f,
+                    40f,
+                    0.02f
+                );
+
+            Vector3 airVelocity =
+                PlayerCameraRelativeMovement.CalculateHorizontalVelocity(
+                    Vector3.zero,
+                    Vector3.forward,
+                    6f,
+                    12f,
+                    6f,
+                    0.02f
+                );
+
+            Assert.That(
+                airVelocity.magnitude,
+                Is.LessThan(groundVelocity.magnitude)
+            );
+        }
+
+        [Test]
+        public void AirDeceleration_PreservesMoreMomentumThanGround()
+        {
+            Vector3 groundVelocity =
+                PlayerCameraRelativeMovement.CalculateHorizontalVelocity(
+                    Vector3.forward * 6f,
+                    Vector3.zero,
+                    6f,
+                    30f,
+                    40f,
+                    0.02f
+                );
+
+            Vector3 airVelocity =
+                PlayerCameraRelativeMovement.CalculateHorizontalVelocity(
+                    Vector3.forward * 6f,
+                    Vector3.zero,
+                    6f,
+                    12f,
+                    6f,
+                    0.02f
+                );
+
+            Assert.That(
+                airVelocity.magnitude,
+                Is.GreaterThan(groundVelocity.magnitude)
+            );
+        }
+
+        [Test]
+        public void AirControl_DoesNotExceedMoveSpeed()
+        {
+            Vector3 velocity =
+                PlayerCameraRelativeMovement.CalculateHorizontalVelocity(
+                    Vector3.forward * 5.9f,
+                    Vector3.forward,
+                    6f,
+                    12f,
+                    6f,
+                    0.02f
+                );
+
+            Assert.That(
+                velocity.magnitude,
+                Is.EqualTo(6f).Within(0.0001f)
+            );
+        }
     }
 }

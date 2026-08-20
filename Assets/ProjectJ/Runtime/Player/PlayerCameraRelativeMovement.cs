@@ -22,6 +22,14 @@ namespace ProjectJ.Player
 
         [SerializeField]
         [Min(0f)]
+        private float airAcceleration = 12f;
+
+        [SerializeField]
+        [Min(0f)]
+        private float airDeceleration = 6f;
+
+        [SerializeField]
+        [Min(0f)]
         private float jumpVelocity = 8f;
 
         [SerializeField]
@@ -149,12 +157,27 @@ namespace ProjectJ.Player
                 jumpBufferTimer = 0f;
             }
 
+            bool isAirborne = IsAirborneForHorizontalControl(
+                IsGrounded,
+                currentVelocity.y,
+                shouldJump
+            );
+
+            Vector2 horizontalChangeRates =
+                SelectHorizontalChangeRates(
+                    isAirborne,
+                    acceleration,
+                    deceleration,
+                    airAcceleration,
+                    airDeceleration
+                );
+
             Vector3 horizontalVelocity = CalculateHorizontalVelocity(
                 currentVelocity,
                 moveDirection,
                 moveSpeed,
-                acceleration,
-                deceleration,
+                horizontalChangeRates.x,
+                horizontalChangeRates.y,
                 Time.fixedDeltaTime
             );
 
@@ -214,6 +237,16 @@ namespace ProjectJ.Player
 
         private void ApplyFallbackSettings()
         {
+            if (airAcceleration <= 0f)
+            {
+                airAcceleration = 12f;
+            }
+
+            if (airDeceleration <= 0f)
+            {
+                airDeceleration = 6f;
+            }
+
             if (jumpVelocity <= 0f)
             {
                 jumpVelocity = 8f;
@@ -327,6 +360,39 @@ namespace ProjectJ.Player
             }
 
             return moveDirection;
+        }
+
+        public static bool IsAirborneForHorizontalControl(
+            bool isGrounded,
+            float currentVerticalVelocity,
+            bool shouldJump
+        )
+        {
+            return shouldJump ||
+                !isGrounded ||
+                currentVerticalVelocity > 0.1f;
+        }
+
+        public static Vector2 SelectHorizontalChangeRates(
+            bool isAirborne,
+            float groundAcceleration,
+            float groundDeceleration,
+            float airAcceleration,
+            float airDeceleration
+        )
+        {
+            if (isAirborne)
+            {
+                return new Vector2(
+                    Mathf.Max(0f, airAcceleration),
+                    Mathf.Max(0f, airDeceleration)
+                );
+            }
+
+            return new Vector2(
+                Mathf.Max(0f, groundAcceleration),
+                Mathf.Max(0f, groundDeceleration)
+            );
         }
 
         public static Vector3 CalculateHorizontalVelocity(

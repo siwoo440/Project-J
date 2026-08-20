@@ -5,7 +5,8 @@ namespace ProjectJ.Ranking
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PlayerHeightTracker))]
-    public sealed class PlayerRankingParticipant : MonoBehaviour
+    public sealed class PlayerRankingParticipant :
+        MonoBehaviour
     {
         [SerializeField]
         private int playerId = -1;
@@ -15,6 +16,9 @@ namespace ProjectJ.Ranking
 
         [SerializeField]
         private int currentRank = 1;
+
+        [SerializeField]
+        private bool heightRankingEligible = true;
 
         public int PlayerId
         {
@@ -37,6 +41,14 @@ namespace ProjectJ.Ranking
             get
             {
                 return currentRank;
+            }
+        }
+
+        public bool HeightRankingEligible
+        {
+            get
+            {
+                return heightRankingEligible;
             }
         }
 
@@ -140,6 +152,14 @@ namespace ProjectJ.Ranking
                     1,
                     newRank
                 );
+        }
+
+        public void SetHeightRankingEligible(
+            bool eligible
+        )
+        {
+            heightRankingEligible =
+                eligible;
         }
 
         private void ResolveHeightTracker()

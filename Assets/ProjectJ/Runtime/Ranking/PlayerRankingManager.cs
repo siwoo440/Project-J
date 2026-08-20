@@ -4,18 +4,31 @@ using UnityEngine;
 namespace ProjectJ.Ranking
 {
     [DisallowMultipleComponent]
-    public sealed class PlayerRankingManager : MonoBehaviour
+    public sealed class PlayerRankingManager :
+        MonoBehaviour
     {
         [SerializeField]
-        private List<PlayerRankingParticipant> participants =
-            new List<PlayerRankingParticipant>();
+        private List<PlayerRankingParticipant>
+            participants =
+                new List<
+                    PlayerRankingParticipant
+                >();
 
         private readonly List<int> heightBuffer =
             new List<int>();
 
+        private readonly List<
+            PlayerRankingParticipant
+        > activeParticipantBuffer =
+            new List<
+                PlayerRankingParticipant
+            >();
+
         private int nextRuntimePlayerId;
 
-        public IReadOnlyList<PlayerRankingParticipant> Participants
+        public IReadOnlyList<
+            PlayerRankingParticipant
+        > Participants
         {
             get
             {
@@ -77,6 +90,9 @@ namespace ProjectJ.Ranking
             RemoveNullParticipants();
 
             heightBuffer.Clear();
+            activeParticipantBuffer.Clear();
+
+            int fixedRankOffset = 0;
 
             for (
                 int i = 0;
@@ -84,8 +100,25 @@ namespace ProjectJ.Ranking
                 i++
             )
             {
+                PlayerRankingParticipant
+                    participant =
+                        participants[i];
+
+                if (
+                    !participant
+                        .HeightRankingEligible
+                )
+                {
+                    fixedRankOffset++;
+                    continue;
+                }
+
+                activeParticipantBuffer.Add(
+                    participant
+                );
+
                 heightBuffer.Add(
-                    participants[i]
+                    participant
                         .CurrentHeightCentimeters
                 );
             }
@@ -103,13 +136,15 @@ namespace ProjectJ.Ranking
 
             for (
                 int i = 0;
-                i < participants.Count;
+                i <
+                activeParticipantBuffer.Count;
                 i++
             )
             {
-                participants[i]
+                activeParticipantBuffer[i]
                     .SetCurrentRank(
-                        ranks[i]
+                        ranks[i] +
+                        fixedRankOffset
                     );
             }
         }

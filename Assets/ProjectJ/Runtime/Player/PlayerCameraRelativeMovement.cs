@@ -30,6 +30,34 @@ namespace ProjectJ.Player
         private float standingSpaceCheckPadding = 0.02f;
 
         [SerializeField]
+        [Range(0f, 89f)]
+        private float maxSlopeAngle = 45f;
+
+        [SerializeField]
+        [Min(0f)]
+        private float groundProbeDistance = 0.6f;
+
+        [SerializeField]
+        [Min(0f)]
+        private float groundSnapDistance = 0.25f;
+
+        [SerializeField]
+        [Min(0f)]
+        private float groundSnapSpeed = 4f;
+
+        [SerializeField]
+        [Min(0f)]
+        private float maxStepHeight = 0.4f;
+
+        [SerializeField]
+        [Min(0f)]
+        private float stepCheckDistance = 0.6f;
+
+        [SerializeField]
+        [Min(0f)]
+        private float stepUpSpeed = 3f;
+
+        [SerializeField]
         [Min(0f)]
         private float acceleration = 30f;
 
@@ -219,9 +247,38 @@ namespace ProjectJ.Player
                 );
             }
 
-            IsGrounded = CheckGrounded();
-
             Vector3 currentVelocity = body.linearVelocity;
+
+            bool hasGroundSurface = TryGetGroundSurface(
+                out RaycastHit groundHit,
+                out float groundGap
+            );
+
+            bool hasWalkableGround =
+                hasGroundSurface &&
+                IsSlopeWalkable(
+                    groundHit.normal,
+                    maxSlopeAngle
+                );
+
+            bool rawGrounded =
+                CheckGrounded();
+
+            bool groundedOnWalkableSurface =
+                rawGrounded &&
+                (
+                    !hasGroundSurface ||
+                    hasWalkableGround
+                );
+
+            bool closeEnoughForSnap =
+                hasWalkableGround &&
+                currentVelocity.y <= 0.1f &&
+                groundGap <= groundSnapDistance;
+
+            IsGrounded =
+                groundedOnWalkableSurface ||
+                closeEnoughForSnap;
 
             bool groundedForJump =
                 IsGrounded &&
@@ -306,34 +363,91 @@ namespace ProjectJ.Player
                     airDeceleration
                 );
 
-            Vector3 horizontalVelocity = CalculateHorizontalVelocity(
-                currentVelocity,
-                moveDirection,
-                targetMoveSpeed,
-                horizontalChangeRates.x,
-                horizontalChangeRates.y,
-                Time.fixedDeltaTime
-            );
+            bool useGroundSurfaceMovement =
+                IsGrounded &&
+                hasWalkableGround &&
+                !shouldJump;
 
-            float verticalVelocity = CalculateVerticalVelocity(
+            Vector3 calculatedVelocity;
+
+            if (useGroundSurfaceMovement)
+            {
+                calculatedVelocity = CalculateSurfaceVelocity(
+                    currentVelocity,
+                    moveDirection,
+                    groundHit.normal,
+                    targetMoveSpeed,
+                    horizontalChangeRates.x,
+                    horizontalChangeRates.y,
+                    Time.fixedDeltaTime
+                );
+            }
+            else
+            {
+                Vector3 horizontalVelocity = CalculateHorizontalVelocity(
+                    currentVelocity,
+                    moveDirection,
+                    targetMoveSpeed,
+                    horizontalChangeRates.x,
+                    horizontalChangeRates.y,
+                    Time.fixedDeltaTime
+                );
+
+                float verticalVelocity = CalculateVerticalVelocity(
+                    currentVelocity.y,
+                    IsGrounded,
+                    shouldJump,
+                    jumpVelocity,
+                    gravity,
+                    Time.fixedDeltaTime
+                );
+
+                calculatedVelocity = new Vector3(
+                    horizontalVelocity.x,
+                    verticalVelocity,
+                    horizontalVelocity.z
+                );
+            }
+
+            bool shouldSnapDown = ShouldApplyGroundSnap(
+                hasWalkableGround,
+                rawGrounded,
                 currentVelocity.y,
-                IsGrounded,
-                shouldJump,
-                jumpVelocity,
-                gravity,
-                Time.fixedDeltaTime
+                groundGap,
+                groundSnapDistance,
+                shouldJump
             );
 
-            body.linearVelocity = new Vector3(
-                horizontalVelocity.x,
-                verticalVelocity,
-                horizontalVelocity.z
+            if (shouldSnapDown)
+            {
+                calculatedVelocity.y = Mathf.Min(
+                    calculatedVelocity.y,
+                    -groundSnapSpeed
+                );
+            }
+
+            bool shouldStepUp = TryGetStepAssist(
+                moveDirection,
+                shouldJump
             );
+
+            if (shouldStepUp)
+            {
+                calculatedVelocity.y = Mathf.Max(
+                    calculatedVelocity.y,
+                    stepUpSpeed
+                );
+            }
+
+            body.linearVelocity = calculatedVelocity;
 
             if (moveDirection.sqrMagnitude > 0.0001f)
             {
                 body.MoveRotation(
-                    Quaternion.LookRotation(moveDirection, Vector3.up)
+                    Quaternion.LookRotation(
+                        moveDirection,
+                        Vector3.up
+                    )
                 );
             }
         }
@@ -348,7 +462,10 @@ namespace ProjectJ.Player
 
         private void OnJumpPerformed(InputAction.CallbackContext context)
         {
-            jumpBufferTimer = Mathf.Max(0f, jumpBufferTime);
+            jumpBufferTimer = Mathf.Max(
+                0f,
+                jumpBufferTime
+            );
         }
 
         private void OnSprintChanged(InputAction.CallbackContext context)
@@ -377,12 +494,18 @@ namespace ProjectJ.Player
 
             if (!shouldCrouch)
             {
-                capsuleCollider.height = standingColliderHeight;
-                capsuleCollider.center = standingColliderCenter;
+                capsuleCollider.height =
+                    standingColliderHeight;
+
+                capsuleCollider.center =
+                    standingColliderCenter;
+
                 return;
             }
 
-            float minimumHeight = capsuleCollider.radius * 2f;
+            float minimumHeight =
+                capsuleCollider.radius * 2f;
+
             float targetHeight = Mathf.Clamp(
                 crouchHeight,
                 minimumHeight,
@@ -391,7 +514,9 @@ namespace ProjectJ.Player
 
             capsuleCollider.height = targetHeight;
 
-            Vector3 crouchCenter = standingColliderCenter;
+            Vector3 crouchCenter =
+                standingColliderCenter;
+
             crouchCenter.y = CalculateCrouchCenterY(
                 standingColliderCenter.y,
                 standingColliderHeight,
@@ -408,22 +533,20 @@ namespace ProjectJ.Player
                 return true;
             }
 
-            float probeRadius;
-            Vector3 pointA;
-            Vector3 pointB;
-
             CalculateCapsuleWorldPoints(
                 transform,
                 standingColliderCenter,
                 standingColliderHeight,
                 capsuleCollider.radius,
                 standingSpaceCheckPadding,
-                out pointA,
-                out pointB,
-                out probeRadius
+                out Vector3 pointA,
+                out Vector3 pointB,
+                out float probeRadius
             );
 
-            bool colliderState = capsuleCollider.enabled;
+            bool colliderState =
+                capsuleCollider.enabled;
+
             capsuleCollider.enabled = false;
 
             bool isBlocked = Physics.CheckCapsule(
@@ -434,7 +557,8 @@ namespace ProjectJ.Player
                 QueryTriggerInteraction.Ignore
             );
 
-            capsuleCollider.enabled = colliderState;
+            capsuleCollider.enabled =
+                colliderState;
 
             return !isBlocked;
         }
@@ -454,6 +578,121 @@ namespace ProjectJ.Player
                 groundCheckRadius,
                 groundLayers,
                 QueryTriggerInteraction.Ignore
+            );
+        }
+
+        private bool TryGetGroundSurface(
+            out RaycastHit hit,
+            out float groundGap
+        )
+        {
+            Bounds bounds = groundCollider.bounds;
+
+            const float probeStartOffset = 0.05f;
+
+            Vector3 origin =
+                bounds.center +
+                Vector3.up * probeStartOffset;
+
+            float distanceFromOriginToBottom =
+                bounds.extents.y +
+                probeStartOffset;
+
+            float castDistance =
+                distanceFromOriginToBottom +
+                groundProbeDistance;
+
+            bool hasHit = Physics.Raycast(
+                origin,
+                Vector3.down,
+                out hit,
+                castDistance,
+                groundLayers,
+                QueryTriggerInteraction.Ignore
+            );
+
+            if (!hasHit)
+            {
+                groundGap = float.PositiveInfinity;
+                return false;
+            }
+
+            groundGap = CalculateGroundGap(
+                hit.distance,
+                distanceFromOriginToBottom
+            );
+
+            return true;
+        }
+
+        private bool TryGetStepAssist(
+            Vector3 moveDirection,
+            bool shouldJump
+        )
+        {
+            if (!IsGrounded)
+            {
+                return false;
+            }
+
+            Vector3 forward = Vector3.ProjectOnPlane(
+                moveDirection,
+                Vector3.up
+            );
+
+            if (forward.sqrMagnitude <= 0.0001f)
+            {
+                return false;
+            }
+
+            forward.Normalize();
+
+            Bounds bounds = groundCollider.bounds;
+
+            const float lowerProbeHeight = 0.05f;
+            const float upperProbePadding = 0.05f;
+
+            Vector3 lowerOrigin = new Vector3(
+                bounds.center.x,
+                bounds.min.y + lowerProbeHeight,
+                bounds.center.z
+            );
+
+            Vector3 upperOrigin = new Vector3(
+                bounds.center.x,
+                bounds.min.y +
+                    maxStepHeight +
+                    upperProbePadding,
+                bounds.center.z
+            );
+
+            bool lowerBlocked = Physics.Raycast(
+                lowerOrigin,
+                forward,
+                out RaycastHit lowerHit,
+                stepCheckDistance,
+                groundLayers,
+                QueryTriggerInteraction.Ignore
+            );
+
+            bool upperBlocked = Physics.Raycast(
+                upperOrigin,
+                forward,
+                stepCheckDistance,
+                groundLayers,
+                QueryTriggerInteraction.Ignore
+            );
+
+            bool lowerSurfaceIsStepFace =
+                lowerBlocked &&
+                lowerHit.normal.y < 0.2f;
+
+            return CanUseStepAssist(
+                lowerSurfaceIsStepFace,
+                upperBlocked,
+                IsGrounded,
+                shouldJump,
+                body.linearVelocity.y
             );
         }
 
@@ -477,6 +716,47 @@ namespace ProjectJ.Player
             if (standingSpaceCheckPadding < 0f)
             {
                 standingSpaceCheckPadding = 0f;
+            }
+
+            maxSlopeAngle = Mathf.Clamp(
+                maxSlopeAngle,
+                0f,
+                89f
+            );
+
+            if (maxSlopeAngle <= 0f)
+            {
+                maxSlopeAngle = 45f;
+            }
+
+            if (groundProbeDistance <= 0f)
+            {
+                groundProbeDistance = 0.6f;
+            }
+
+            if (groundSnapDistance <= 0f)
+            {
+                groundSnapDistance = 0.25f;
+            }
+
+            if (groundSnapSpeed <= 0f)
+            {
+                groundSnapSpeed = 4f;
+            }
+
+            if (maxStepHeight <= 0f)
+            {
+                maxStepHeight = 0.4f;
+            }
+
+            if (stepCheckDistance <= 0f)
+            {
+                stepCheckDistance = 0.6f;
+            }
+
+            if (stepUpSpeed <= 0f)
+            {
+                stepUpSpeed = 3f;
             }
 
             if (airAcceleration <= 0f)
@@ -547,7 +827,8 @@ namespace ProjectJ.Player
         {
             if (Camera.main != null)
             {
-                cameraReference = Camera.main.transform;
+                cameraReference =
+                    Camera.main.transform;
             }
         }
 
@@ -557,7 +838,8 @@ namespace ProjectJ.Player
 
             if (targetCollider == null)
             {
-                targetCollider = GetComponent<Collider>();
+                targetCollider =
+                    GetComponent<Collider>();
             }
 
             if (targetCollider == null)
@@ -574,26 +856,42 @@ namespace ProjectJ.Player
             );
 
             Gizmos.color = Color.green;
+
             Gizmos.DrawWireSphere(
                 checkPosition,
                 groundCheckRadius
             );
 
-            CapsuleCollider targetCapsule = capsuleCollider;
+            Gizmos.color = Color.cyan;
+
+            Vector3 probeOrigin =
+                bounds.center +
+                Vector3.up * 0.05f;
+
+            Gizmos.DrawLine(
+                probeOrigin,
+                probeOrigin +
+                    Vector3.down *
+                    (
+                        bounds.extents.y +
+                        0.05f +
+                        groundProbeDistance
+                    )
+            );
+
+            CapsuleCollider targetCapsule =
+                capsuleCollider;
 
             if (targetCapsule == null)
             {
-                targetCapsule = GetComponent<CapsuleCollider>();
+                targetCapsule =
+                    GetComponent<CapsuleCollider>();
             }
 
             if (targetCapsule == null)
             {
                 return;
             }
-
-            float probeRadius;
-            Vector3 pointA;
-            Vector3 pointB;
 
             CalculateCapsuleWorldPoints(
                 transform,
@@ -605,18 +903,21 @@ namespace ProjectJ.Player
                     : standingColliderHeight,
                 targetCapsule.radius,
                 standingSpaceCheckPadding,
-                out pointA,
-                out pointB,
-                out probeRadius
+                out Vector3 pointA,
+                out Vector3 pointB,
+                out float probeRadius
             );
 
             Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(pointA, probeRadius);
-            Gizmos.DrawWireSphere(pointB, probeRadius);
-            Gizmos.DrawLine(pointA + Vector3.right * probeRadius, pointB + Vector3.right * probeRadius);
-            Gizmos.DrawLine(pointA - Vector3.right * probeRadius, pointB - Vector3.right * probeRadius);
-            Gizmos.DrawLine(pointA + Vector3.forward * probeRadius, pointB + Vector3.forward * probeRadius);
-            Gizmos.DrawLine(pointA - Vector3.forward * probeRadius, pointB - Vector3.forward * probeRadius);
+            Gizmos.DrawWireSphere(
+                pointA,
+                probeRadius
+            );
+
+            Gizmos.DrawWireSphere(
+                pointB,
+                probeRadius
+            );
         }
 
         public static Vector3 CalculateMoveDirection(
@@ -625,17 +926,23 @@ namespace ProjectJ.Player
             Vector3 cameraRight
         )
         {
-            Vector2 clampedInput = Vector2.ClampMagnitude(input, 1f);
+            Vector2 clampedInput =
+                Vector2.ClampMagnitude(
+                    input,
+                    1f
+                );
 
-            Vector3 forward = Vector3.ProjectOnPlane(
-                cameraForward,
-                Vector3.up
-            );
+            Vector3 forward =
+                Vector3.ProjectOnPlane(
+                    cameraForward,
+                    Vector3.up
+                );
 
-            Vector3 right = Vector3.ProjectOnPlane(
-                cameraRight,
-                Vector3.up
-            );
+            Vector3 right =
+                Vector3.ProjectOnPlane(
+                    cameraRight,
+                    Vector3.up
+                );
 
             if (forward.sqrMagnitude > 0.0001f)
             {
@@ -670,12 +977,165 @@ namespace ProjectJ.Player
                 return true;
             }
 
-            if (isCurrentlyCrouching && !canStandUp)
+            if (
+                isCurrentlyCrouching &&
+                !canStandUp
+            )
             {
                 return true;
             }
 
             return false;
+        }
+
+        public static bool IsSlopeWalkable(
+            Vector3 surfaceNormal,
+            float maxSlopeAngle
+        )
+        {
+            if (surfaceNormal.sqrMagnitude <= 0.0001f)
+            {
+                return false;
+            }
+
+            float angle = Vector3.Angle(
+                surfaceNormal,
+                Vector3.up
+            );
+
+            return angle <= Mathf.Clamp(
+                maxSlopeAngle,
+                0f,
+                89f
+            );
+        }
+
+        public static Vector3 ProjectDirectionOnSlope(
+            Vector3 moveDirection,
+            Vector3 surfaceNormal
+        )
+        {
+            float inputMagnitude = Mathf.Clamp01(
+                moveDirection.magnitude
+            );
+
+            if (
+                inputMagnitude <= 0f ||
+                surfaceNormal.sqrMagnitude <= 0.0001f
+            )
+            {
+                return Vector3.zero;
+            }
+
+            Vector3 projected =
+                Vector3.ProjectOnPlane(
+                    moveDirection,
+                    surfaceNormal
+                );
+
+            if (projected.sqrMagnitude <= 0.0001f)
+            {
+                return Vector3.zero;
+            }
+
+            return projected.normalized *
+                inputMagnitude;
+        }
+
+        public static Vector3 CalculateSurfaceVelocity(
+            Vector3 currentVelocity,
+            Vector3 moveDirection,
+            Vector3 surfaceNormal,
+            float moveSpeed,
+            float acceleration,
+            float deceleration,
+            float deltaTime
+        )
+        {
+            Vector3 safeNormal =
+                surfaceNormal.sqrMagnitude > 0.0001f
+                    ? surfaceNormal.normalized
+                    : Vector3.up;
+
+            Vector3 currentSurfaceVelocity =
+                Vector3.ProjectOnPlane(
+                    currentVelocity,
+                    safeNormal
+                );
+
+            Vector3 surfaceDirection =
+                ProjectDirectionOnSlope(
+                    moveDirection,
+                    safeNormal
+                );
+
+            Vector3 targetVelocity =
+                surfaceDirection *
+                Mathf.Max(0f, moveSpeed);
+
+            bool hasMoveInput =
+                moveDirection.sqrMagnitude > 0.0001f;
+
+            float changeRate = hasMoveInput
+                ? Mathf.Max(0f, acceleration)
+                : Mathf.Max(0f, deceleration);
+
+            return Vector3.MoveTowards(
+                currentSurfaceVelocity,
+                targetVelocity,
+                changeRate *
+                    Mathf.Max(0f, deltaTime)
+            );
+        }
+
+        public static float CalculateGroundGap(
+            float groundHitDistance,
+            float distanceFromProbeToColliderBottom
+        )
+        {
+            return Mathf.Max(
+                0f,
+                groundHitDistance -
+                    Mathf.Max(
+                        0f,
+                        distanceFromProbeToColliderBottom
+                    )
+            );
+        }
+
+        public static bool ShouldApplyGroundSnap(
+            bool hasWalkableGround,
+            bool isAlreadyGrounded,
+            float currentVerticalVelocity,
+            float groundGap,
+            float snapDistance,
+            bool shouldJump
+        )
+        {
+            return hasWalkableGround &&
+                !isAlreadyGrounded &&
+                !shouldJump &&
+                currentVerticalVelocity <= 0.1f &&
+                groundGap >= 0f &&
+                groundGap <= Mathf.Max(
+                    0f,
+                    snapDistance
+                );
+        }
+
+        public static bool CanUseStepAssist(
+            bool lowerProbeBlocked,
+            bool upperProbeBlocked,
+            bool isGrounded,
+            bool shouldJump,
+            float currentVerticalVelocity
+        )
+        {
+            return lowerProbeBlocked &&
+                !upperProbeBlocked &&
+                isGrounded &&
+                !shouldJump &&
+                currentVerticalVelocity <= 0.1f;
         }
 
         public static bool IsAirborneForHorizontalControl(
@@ -719,7 +1179,10 @@ namespace ProjectJ.Player
         {
             if (isCrouching)
             {
-                return Mathf.Max(0f, crouchMoveSpeed);
+                return Mathf.Max(
+                    0f,
+                    crouchMoveSpeed
+                );
             }
 
             return isSprinting
@@ -733,15 +1196,22 @@ namespace ProjectJ.Player
             float crouchingHeight
         )
         {
-            float safeStandingHeight = Mathf.Max(0f, standingHeight);
-            float safeCrouchingHeight = Mathf.Clamp(
-                crouchingHeight,
-                0f,
-                safeStandingHeight
-            );
+            float safeStandingHeight =
+                Mathf.Max(
+                    0f,
+                    standingHeight
+                );
+
+            float safeCrouchingHeight =
+                Mathf.Clamp(
+                    crouchingHeight,
+                    0f,
+                    safeStandingHeight
+                );
 
             float heightDifference =
-                safeStandingHeight - safeCrouchingHeight;
+                safeStandingHeight -
+                safeCrouchingHeight;
 
             return standingCenterY -
                 heightDifference * 0.5f;
@@ -758,37 +1228,59 @@ namespace ProjectJ.Player
             out float probeRadius
         )
         {
-            Vector3 lossyScale = targetTransform.lossyScale;
+            Vector3 lossyScale =
+                targetTransform.lossyScale;
 
             float horizontalScale = Mathf.Max(
                 Mathf.Abs(lossyScale.x),
                 Mathf.Abs(lossyScale.z)
             );
 
-            float verticalScale = Mathf.Abs(lossyScale.y);
+            float verticalScale =
+                Mathf.Abs(lossyScale.y);
+
             float safeRadius = Mathf.Max(
                 0.01f,
-                localRadius * horizontalScale
+                localRadius *
+                    horizontalScale
             );
 
             float safeHeight = Mathf.Max(
                 safeRadius * 2f,
-                localHeight * verticalScale
+                localHeight *
+                    verticalScale
             );
 
-            float halfSegmentLength = Mathf.Max(
-                0f,
-                safeHeight * 0.5f - safeRadius
-            );
+            float halfSegmentLength =
+                Mathf.Max(
+                    0f,
+                    safeHeight * 0.5f -
+                        safeRadius
+                );
 
-            Vector3 worldCenter = targetTransform.TransformPoint(localCenter);
-            Vector3 axis = targetTransform.up;
+            Vector3 worldCenter =
+                targetTransform.TransformPoint(
+                    localCenter
+                );
 
-            pointA = worldCenter + axis * halfSegmentLength;
-            pointB = worldCenter - axis * halfSegmentLength;
+            Vector3 axis =
+                targetTransform.up;
+
+            pointA =
+                worldCenter +
+                axis * halfSegmentLength;
+
+            pointB =
+                worldCenter -
+                axis * halfSegmentLength;
+
             probeRadius = Mathf.Max(
                 0.01f,
-                safeRadius - Mathf.Max(0f, padding)
+                safeRadius -
+                    Mathf.Max(
+                        0f,
+                        padding
+                    )
             );
         }
 
@@ -801,21 +1293,39 @@ namespace ProjectJ.Player
             float deltaTime
         )
         {
-            float safeMaxStamina = Mathf.Max(0f, maxStamina);
-            float safeCurrentStamina = Mathf.Clamp(
-                currentStamina,
-                0f,
-                safeMaxStamina
-            );
+            float safeMaxStamina =
+                Mathf.Max(
+                    0f,
+                    maxStamina
+                );
 
-            float safeDeltaTime = Mathf.Max(0f, deltaTime);
+            float safeCurrentStamina =
+                Mathf.Clamp(
+                    currentStamina,
+                    0f,
+                    safeMaxStamina
+                );
 
-            float staminaChange = isSprinting
-                ? -Mathf.Max(0f, drainRate) * safeDeltaTime
-                : Mathf.Max(0f, recoveryRate) * safeDeltaTime;
+            float safeDeltaTime =
+                Mathf.Max(
+                    0f,
+                    deltaTime
+                );
+
+            float staminaChange =
+                isSprinting
+                    ? -Mathf.Max(
+                        0f,
+                        drainRate
+                    ) * safeDeltaTime
+                    : Mathf.Max(
+                        0f,
+                        recoveryRate
+                    ) * safeDeltaTime;
 
             return Mathf.Clamp(
-                safeCurrentStamina + staminaChange,
+                safeCurrentStamina +
+                    staminaChange,
                 0f,
                 safeMaxStamina
             );
@@ -832,14 +1342,26 @@ namespace ProjectJ.Player
             if (isAirborne)
             {
                 return new Vector2(
-                    Mathf.Max(0f, airAcceleration),
-                    Mathf.Max(0f, airDeceleration)
+                    Mathf.Max(
+                        0f,
+                        airAcceleration
+                    ),
+                    Mathf.Max(
+                        0f,
+                        airDeceleration
+                    )
                 );
             }
 
             return new Vector2(
-                Mathf.Max(0f, groundAcceleration),
-                Mathf.Max(0f, groundDeceleration)
+                Mathf.Max(
+                    0f,
+                    groundAcceleration
+                ),
+                Mathf.Max(
+                    0f,
+                    groundDeceleration
+                )
             );
         }
 
@@ -852,29 +1374,47 @@ namespace ProjectJ.Player
             float deltaTime
         )
         {
-            Vector3 currentHorizontalVelocity = new Vector3(
-                currentVelocity.x,
-                0f,
-                currentVelocity.z
-            );
+            Vector3 currentHorizontalVelocity =
+                new Vector3(
+                    currentVelocity.x,
+                    0f,
+                    currentVelocity.z
+                );
 
-            Vector3 clampedDirection = Vector3.ClampMagnitude(
-                moveDirection,
-                1f
-            );
+            Vector3 clampedDirection =
+                Vector3.ClampMagnitude(
+                    moveDirection,
+                    1f
+                );
 
             Vector3 targetVelocity =
-                clampedDirection * Mathf.Max(0f, moveSpeed);
+                clampedDirection *
+                Mathf.Max(
+                    0f,
+                    moveSpeed
+                );
 
             bool hasMoveInput =
-                clampedDirection.sqrMagnitude > 0.0001f;
+                clampedDirection.sqrMagnitude >
+                    0.0001f;
 
-            float changeRate = hasMoveInput
-                ? Mathf.Max(0f, acceleration)
-                : Mathf.Max(0f, deceleration);
+            float changeRate =
+                hasMoveInput
+                    ? Mathf.Max(
+                        0f,
+                        acceleration
+                    )
+                    : Mathf.Max(
+                        0f,
+                        deceleration
+                    );
 
             float maxVelocityChange =
-                changeRate * Mathf.Max(0f, deltaTime);
+                changeRate *
+                Mathf.Max(
+                    0f,
+                    deltaTime
+                );
 
             return Vector3.MoveTowards(
                 currentHorizontalVelocity,
@@ -890,7 +1430,11 @@ namespace ProjectJ.Player
             float deltaTime
         )
         {
-            float safeCoyoteTime = Mathf.Max(0f, coyoteTime);
+            float safeCoyoteTime =
+                Mathf.Max(
+                    0f,
+                    coyoteTime
+                );
 
             if (isGrounded)
             {
@@ -898,9 +1442,15 @@ namespace ProjectJ.Player
             }
 
             return Mathf.MoveTowards(
-                Mathf.Max(0f, currentTimer),
+                Mathf.Max(
+                    0f,
+                    currentTimer
+                ),
                 0f,
-                Mathf.Max(0f, deltaTime)
+                Mathf.Max(
+                    0f,
+                    deltaTime
+                )
             );
         }
 
@@ -910,9 +1460,15 @@ namespace ProjectJ.Player
         )
         {
             return Mathf.MoveTowards(
-                Mathf.Max(0f, currentTimer),
+                Mathf.Max(
+                    0f,
+                    currentTimer
+                ),
                 0f,
-                Mathf.Max(0f, deltaTime)
+                Mathf.Max(
+                    0f,
+                    deltaTime
+                )
             );
         }
 
@@ -934,9 +1490,23 @@ namespace ProjectJ.Player
             float deltaTime
         )
         {
-            float safeJumpVelocity = Mathf.Max(0f, jumpVelocity);
-            float safeGravity = Mathf.Min(0f, gravity);
-            float safeDeltaTime = Mathf.Max(0f, deltaTime);
+            float safeJumpVelocity =
+                Mathf.Max(
+                    0f,
+                    jumpVelocity
+                );
+
+            float safeGravity =
+                Mathf.Min(
+                    0f,
+                    gravity
+                );
+
+            float safeDeltaTime =
+                Mathf.Max(
+                    0f,
+                    deltaTime
+                );
 
             if (shouldJump)
             {
@@ -953,7 +1523,8 @@ namespace ProjectJ.Player
             }
 
             return currentVerticalVelocity +
-                safeGravity * safeDeltaTime;
+                safeGravity *
+                    safeDeltaTime;
         }
     }
 }

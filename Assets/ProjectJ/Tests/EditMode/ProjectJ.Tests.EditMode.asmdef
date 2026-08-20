@@ -1,0 +1,21 @@
+{
+    "name": "ProjectJ.Tests.EditMode",
+    "rootNamespace": "ProjectJ.Tests.EditMode",
+    "references": [
+        "ProjectJ.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false,
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}

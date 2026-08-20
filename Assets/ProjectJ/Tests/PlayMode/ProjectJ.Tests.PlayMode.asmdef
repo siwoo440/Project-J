@@ -1,0 +1,19 @@
+{
+    "name": "ProjectJ.Tests.PlayMode",
+    "rootNamespace": "ProjectJ.Tests.PlayMode",
+    "references": [
+        "ProjectJ.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false,
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}

@@ -261,6 +261,9 @@ namespace ProjectJ.Match
                 centerStyle.fontSize = 76;
                 centerStyle.fontStyle =
                     FontStyle.Bold;
+
+                centerStyle.normal.textColor =
+                    Color.black;
             }
 
             if (stateStyle == null)
@@ -273,6 +276,9 @@ namespace ProjectJ.Match
                 stateStyle.fontSize = 20;
                 stateStyle.fontStyle =
                     FontStyle.Bold;
+
+                stateStyle.normal.textColor =
+                    Color.black;
             }
         }
     }

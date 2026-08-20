@@ -5,6 +5,7 @@ namespace ProjectJ.Player
 {
     [RequireComponent(typeof(Rigidbody))]
     [RequireComponent(typeof(PlayerInput))]
+    [RequireComponent(typeof(Collider))]
     public sealed class PlayerCameraRelativeMovement : MonoBehaviour
     {
         [SerializeField]
@@ -20,26 +21,56 @@ namespace ProjectJ.Player
         private float deceleration = 40f;
 
         [SerializeField]
+        [Min(0f)]
+        private float jumpVelocity = 8f;
+
+        [SerializeField]
+        private float gravity = -22f;
+
+        [SerializeField]
+        [Min(0f)]
+        private float groundCheckRadius = 0.22f;
+
+        [SerializeField]
+        [Min(0f)]
+        private float groundCheckOffset = 0.08f;
+
+        [SerializeField]
+        private LayerMask groundLayers;
+
+        [SerializeField]
         private Transform cameraReference;
 
         private Rigidbody body;
         private PlayerInput playerInput;
+        private Collider groundCollider;
         private InputAction moveAction;
+        private InputAction jumpAction;
         private Vector2 moveInput;
+        private bool jumpRequested;
+
+        public bool IsGrounded { get; private set; }
 
         private void Awake()
         {
             body = GetComponent<Rigidbody>();
             playerInput = GetComponent<PlayerInput>();
+            groundCollider = GetComponent<Collider>();
 
+            body.useGravity = false;
+
+            ApplyFallbackSettings();
             TryFindCamera();
         }
 
         private void OnEnable()
         {
             moveAction = playerInput.actions.FindAction("Move", true);
+            jumpAction = playerInput.actions.FindAction("Jump", true);
+
             moveAction.performed += OnMoveChanged;
             moveAction.canceled += OnMoveChanged;
+            jumpAction.performed += OnJumpPerformed;
         }
 
         private void OnDisable()
@@ -50,7 +81,13 @@ namespace ProjectJ.Player
                 moveAction.canceled -= OnMoveChanged;
             }
 
+            if (jumpAction != null)
+            {
+                jumpAction.performed -= OnJumpPerformed;
+            }
+
             moveInput = Vector2.zero;
+            jumpRequested = false;
         }
 
         private void FixedUpdate()
@@ -60,16 +97,18 @@ namespace ProjectJ.Player
                 TryFindCamera();
             }
 
-            if (cameraReference == null)
+            Vector3 moveDirection = Vector3.zero;
+
+            if (cameraReference != null)
             {
-                return;
+                moveDirection = CalculateMoveDirection(
+                    moveInput,
+                    cameraReference.forward,
+                    cameraReference.right
+                );
             }
 
-            Vector3 moveDirection = CalculateMoveDirection(
-                moveInput,
-                cameraReference.forward,
-                cameraReference.right
-            );
+            IsGrounded = CheckGrounded();
 
             Vector3 currentVelocity = body.linearVelocity;
 
@@ -82,9 +121,20 @@ namespace ProjectJ.Player
                 Time.fixedDeltaTime
             );
 
+            float verticalVelocity = CalculateVerticalVelocity(
+                currentVelocity.y,
+                IsGrounded,
+                jumpRequested,
+                jumpVelocity,
+                gravity,
+                Time.fixedDeltaTime
+            );
+
+            jumpRequested = false;
+
             body.linearVelocity = new Vector3(
                 horizontalVelocity.x,
-                currentVelocity.y,
+                verticalVelocity,
                 horizontalVelocity.z
             );
 
@@ -104,12 +154,94 @@ namespace ProjectJ.Player
             );
         }
 
+        private void OnJumpPerformed(InputAction.CallbackContext context)
+        {
+            jumpRequested = true;
+        }
+
+        private bool CheckGrounded()
+        {
+            Bounds bounds = groundCollider.bounds;
+
+            Vector3 checkPosition = new Vector3(
+                bounds.center.x,
+                bounds.min.y + groundCheckOffset,
+                bounds.center.z
+            );
+
+            return Physics.CheckSphere(
+                checkPosition,
+                groundCheckRadius,
+                groundLayers,
+                QueryTriggerInteraction.Ignore
+            );
+        }
+
+        private void ApplyFallbackSettings()
+        {
+            if (jumpVelocity <= 0f)
+            {
+                jumpVelocity = 8f;
+            }
+
+            if (gravity >= 0f)
+            {
+                gravity = -22f;
+            }
+
+            if (groundCheckRadius <= 0f)
+            {
+                groundCheckRadius = 0.22f;
+            }
+
+            if (groundCheckOffset <= 0f)
+            {
+                groundCheckOffset = 0.08f;
+            }
+
+            if (groundLayers.value == 0)
+            {
+                groundLayers = LayerMask.GetMask(
+                    "World",
+                    "Obstacle"
+                );
+            }
+        }
+
         private void TryFindCamera()
         {
             if (Camera.main != null)
             {
                 cameraReference = Camera.main.transform;
             }
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            Collider targetCollider = groundCollider;
+
+            if (targetCollider == null)
+            {
+                targetCollider = GetComponent<Collider>();
+            }
+
+            if (targetCollider == null)
+            {
+                return;
+            }
+
+            Bounds bounds = targetCollider.bounds;
+
+            Vector3 checkPosition = new Vector3(
+                bounds.center.x,
+                bounds.min.y + groundCheckOffset,
+                bounds.center.z
+            );
+
+            Gizmos.DrawWireSphere(
+                checkPosition,
+                groundCheckRadius
+            );
         }
 
         public static Vector3 CalculateMoveDirection(
@@ -190,6 +322,37 @@ namespace ProjectJ.Player
                 targetVelocity,
                 maxVelocityChange
             );
+        }
+
+        public static float CalculateVerticalVelocity(
+            float currentVerticalVelocity,
+            bool isGrounded,
+            bool jumpRequested,
+            float jumpVelocity,
+            float gravity,
+            float deltaTime
+        )
+        {
+            float safeJumpVelocity = Mathf.Max(0f, jumpVelocity);
+            float safeGravity = Mathf.Min(0f, gravity);
+            float safeDeltaTime = Mathf.Max(0f, deltaTime);
+
+            bool canUseGroundState =
+                isGrounded &&
+                currentVerticalVelocity <= 0.1f;
+
+            if (canUseGroundState)
+            {
+                if (jumpRequested)
+                {
+                    return safeJumpVelocity;
+                }
+
+                return 0f;
+            }
+
+            return currentVerticalVelocity +
+                safeGravity * safeDeltaTime;
         }
     }
 }

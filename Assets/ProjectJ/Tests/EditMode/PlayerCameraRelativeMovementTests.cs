@@ -198,5 +198,104 @@ namespace ProjectJ.Tests.EditMode
 
             Assert.That(velocity.y, Is.EqualTo(0f));
         }
+
+        [Test]
+        public void GroundedJump_ReturnsJumpVelocity()
+        {
+            float velocity =
+                PlayerCameraRelativeMovement.CalculateVerticalVelocity(
+                    0f,
+                    true,
+                    true,
+                    8f,
+                    -22f,
+                    0.02f
+                );
+
+            Assert.That(velocity, Is.EqualTo(8f));
+        }
+
+        [Test]
+        public void GroundedWithoutJump_StopsDownwardVelocity()
+        {
+            float velocity =
+                PlayerCameraRelativeMovement.CalculateVerticalVelocity(
+                    -5f,
+                    true,
+                    false,
+                    8f,
+                    -22f,
+                    0.02f
+                );
+
+            Assert.That(velocity, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void AirborneJump_DoesNotApplySecondJump()
+        {
+            float velocity =
+                PlayerCameraRelativeMovement.CalculateVerticalVelocity(
+                    -2f,
+                    false,
+                    true,
+                    8f,
+                    -22f,
+                    0.02f
+                );
+
+            Assert.That(velocity, Is.LessThan(-2f));
+            Assert.That(velocity, Is.Not.EqualTo(8f));
+        }
+
+        [Test]
+        public void Gravity_ReducesUpwardVelocity()
+        {
+            float velocity =
+                PlayerCameraRelativeMovement.CalculateVerticalVelocity(
+                    8f,
+                    false,
+                    false,
+                    8f,
+                    -22f,
+                    0.02f
+                );
+
+            Assert.That(velocity, Is.LessThan(8f));
+            Assert.That(velocity, Is.GreaterThan(0f));
+        }
+
+        [Test]
+        public void Gravity_IncreasesDownwardSpeed()
+        {
+            float velocity =
+                PlayerCameraRelativeMovement.CalculateVerticalVelocity(
+                    -2f,
+                    false,
+                    false,
+                    8f,
+                    -22f,
+                    0.02f
+                );
+
+            Assert.That(velocity, Is.LessThan(-2f));
+        }
+
+        [Test]
+        public void UpwardVelocity_IsNotCanceledByGroundOverlap()
+        {
+            float velocity =
+                PlayerCameraRelativeMovement.CalculateVerticalVelocity(
+                    7f,
+                    true,
+                    false,
+                    8f,
+                    -22f,
+                    0.02f
+                );
+
+            Assert.That(velocity, Is.LessThan(7f));
+            Assert.That(velocity, Is.GreaterThan(0f));
+        }
     }
 }

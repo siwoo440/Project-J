@@ -119,6 +119,37 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &9606315
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9606316}
+  m_Layer: 0
+  m_Name: FallLimit_CP3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9606316
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9606315}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 580, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 576707580}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &59201598
 GameObject:
   m_ObjectHideFlags: 0
@@ -299,6 +330,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4262717392992014944, guid: 789f2ac2aef99e843b35ceece91b3001, type: 3}
+      propertyPath: fallLimitSet
+      value: 
+      objectReference: {fileID: 576707579}
+    - target: {fileID: 4262717392992014944, guid: 789f2ac2aef99e843b35ceece91b3001, type: 3}
+      propertyPath: activeFallLimitY
+      value: -20
+      objectReference: {fileID: 0}
+    - target: {fileID: 4262717392992014944, guid: 789f2ac2aef99e843b35ceece91b3001, type: 3}
+      propertyPath: checkpointTracker
+      value: 
+      objectReference: {fileID: 127528468}
     - target: {fileID: 5004573433238649458, guid: 789f2ac2aef99e843b35ceece91b3001, type: 3}
       propertyPath: m_Name
       value: Player
@@ -319,6 +362,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a32a6f5c0051460bb6c345a5816b001d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Checkpoint.PlayerCheckpointTracker
+--- !u!114 &127528469 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4262717392992014944, guid: 789f2ac2aef99e843b35ceece91b3001, type: 3}
+  m_PrefabInstance: {fileID: 127528467}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13cb9298b95f4a41beb2d211532bca2d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Checkpoint.PlayerFallTracker
 --- !u!1001 &147076721
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -856,6 +910,37 @@ Transform:
   - {fileID: 1318404954}
   m_Father: {fileID: 1724732322}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &417732327
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 417732328}
+  m_Layer: 0
+  m_Name: FallLimit_CP4
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &417732328
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 417732327}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 780, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 576707580}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &430923256
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1173,6 +1258,60 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 562615191952274698, guid: 1691b72085d119146ad1985017ca29b2, type: 3}
   m_PrefabInstance: {fileID: 564473752}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &576707578
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 576707580}
+  - component: {fileID: 576707579}
+  m_Layer: 0
+  m_Name: === Fall Limits ===
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &576707579
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 576707578}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28429fb650f44e2896452b510e7a8d13, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Checkpoint.CheckpointFallLimitSet
+  startFallLimitY: -20
+  cp1FallLimitY: 180
+  cp2FallLimitY: 380
+  cp3FallLimitY: 580
+  cp4FallLimitY: 780
+--- !u!4 &576707580
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 576707578}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1209675553}
+  - {fileID: 1617120486}
+  - {fileID: 1019203716}
+  - {fileID: 9606316}
+  - {fileID: 417732328}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &612010546
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2302,6 +2441,37 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 562615191952274698, guid: 1691b72085d119146ad1985017ca29b2, type: 3}
   m_PrefabInstance: {fileID: 1000545474}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1019203715
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1019203716}
+  m_Layer: 0
+  m_Name: FallLimit_CP2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1019203716
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1019203715}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 380, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 576707580}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1027105655
 GameObject:
   m_ObjectHideFlags: 0
@@ -2663,6 +2833,37 @@ Transform:
   m_Children:
   - {fileID: 59201599}
   m_Father: {fileID: 1724732322}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1209675552
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1209675553}
+  m_Layer: 0
+  m_Name: FallLimit_START
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1209675553
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1209675552}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -20, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 576707580}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1225025011
 PrefabInstance:
@@ -3425,6 +3626,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 59201599}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1617120485
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1617120486}
+  m_Layer: 0
+  m_Name: FallLimit_CP1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1617120486
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1617120485}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 180, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 576707580}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1631702154
 GameObject:
   m_ObjectHideFlags: 0
@@ -3788,6 +4020,51 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 562615191952274698, guid: 1691b72085d119146ad1985017ca29b2, type: 3}
   m_PrefabInstance: {fileID: 1752954486}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1778040191
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1778040193}
+  - component: {fileID: 1778040192}
+  m_Layer: 0
+  m_Name: Fall Limit Debug
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1778040192
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778040191}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a12c5427e1d4e40b660e2adcbcaee25, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Checkpoint.FallLimitDebugView
+  fallTracker: {fileID: 127528469}
+--- !u!4 &1778040193
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778040191}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1816491940
 GameObject:
   m_ObjectHideFlags: 0
@@ -4503,3 +4780,5 @@ SceneRoots:
   - {fileID: 895916064}
   - {fileID: 729487667}
   - {fileID: 615563442}
+  - {fileID: 576707580}
+  - {fileID: 1778040193}

@@ -27,6 +27,10 @@ namespace ProjectJ.Player
 
         [SerializeField]
         [Min(0f)]
+        private float standingSpaceCheckPadding = 0.02f;
+
+        [SerializeField]
+        [Min(0f)]
         private float acceleration = 30f;
 
         [SerializeField]
@@ -195,7 +199,14 @@ namespace ProjectJ.Player
                 TryFindCamera();
             }
 
-            ApplyCrouchState(crouchHeld);
+            bool canStandUp = CanStandUp();
+            bool shouldCrouch = DetermineCrouchState(
+                crouchHeld,
+                IsCrouching,
+                canStandUp
+            );
+
+            ApplyCrouchState(shouldCrouch);
 
             Vector3 moveDirection = Vector3.zero;
 
@@ -390,6 +401,44 @@ namespace ProjectJ.Player
             capsuleCollider.center = crouchCenter;
         }
 
+        private bool CanStandUp()
+        {
+            if (capsuleCollider == null)
+            {
+                return true;
+            }
+
+            float probeRadius;
+            Vector3 pointA;
+            Vector3 pointB;
+
+            CalculateCapsuleWorldPoints(
+                transform,
+                standingColliderCenter,
+                standingColliderHeight,
+                capsuleCollider.radius,
+                standingSpaceCheckPadding,
+                out pointA,
+                out pointB,
+                out probeRadius
+            );
+
+            bool colliderState = capsuleCollider.enabled;
+            capsuleCollider.enabled = false;
+
+            bool isBlocked = Physics.CheckCapsule(
+                pointA,
+                pointB,
+                probeRadius,
+                groundLayers,
+                QueryTriggerInteraction.Ignore
+            );
+
+            capsuleCollider.enabled = colliderState;
+
+            return !isBlocked;
+        }
+
         private bool CheckGrounded()
         {
             Bounds bounds = groundCollider.bounds;
@@ -423,6 +472,11 @@ namespace ProjectJ.Player
             if (crouchHeight <= 0f)
             {
                 crouchHeight = 1.2f;
+            }
+
+            if (standingSpaceCheckPadding < 0f)
+            {
+                standingSpaceCheckPadding = 0f;
             }
 
             if (airAcceleration <= 0f)
@@ -519,10 +573,50 @@ namespace ProjectJ.Player
                 bounds.center.z
             );
 
+            Gizmos.color = Color.green;
             Gizmos.DrawWireSphere(
                 checkPosition,
                 groundCheckRadius
             );
+
+            CapsuleCollider targetCapsule = capsuleCollider;
+
+            if (targetCapsule == null)
+            {
+                targetCapsule = GetComponent<CapsuleCollider>();
+            }
+
+            if (targetCapsule == null)
+            {
+                return;
+            }
+
+            float probeRadius;
+            Vector3 pointA;
+            Vector3 pointB;
+
+            CalculateCapsuleWorldPoints(
+                transform,
+                standingColliderCenter == Vector3.zero
+                    ? targetCapsule.center
+                    : standingColliderCenter,
+                standingColliderHeight <= 0f
+                    ? targetCapsule.height
+                    : standingColliderHeight,
+                targetCapsule.radius,
+                standingSpaceCheckPadding,
+                out pointA,
+                out pointB,
+                out probeRadius
+            );
+
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(pointA, probeRadius);
+            Gizmos.DrawWireSphere(pointB, probeRadius);
+            Gizmos.DrawLine(pointA + Vector3.right * probeRadius, pointB + Vector3.right * probeRadius);
+            Gizmos.DrawLine(pointA - Vector3.right * probeRadius, pointB - Vector3.right * probeRadius);
+            Gizmos.DrawLine(pointA + Vector3.forward * probeRadius, pointB + Vector3.forward * probeRadius);
+            Gizmos.DrawLine(pointA - Vector3.forward * probeRadius, pointB - Vector3.forward * probeRadius);
         }
 
         public static Vector3 CalculateMoveDirection(
@@ -563,6 +657,25 @@ namespace ProjectJ.Player
             }
 
             return moveDirection;
+        }
+
+        public static bool DetermineCrouchState(
+            bool crouchHeld,
+            bool isCurrentlyCrouching,
+            bool canStandUp
+        )
+        {
+            if (crouchHeld)
+            {
+                return true;
+            }
+
+            if (isCurrentlyCrouching && !canStandUp)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public static bool IsAirborneForHorizontalControl(
@@ -632,6 +745,51 @@ namespace ProjectJ.Player
 
             return standingCenterY -
                 heightDifference * 0.5f;
+        }
+
+        public static void CalculateCapsuleWorldPoints(
+            Transform targetTransform,
+            Vector3 localCenter,
+            float localHeight,
+            float localRadius,
+            float padding,
+            out Vector3 pointA,
+            out Vector3 pointB,
+            out float probeRadius
+        )
+        {
+            Vector3 lossyScale = targetTransform.lossyScale;
+
+            float horizontalScale = Mathf.Max(
+                Mathf.Abs(lossyScale.x),
+                Mathf.Abs(lossyScale.z)
+            );
+
+            float verticalScale = Mathf.Abs(lossyScale.y);
+            float safeRadius = Mathf.Max(
+                0.01f,
+                localRadius * horizontalScale
+            );
+
+            float safeHeight = Mathf.Max(
+                safeRadius * 2f,
+                localHeight * verticalScale
+            );
+
+            float halfSegmentLength = Mathf.Max(
+                0f,
+                safeHeight * 0.5f - safeRadius
+            );
+
+            Vector3 worldCenter = targetTransform.TransformPoint(localCenter);
+            Vector3 axis = targetTransform.up;
+
+            pointA = worldCenter + axis * halfSegmentLength;
+            pointB = worldCenter - axis * halfSegmentLength;
+            probeRadius = Mathf.Max(
+                0.01f,
+                safeRadius - Mathf.Max(0f, padding)
+            );
         }
 
         public static float CalculateStamina(

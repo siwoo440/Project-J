@@ -1,5 +1,0 @@
-﻿<Solution>
-  <Project Path="ProjectJ.Runtime.csproj" />
-  <Project Path="ProjectJ.Tests.EditMode.csproj" />
-  <Project Path="ProjectJ.Tests.PlayMode.csproj" />
-</Solution>

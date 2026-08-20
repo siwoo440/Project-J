@@ -76,6 +76,91 @@ namespace ProjectJ.Tests.EditMode
         }
 
         [Test]
+        public void DetermineCrouchState_HeldInputKeepsCrouch()
+        {
+            bool shouldCrouch =
+                PlayerCameraRelativeMovement.DetermineCrouchState(
+                    true,
+                    false,
+                    true
+                );
+
+            Assert.That(shouldCrouch, Is.True);
+        }
+
+        [Test]
+        public void DetermineCrouchState_ReleasedInputWithBlockedHeadKeepsCrouch()
+        {
+            bool shouldCrouch =
+                PlayerCameraRelativeMovement.DetermineCrouchState(
+                    false,
+                    true,
+                    false
+                );
+
+            Assert.That(shouldCrouch, Is.True);
+        }
+
+        [Test]
+        public void DetermineCrouchState_ReleasedInputWithHeadroomStandsUp()
+        {
+            bool shouldCrouch =
+                PlayerCameraRelativeMovement.DetermineCrouchState(
+                    false,
+                    true,
+                    true
+                );
+
+            Assert.That(shouldCrouch, Is.False);
+        }
+
+        [Test]
+        public void DetermineCrouchState_StandingWithoutInputRemainsStanding()
+        {
+            bool shouldCrouch =
+                PlayerCameraRelativeMovement.DetermineCrouchState(
+                    false,
+                    false,
+                    true
+                );
+
+            Assert.That(shouldCrouch, Is.False);
+        }
+
+        [Test]
+        public void CalculateCapsuleWorldPoints_UsesStandingWorldHeight()
+        {
+            GameObject testObject = new GameObject("CapsulePointTest");
+
+            try
+            {
+                float radius;
+
+                Vector3 pointA;
+                Vector3 pointB;
+
+                PlayerCameraRelativeMovement.CalculateCapsuleWorldPoints(
+                    testObject.transform,
+                    Vector3.zero,
+                    2f,
+                    0.5f,
+                    0.02f,
+                    out pointA,
+                    out pointB,
+                    out radius
+                );
+
+                Assert.That(radius, Is.EqualTo(0.48f).Within(0.0001f));
+                Assert.That(pointA.y, Is.EqualTo(0.5f).Within(0.0001f));
+                Assert.That(pointB.y, Is.EqualTo(-0.5f).Within(0.0001f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(testObject);
+            }
+        }
+
+        [Test]
         public void Acceleration_DoesNotReachMaxSpeedImmediately()
         {
             Vector3 velocity =

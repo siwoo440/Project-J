@@ -2,9 +2,7 @@
     "name": "ProjectJ.Editor",
     "rootNamespace": "ProjectJ.Editor",
     "references": [
-        "ProjectJ.Runtime",
-        "Unity.InputSystem",
-        "UnityEngine.UI"
+        "ProjectJ.Runtime"
     ],
     "includePlatforms": [
         "Editor"

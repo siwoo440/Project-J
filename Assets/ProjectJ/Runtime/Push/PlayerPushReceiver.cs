@@ -8,6 +8,9 @@ namespace ProjectJ.Push
     [RequireComponent(
         typeof(Rigidbody)
     )]
+    [RequireComponent(
+        typeof(PlayerExternalForceAccumulator)
+    )]
     public sealed class PlayerPushReceiver :
         MonoBehaviour
     {
@@ -21,11 +24,27 @@ namespace ProjectJ.Push
         [SerializeField]
         private PlayerFinishState finishState;
 
+        [SerializeField]
+        private PlayerExternalForceAccumulator
+            externalForceAccumulator;
+
         public Rigidbody Body
         {
             get
             {
                 return body;
+            }
+        }
+
+        public PlayerExternalForceAccumulator
+            ExternalForceAccumulator
+        {
+            get
+            {
+                ResolveReferences();
+
+                return
+                    externalForceAccumulator;
             }
         }
 
@@ -72,13 +91,24 @@ namespace ProjectJ.Push
                     return false;
                 }
 
-                return true;
+                return
+                    externalForceAccumulator != null;
             }
         }
 
         private void Awake()
         {
             ResolveReferences();
+
+            if (
+                externalForceAccumulator == null
+            )
+            {
+                externalForceAccumulator =
+                    gameObject.AddComponent<
+                        PlayerExternalForceAccumulator
+                    >();
+            }
         }
 
         public void Configure(
@@ -110,26 +140,11 @@ namespace ProjectJ.Push
                 return false;
             }
 
-            Vector3 currentVelocity =
-                body.linearVelocity;
-
-            Vector3 horizontalVelocityChange =
-                new Vector3(
-                    velocityChange.x,
-                    0f,
-                    velocityChange.z
-                );
-
-            body.linearVelocity =
-                new Vector3(
-                    currentVelocity.x +
-                        horizontalVelocityChange.x,
-                    currentVelocity.y,
-                    currentVelocity.z +
-                        horizontalVelocityChange.z
-                );
-
-            return true;
+            return
+                externalForceAccumulator
+                    .AddVelocityChange(
+                        velocityChange
+                    );
         }
 
         private void ResolveReferences()
@@ -153,6 +168,16 @@ namespace ProjectJ.Push
                 finishState =
                     GetComponent<
                         PlayerFinishState
+                    >();
+            }
+
+            if (
+                externalForceAccumulator == null
+            )
+            {
+                externalForceAccumulator =
+                    GetComponent<
+                        PlayerExternalForceAccumulator
                     >();
             }
         }

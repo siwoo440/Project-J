@@ -18,7 +18,7 @@ namespace ProjectJ.Tests.EditMode
             90f;
 
         private const float HorizontalPush =
-            6f;
+            12f;
 
         private const float UpwardPush =
             0f;

@@ -20,7 +20,7 @@ namespace ProjectJ.Push
         [SerializeField]
         [Min(0f)]
         private float horizontalVelocityChange =
-            6f;
+            12f;
 
         [SerializeField]
         [Min(0f)]

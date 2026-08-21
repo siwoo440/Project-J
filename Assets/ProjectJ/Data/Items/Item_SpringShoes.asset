@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: Item_SpringShoes
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Items.ItemDefinition
   itemId: spring_shoes
-  displayName: Spring Shoes
+  displayName: 스프링 신발
   category: 0
   useMode: 0
   targetType: 0
   duration: 8
   cooldown: 0
   isPlaceable: 0
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: fa4cac9cb5c6bff4197a296344af6114, type: 3}

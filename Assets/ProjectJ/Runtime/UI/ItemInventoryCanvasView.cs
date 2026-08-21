@@ -19,11 +19,18 @@ namespace ProjectJ.UI // 프로젝트 UI 네임스페이스
         private static readonly Color EmptyIconColor =
             new Color(0.22f, 0.24f, 0.28f, 1f); // 빈 아이콘 색상
 
+        private static readonly Color EmptyNameColor =
+            new Color(0.62f, 0.65f, 0.70f, 1f); // 빈 슬롯 이름 색상
+
+        private const float SlotSize = 170f; // 정사각형 슬롯 크기
+        private const float SlotGap = 18f; // 두 슬롯 사이 간격
+        private const float IconPadding = 10f; // 슬롯 안쪽 아이콘 여백
+        private const float NameHeight = 34f; // 슬롯 위 아이템 이름 높이
+
         private PlayerItemInventory inventory; // 표시할 Inventory
         private Image[] slotBackgrounds; // 두 슬롯 배경
         private Image[] iconImages; // 두 슬롯 아이콘
-        private Text[] itemNameTexts; // 두 슬롯 이름
-        private Text[] modeTexts; // 두 슬롯 사용 방식
+        private Text[] itemNameTexts; // 슬롯 위 아이템 이름
 
         public static ItemInventoryCanvasView Create(Transform parent) // Canvas UI 런타임 생성
         {
@@ -87,10 +94,19 @@ namespace ProjectJ.UI // 프로젝트 UI 네임스페이스
             slotBackgrounds = new Image[PlayerItemInventory.SlotCount]; // 슬롯 배경 배열 생성
             iconImages = new Image[PlayerItemInventory.SlotCount]; // 아이콘 배열 생성
             itemNameTexts = new Text[PlayerItemInventory.SlotCount]; // 이름 Text 배열 생성
-            modeTexts = new Text[PlayerItemInventory.SlotCount]; // 방식 Text 배열 생성
 
             Font font =
                 Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); // Unity 기본 Font 사용
+
+            float panelWidth =
+                (SlotSize * PlayerItemInventory.SlotCount) +
+                SlotGap +
+                36f; // 두 슬롯과 바깥 여백을 포함한 Panel 폭
+
+            float panelHeight =
+                NameHeight +
+                SlotSize +
+                30f; // 이름 영역과 정사각형 슬롯을 포함한 Panel 높이
 
             GameObject panelObject =
                 CreateUiObject("InventoryPanel", transform); // Panel 오브젝트 생성
@@ -102,57 +118,63 @@ namespace ProjectJ.UI // 프로젝트 UI 네임스페이스
             panelRect.anchorMax = new Vector2(1f, 0f); // 화면 오른쪽 아래 기준
             panelRect.pivot = new Vector2(1f, 0f); // 우하단 Pivot
             panelRect.anchoredPosition = new Vector2(-28f, 28f); // 화면 가장자리 여백
-            panelRect.sizeDelta = new Vector2(390f, 142f); // 전체 인벤토리 크기
+            panelRect.sizeDelta = new Vector2(panelWidth, panelHeight); // 확대된 인벤토리 크기
 
             Image panelImage = panelObject.AddComponent<Image>(); // Panel 배경 추가
             panelImage.color = PanelColor; // 배경 색상 적용
 
-            Text title = CreateText( // 제목 Text 생성
-                "Title",
-                panelObject.transform,
-                font,
-                "ITEM INVENTORY",
-                18,
-                TextAnchor.MiddleLeft
-            );
-
-            RectTransform titleRect =
-                title.GetComponent<RectTransform>(); // 제목 RectTransform 저장
-
-            SetRect(
-                titleRect,
-                new Vector2(18f, -9f),
-                new Vector2(354f, 28f),
-                new Vector2(0f, 1f)
-            ); // Panel 상단 제목 배치
-
-            CreateSlot( // 첫 번째 Q 슬롯 생성
+            CreateSlot(
                 panelObject.transform,
                 font,
                 0,
                 "Q",
-                new Vector2(18f, -43f)
-            );
+                new Vector2(18f, -NameHeight - 18f)
+            ); // 첫 번째 Q 슬롯 생성
 
-            CreateSlot( // 두 번째 E 슬롯 생성
+            CreateSlot(
                 panelObject.transform,
                 font,
                 1,
                 "E",
-                new Vector2(201f, -43f)
-            );
+                new Vector2(18f + SlotSize + SlotGap, -NameHeight - 18f)
+            ); // 두 번째 E 슬롯 생성
 
-            Refresh(); // 초기 EMPTY 상태 표시
+            Refresh(); // 초기 빈 슬롯 상태 표시
         }
 
-        private void CreateSlot( // 한 개 슬롯 UI 생성
+        private void CreateSlot( // 한 개 정사각형 슬롯 UI 생성
             Transform parent,
             Font font,
             int slotIndex,
             string keyLabel,
-            Vector2 anchoredPosition
+            Vector2 slotPosition
         )
         {
+            Text nameText = CreateText(
+                "ItemName_" + (slotIndex + 1),
+                parent,
+                font,
+                "빈 슬롯",
+                20,
+                TextAnchor.MiddleCenter
+            ); // 슬롯 위 아이템 이름 생성
+
+            RectTransform nameRect =
+                nameText.GetComponent<RectTransform>(); // 이름 RectTransform 저장
+
+            SetRect(
+                nameRect,
+                new Vector2(slotPosition.x, -8f),
+                new Vector2(SlotSize, NameHeight),
+                new Vector2(0f, 1f)
+            ); // 슬롯 바로 위에 이름 배치
+
+            nameText.resizeTextForBestFit = true; // 긴 아이템 이름 자동 축소
+            nameText.resizeTextMinSize = 12; // 최소 글자 크기
+            nameText.resizeTextMaxSize = 20; // 최대 글자 크기
+            nameText.fontStyle = FontStyle.Bold; // 아이템 이름 강조
+            itemNameTexts[slotIndex] = nameText; // 배열 저장
+
             GameObject slotObject =
                 CreateUiObject("Slot_" + (slotIndex + 1), parent); // 슬롯 Root 생성
 
@@ -161,97 +183,60 @@ namespace ProjectJ.UI // 프로젝트 UI 네임스페이스
 
             SetRect(
                 slotRect,
-                anchoredPosition,
-                new Vector2(171f, 82f),
+                slotPosition,
+                new Vector2(SlotSize, SlotSize),
                 new Vector2(0f, 1f)
-            ); // 슬롯 위치와 크기 설정
+            ); // 슬롯을 정사각형으로 설정
 
             Image background = slotObject.AddComponent<Image>(); // 슬롯 배경 추가
             background.color = NormalSlotColor; // 기본 색상 적용
             slotBackgrounds[slotIndex] = background; // 배열에 저장
 
-            Text keyText = CreateText( // Q 또는 E 표시
-                "Key",
-                slotObject.transform,
-                font,
-                "[" + keyLabel + "]",
-                19,
-                TextAnchor.MiddleCenter
-            );
-
-            RectTransform keyRect =
-                keyText.GetComponent<RectTransform>(); // Key RectTransform
-
-            SetRect(
-                keyRect,
-                new Vector2(8f, -8f),
-                new Vector2(38f, 28f),
-                new Vector2(0f, 1f)
-            ); // 슬롯 왼쪽 위 배치
-
             GameObject iconObject =
                 CreateUiObject("Icon", slotObject.transform); // 아이콘 오브젝트 생성
 
             RectTransform iconRect =
-                iconObject.GetComponent<RectTransform>(); // 아이콘 RectTransform
+                iconObject.GetComponent<RectTransform>(); // 아이콘 RectTransform 저장
 
-            SetRect(
-                iconRect,
-                new Vector2(8f, -38f),
-                new Vector2(36f, 36f),
-                new Vector2(0f, 1f)
-            ); // 슬롯 왼쪽 아래 배치
+            iconRect.anchorMin = Vector2.zero; // 슬롯 전체 기준
+            iconRect.anchorMax = Vector2.one; // 슬롯 전체 기준
+            iconRect.pivot = new Vector2(0.5f, 0.5f); // 중앙 Pivot
+            iconRect.offsetMin = new Vector2(IconPadding, IconPadding); // 좌하단 여백
+            iconRect.offsetMax = new Vector2(-IconPadding, -IconPadding); // 우상단 여백
 
             Image iconImage = iconObject.AddComponent<Image>(); // 아이콘 Image 추가
-            iconImage.color = EmptyIconColor; // 빈 아이콘 기본 색상
-            iconImage.preserveAspect = true; // Sprite 비율 유지
+            iconImage.color = EmptyIconColor; // 빈 슬롯 기본 색상
+            iconImage.preserveAspect = true; // 원본 이미지 비율 유지
+            iconImage.raycastTarget = false; // UI 클릭 판정 제외
             iconImages[slotIndex] = iconImage; // 배열에 저장
 
-            Text nameText = CreateText( // 아이템 이름 Text 생성
-                "ItemName",
+            Text keyText = CreateText(
+                "Key",
                 slotObject.transform,
                 font,
-                "EMPTY",
-                16,
-                TextAnchor.MiddleLeft
-            );
+                keyLabel,
+                24,
+                TextAnchor.MiddleCenter
+            ); // Q 또는 E 표시
 
-            RectTransform nameRect =
-                nameText.GetComponent<RectTransform>(); // 이름 RectTransform
-
-            SetRect(
-                nameRect,
-                new Vector2(51f, -12f),
-                new Vector2(111f, 30f),
-                new Vector2(0f, 1f)
-            ); // 이름 위치 설정
-
-            nameText.resizeTextForBestFit = true; // 긴 이름 자동 축소
-            nameText.resizeTextMinSize = 10; // 최소 글자 크기
-            nameText.resizeTextMaxSize = 16; // 최대 글자 크기
-            itemNameTexts[slotIndex] = nameText; // 배열에 저장
-
-            Text modeText = CreateText( // 사용 방식 Text 생성
-                "Mode",
-                slotObject.transform,
-                font,
-                "-",
-                12,
-                TextAnchor.MiddleLeft
-            );
-
-            RectTransform modeRect =
-                modeText.GetComponent<RectTransform>(); // 방식 RectTransform
+            RectTransform keyRect =
+                keyText.GetComponent<RectTransform>(); // Key RectTransform 저장
 
             SetRect(
-                modeRect,
-                new Vector2(51f, -48f),
-                new Vector2(111f, 24f),
+                keyRect,
+                new Vector2(8f, -8f),
+                new Vector2(34f, 34f),
                 new Vector2(0f, 1f)
-            ); // 방식 위치 설정
+            ); // 슬롯 왼쪽 위에 키 표시
 
-            modeText.color = new Color(0.78f, 0.80f, 0.84f, 1f); // 보조 정보 색상
-            modeTexts[slotIndex] = modeText; // 배열에 저장
+            Image keyBackground =
+                CreateKeyBackground(slotObject.transform, keyRect); // 키 가독성용 배경 생성
+
+            keyBackground.transform.SetSiblingIndex(
+                keyText.transform.GetSiblingIndex()
+            ); // 키 Text 바로 뒤에 배경 배치
+
+            keyText.transform.SetAsLastSibling(); // 키 Text를 아이콘 위에 표시
         }
 
         private void Refresh() // Inventory 상태를 Canvas에 반영
@@ -278,30 +263,51 @@ namespace ProjectJ.UI // 프로젝트 UI 네임스페이스
 
                 if (definition == null) // 빈 슬롯 검사
                 {
-                    itemNameTexts[i].text = "EMPTY"; // 빈 슬롯 이름 표시
-                    modeTexts[i].text = "-"; // 사용 방식 숨김
+                    itemNameTexts[i].text = "빈 슬롯"; // 슬롯 위 빈 상태 표시
+                    itemNameTexts[i].color = EmptyNameColor; // 빈 슬롯 이름 색상
                     iconImages[i].sprite = null; // Sprite 제거
-                    iconImages[i].color = EmptyIconColor; // 빈 아이콘 색상 적용
+                    iconImages[i].color = EmptyIconColor; // 빈 슬롯 색상 적용
                     continue; // 다음 슬롯 처리
                 }
 
                 itemNameTexts[i].text =
                     string.IsNullOrWhiteSpace(definition.DisplayName)
                         ? definition.ItemId
-                        : definition.DisplayName; // 표시 이름 적용
+                        : definition.DisplayName; // 슬롯 위에 현재 아이템 이름 표시
 
-                modeTexts[i].text =
-                    definition.Category + " / " + definition.UseMode; // 아이템 역할과 사용 방식 표시
-
-                iconImages[i].sprite = definition.Icon; // 아이콘 Sprite 적용
+                itemNameTexts[i].color = Color.white; // 보유 아이템 이름 흰색 표시
+                iconImages[i].sprite = definition.Icon; // 실제 아이템 Sprite 적용
                 iconImages[i].color =
                     definition.Icon != null
                         ? Color.white
-                        : GetCategoryColor(definition.Category); // 아이콘이 없으면 카테고리 색상 표시
+                        : GetCategoryColor(definition.Category); // 아이콘 누락 시 카테고리 색상 표시
             }
         }
 
-        private static Color GetCategoryColor(ItemCategory category) // 카테고리별 임시 아이콘 색상
+        private static Image CreateKeyBackground( // Q/E 표시 뒤 작은 배경 생성
+            Transform parent,
+            RectTransform keyRect
+        )
+        {
+            GameObject backgroundObject =
+                CreateUiObject("KeyBackground", parent); // 키 배경 생성
+
+            RectTransform backgroundRect =
+                backgroundObject.GetComponent<RectTransform>(); // 배경 RectTransform 저장
+
+            backgroundRect.anchorMin = keyRect.anchorMin; // Key와 동일 Anchor 사용
+            backgroundRect.anchorMax = keyRect.anchorMax; // Key와 동일 Anchor 사용
+            backgroundRect.pivot = keyRect.pivot; // Key와 동일 Pivot 사용
+            backgroundRect.anchoredPosition = keyRect.anchoredPosition; // Key와 같은 위치
+            backgroundRect.sizeDelta = keyRect.sizeDelta; // Key와 같은 크기
+
+            Image image = backgroundObject.AddComponent<Image>(); // 배경 Image 추가
+            image.color = new Color(0f, 0f, 0f, 0.62f); // 반투명 검정 배경
+            image.raycastTarget = false; // 클릭 판정 제외
+            return image; // 생성된 배경 반환
+        }
+
+        private static Color GetCategoryColor(ItemCategory category) // 아이콘 누락 시 카테고리별 임시 색상
         {
             switch (category)
             {

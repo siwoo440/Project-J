@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: Item_BalloonHorn
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Items.ItemDefinition
   itemId: balloon_horn
-  displayName: Balloon Horn
+  displayName: 풍선 나팔
   category: 2
   useMode: 0
   targetType: 2
   duration: 0
   cooldown: 0
   isPlaceable: 0
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 0af7e90b98fb9114ab0d10ef22d7a532, type: 3}

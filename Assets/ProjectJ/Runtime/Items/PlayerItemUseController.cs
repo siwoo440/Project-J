@@ -124,6 +124,23 @@ namespace ProjectJ.Items // 아이템 시스템 네임스페이스
             return Complete(ItemUseResult.Success()); // 효과와 소비 모두 성공
         }
 
+        public void NotifyUseInputReleased() // Hold 아이템에 사용 버튼 해제를 전달
+        {
+            MonoBehaviour[] behaviours =
+                GetComponents<MonoBehaviour>(); // 현재 플레이어의 Runtime 컴포넌트 조회
+
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (
+                    behaviours[i] is
+                    IItemUseReleaseHandler releaseHandler
+                )
+                {
+                    releaseHandler.OnUseReleased(); // Hold Effect 종료 전달
+                }
+            }
+        }
+
         private ItemUseResult Complete(ItemUseResult result) // 결과 이벤트와 반환을 한곳에서 처리
         {
             UseCompleted?.Invoke(result); // UI 피드백 확장용 이벤트 발생

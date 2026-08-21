@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: Item_WaterGun
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Items.ItemDefinition
   itemId: water_gun
-  displayName: Water Gun
+  displayName: 물총
   category: 2
   useMode: 1
   targetType: 1
   duration: 0
   cooldown: 0
   isPlaceable: 0
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 2708e6ede85434f43b0c741e4ad9f693, type: 3}

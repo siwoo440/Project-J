@@ -1,5 +1,6 @@
 using System;
 using ProjectJ.Finish;
+using ProjectJ.Items.Effects;
 using UnityEngine;
 
 namespace ProjectJ.Push
@@ -23,6 +24,8 @@ namespace ProjectJ.Push
         [SerializeField]
         private PlayerExternalForceAccumulator
             externalForceAccumulator;
+
+        private JellyShieldState jellyShieldState;
 
         public event Action<
             ExternalForceSource,
@@ -112,6 +115,14 @@ namespace ProjectJ.Push
                 return false;
             }
 
+            if (
+                jellyShieldState != null &&
+                jellyShieldState.Blocks(source)
+            )
+            {
+                return false;
+            }
+
             Vector3 horizontalChange =
                 new Vector3(
                     velocityChange.x,
@@ -160,6 +171,12 @@ namespace ProjectJ.Push
                     GetComponent<
                         PlayerExternalForceAccumulator
                     >();
+            }
+
+            if (jellyShieldState == null)
+            {
+                jellyShieldState =
+                    GetComponent<JellyShieldState>();
             }
         }
     }

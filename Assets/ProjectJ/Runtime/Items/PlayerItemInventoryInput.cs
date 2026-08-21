@@ -71,7 +71,8 @@ namespace ProjectJ.Items // 아이템 시스템 네임스페이스
 
             if (useItemAction != null) // 사용 Action 존재 검사
             {
-                useItemAction.performed += OnUseItemPerformed; // 우클릭 사용 이벤트 연결
+                useItemAction.performed += OnUseItemPerformed; // 우클릭 사용 시작
+                useItemAction.canceled += OnUseItemCanceled; // 우클릭 해제 전달
             }
         }
 
@@ -90,6 +91,12 @@ namespace ProjectJ.Items // 아이템 시스템 네임스페이스
             if (useItemAction != null) // 사용 Action 존재 검사
             {
                 useItemAction.performed -= OnUseItemPerformed; // 사용 이벤트 해제
+                useItemAction.canceled -= OnUseItemCanceled; // 해제 이벤트 해제
+            }
+
+            if (useController != null)
+            {
+                useController.NotifyUseInputReleased(); // 비활성화 시 Hold Effect 강제 종료
             }
 
             leftSlotAction = null; // Action 참조 초기화
@@ -133,6 +140,14 @@ namespace ProjectJ.Items // 아이템 시스템 네임스페이스
                     $"아이템 사용 실패: {result.Status} / {result.Message}",
                     this
                 ); // 개발 중 실패 원인 확인
+            }
+        }
+
+        private void OnUseItemCanceled(InputAction.CallbackContext context) // Hold 아이템 사용 종료
+        {
+            if (useController != null)
+            {
+                useController.NotifyUseInputReleased(); // 활성 Hold Effect 종료
             }
         }
     }

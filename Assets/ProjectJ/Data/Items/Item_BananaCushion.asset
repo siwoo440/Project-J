@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: Item_BananaCushion
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Items.ItemDefinition
   itemId: banana_cushion
-  displayName: Banana Cushion
+  displayName: 바나나 쿠션
   category: 3
   useMode: 3
   targetType: 3
   duration: 0
   cooldown: 0
   isPlaceable: 1
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 2f6a1da546202ad47a762855a70e320d, type: 3}

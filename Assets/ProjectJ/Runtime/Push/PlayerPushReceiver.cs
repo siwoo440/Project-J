@@ -1,3 +1,4 @@
+using System;
 using ProjectJ.Checkpoint;
 using ProjectJ.Finish;
 using UnityEngine;
@@ -27,6 +28,8 @@ namespace ProjectJ.Push
         [SerializeField]
         private PlayerExternalForceAccumulator
             externalForceAccumulator;
+
+        public event Action<Vector3> PushReceived;
 
         public Rigidbody Body
         {
@@ -140,11 +143,24 @@ namespace ProjectJ.Push
                 return false;
             }
 
-            return
+            bool applied =
                 externalForceAccumulator
                     .AddVelocityChange(
                         velocityChange
                     );
+
+            if (applied)
+            {
+                PushReceived?.Invoke(
+                    new Vector3(
+                        velocityChange.x,
+                        0f,
+                        velocityChange.z
+                    )
+                );
+            }
+
+            return applied;
         }
 
         private void ResolveReferences()

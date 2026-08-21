@@ -1,3 +1,4 @@
+using System;
 using ProjectJ.Finish;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -56,6 +57,12 @@ namespace ProjectJ.Push
         private InputAction pushAction;
         private double nextAllowedPushTime;
         private bool isSubscribed;
+
+        public event Action<
+            PushAttemptResult,
+            PlayerFinishState,
+            Vector3
+        > PushAttempted;
 
         public float HorizontalVelocityChange
         {
@@ -198,15 +205,13 @@ namespace ProjectJ.Push
                 currentTime
             );
 
-            lastTarget =
-                null;
-
             if (IsOnCooldown)
             {
-                lastResult =
-                    PushAttemptResult.Cooldown;
-
-                return lastResult;
+                return CompleteAttempt(
+                    PushAttemptResult.Cooldown,
+                    null,
+                    Vector3.zero
+                );
             }
 
             if (
@@ -217,10 +222,11 @@ namespace ProjectJ.Push
                 )
             )
             {
-                lastResult =
-                    PushAttemptResult.InvalidState;
-
-                return lastResult;
+                return CompleteAttempt(
+                    PushAttemptResult.InvalidState,
+                    null,
+                    Vector3.zero
+                );
             }
 
             StartCooldownAt(
@@ -234,14 +240,12 @@ namespace ProjectJ.Push
 
             if (!foundTarget)
             {
-                lastResult =
-                    PushAttemptResult.Miss;
-
-                return lastResult;
+                return CompleteAttempt(
+                    PushAttemptResult.Miss,
+                    null,
+                    Vector3.zero
+                );
             }
-
-            lastTarget =
-                target;
 
             PlayerPushReceiver receiver =
                 target.GetComponent<
@@ -250,18 +254,20 @@ namespace ProjectJ.Push
 
             if (receiver == null)
             {
-                lastResult =
-                    PushAttemptResult.MissingReceiver;
-
-                return lastResult;
+                return CompleteAttempt(
+                    PushAttemptResult.MissingReceiver,
+                    target,
+                    Vector3.zero
+                );
             }
 
             if (receiver.IsRespawnProtected)
             {
-                lastResult =
-                    PushAttemptResult.Protected;
-
-                return lastResult;
+                return CompleteAttempt(
+                    PushAttemptResult.Protected,
+                    target,
+                    Vector3.zero
+                );
             }
 
             Vector3 velocityChange =
@@ -280,16 +286,18 @@ namespace ProjectJ.Push
 
             if (!applied)
             {
-                lastResult =
-                    PushAttemptResult.InvalidState;
-
-                return lastResult;
+                return CompleteAttempt(
+                    PushAttemptResult.InvalidState,
+                    target,
+                    Vector3.zero
+                );
             }
 
-            lastResult =
-                PushAttemptResult.Success;
-
-            return lastResult;
+            return CompleteAttempt(
+                PushAttemptResult.Success,
+                target,
+                velocityChange
+            );
         }
 
         public bool EvaluateCooldownAt(
@@ -360,6 +368,27 @@ namespace ProjectJ.Push
                     0f,
                     horizontalAmount
                 );
+        }
+
+        private PushAttemptResult CompleteAttempt(
+            PushAttemptResult result,
+            PlayerFinishState target,
+            Vector3 velocityChange
+        )
+        {
+            lastResult =
+                result;
+
+            lastTarget =
+                target;
+
+            PushAttempted?.Invoke(
+                result,
+                target,
+                velocityChange
+            );
+
+            return result;
         }
 
         private void StartCooldownAt(

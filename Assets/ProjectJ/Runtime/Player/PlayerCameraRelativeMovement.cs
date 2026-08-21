@@ -151,6 +151,10 @@ namespace ProjectJ.Player
         private void Awake()
         {
             body = GetComponent<Rigidbody>();
+
+            body.constraints |=  RigidbodyConstraints.FreezeRotation;
+            body.angularVelocity = Vector3.zero;
+
             playerInput = GetComponent<PlayerInput>();
             groundCollider = GetComponent<Collider>();
             capsuleCollider = GetComponent<CapsuleCollider>();

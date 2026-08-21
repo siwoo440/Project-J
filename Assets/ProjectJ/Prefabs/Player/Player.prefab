@@ -114,6 +114,7 @@ GameObject:
   - component: {fileID: 7013514302876382911}
   - component: {fileID: 1006880994580672889}
   - component: {fileID: 281446333843750267}
+  - component: {fileID: 4559156944738506719}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -245,7 +246,7 @@ Rigidbody:
   m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 1
-  m_Constraints: 80
+  m_Constraints: 112
   m_CollisionDetection: 2
 --- !u!114 &6129174852033885732
 MonoBehaviour:
@@ -580,6 +581,23 @@ MonoBehaviour:
   swingLine: {fileID: 8055677533764841171}
   judgmentDuration: 0.65
   swingDuration: 0.12
+--- !u!114 &4559156944738506719
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5004573433238649458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 819742741bff49bc8de1b9bef5f1269c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Player.PlayerSurfaceInteraction
+  surfaceLayers:
+    serializedVersion: 2
+    m_Bits: 1536
+  surfaceProbeDistance: 0.55
+  springJumpRequestWindow: 0.25
 --- !u!1 &6255624159156887663
 GameObject:
   m_ObjectHideFlags: 0

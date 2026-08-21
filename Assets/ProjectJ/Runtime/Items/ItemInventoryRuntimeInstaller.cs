@@ -79,12 +79,20 @@ namespace ProjectJ.Items // 아이템 시스템 네임스페이스
                     playerInput.gameObject.AddComponent<PlayerItemInventory>(); // 두 슬롯 Inventory 추가
             }
 
+            PlayerItemUseController useController =
+                playerInput.GetComponent<PlayerItemUseController>(); // 기존 사용 Controller 탐색
+
+            if (useController == null) // 공통 사용 Controller 누락 검사
+            {
+                playerInput.gameObject.AddComponent<PlayerItemUseController>(); // 사용 Controller 추가
+            }
+
             PlayerItemInventoryInput input =
                 playerInput.GetComponent<PlayerItemInventoryInput>(); // 기존 슬롯 입력 탐색
 
             if (input == null) // 슬롯 입력 누락 검사
             {
-                playerInput.gameObject.AddComponent<PlayerItemInventoryInput>(); // Q/E 슬롯 입력 추가
+                playerInput.gameObject.AddComponent<PlayerItemInventoryInput>(); // Q/E/UseItem 입력 추가
             }
 
             if (canvasView == null) // Canvas UI 누락 검사

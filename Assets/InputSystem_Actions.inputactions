@@ -380,7 +380,7 @@
                 {
                     "name": "",
                     "id": "e93f838c-f2b8-43db-bd4c-8fad4cc495ef",
-                    "path": "<Gamepad>/buttonWest",
+                    "path": "<Gamepad>/dpad/down",
                     "interactions": "",
                     "processors": "",
                     "groups": "Gamepad",

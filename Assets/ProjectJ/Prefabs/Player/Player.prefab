@@ -116,6 +116,7 @@ GameObject:
   - component: {fileID: 281446333843750267}
   - component: {fileID: 4559156944738506719}
   - component: {fileID: 7541114180157678177}
+  - component: {fileID: 4015427724946701021}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -140,6 +141,7 @@ Transform:
   - {fileID: 1691881227439330900}
   - {fileID: 4598535086575503784}
   - {fileID: 8771957030474136690}
+  - {fileID: 4856625655617572078}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &6778428085801515444
@@ -615,6 +617,24 @@ MonoBehaviour:
   body: {fileID: 1453315611713375265}
   finishState: {fileID: 2189439433522827105}
   externalForceAccumulator: {fileID: 1006880994580672889}
+--- !u!114 &4015427724946701021
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5004573433238649458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3643e1114aea4c278c3b87c00890601b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Interaction.PlayerInteractionController
+  interactionOrigin: {fileID: 4856625655617572078}
+  interactionRange: 3
+  interactionLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  drawInteractionRange: 1
 --- !u!1 &6255624159156887663
 GameObject:
   m_ObjectHideFlags: 0
@@ -957,6 +977,37 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 0, b: 0, a: 0.5}
   m_EffectDistance: {x: 2, y: -2}
   m_UseGraphicAlpha: 1
+--- !u!1 &7518491860670914060
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4856625655617572078}
+  m_Layer: 0
+  m_Name: InteractionOrigin
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4856625655617572078
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7518491860670914060}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1643883588576465460}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8757058394664897733
 GameObject:
   m_ObjectHideFlags: 0

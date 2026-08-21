@@ -1,79 +1,103 @@
+using ProjectJ.Debugging;
 using UnityEngine;
 
 namespace ProjectJ.Checkpoint
 {
     [DisallowMultipleComponent]
+    [RequireComponent(
+        typeof(PlayerCheckpointTracker)
+    )]
     public sealed class CheckpointDebugView :
         MonoBehaviour
     {
         [SerializeField]
         private PlayerCheckpointTracker tracker;
 
-        private GUIStyle labelStyle;
+        [SerializeField]
+        private bool showDebug = true;
 
-        public void Configure(
-            PlayerCheckpointTracker targetTracker
-        )
+        private void Awake()
         {
-            tracker =
-                targetTracker;
+            if (tracker == null)
+            {
+                tracker =
+                    GetComponent<
+                        PlayerCheckpointTracker
+                    >();
+            }
         }
 
         private void OnGUI()
         {
-            ResolveTracker();
-
-            if (tracker == null)
+            if (
+                !showDebug ||
+                !ProjectJDebugOverlayController
+                    .IsVisible ||
+                tracker == null
+            )
             {
                 return;
             }
-
-            EnsureStyle();
 
             GUI.Label(
                 new Rect(
                     20f,
-                    70f,
-                    420f,
-                    45f
+                    122f,
+                    460f,
+                    24f
                 ),
-                "Checkpoint : " +
-                tracker.CurrentCheckpointId,
-                labelStyle
+                "체크포인트: " +
+                GetCheckpointLabel(
+                    tracker.CurrentCheckpointId
+                )
+            );
+
+            GUI.Label(
+                new Rect(
+                    20f,
+                    146f,
+                    680f,
+                    24f
+                ),
+                "부활 위치: " +
+                tracker.RespawnPosition
+                    .ToString("F2")
             );
         }
 
-        private void ResolveTracker()
+        public void SetVisible(
+            bool value
+        )
         {
-            if (tracker != null)
-            {
-                return;
-            }
-
-            tracker =
-                FindFirstObjectByType<
-                    PlayerCheckpointTracker
-                >();
+            showDebug = value;
         }
 
-        private void EnsureStyle()
+        private static string
+            GetCheckpointLabel(
+                CheckpointId checkpointId
+            )
         {
-            if (labelStyle != null)
+            if (
+                checkpointId ==
+                CheckpointId.Start
+            )
             {
-                return;
+                return "시작 지점";
             }
 
-            labelStyle =
-                new GUIStyle(
-                    GUI.skin.label
-                );
+            string value =
+                checkpointId.ToString();
 
-            labelStyle.fontSize = 24;
-            labelStyle.fontStyle =
-                FontStyle.Bold;
+            if (
+                value.StartsWith("CP")
+            )
+            {
+                return
+                    "체크포인트 " +
+                    value.Substring(2);
+            }
 
-            labelStyle.normal.textColor =
-                Color.black;
+            return value;
         }
     }
 }

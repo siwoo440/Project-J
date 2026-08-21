@@ -17,8 +17,20 @@ namespace ProjectJ.Items.Effects
         private bool active;
         private float nextTickTime;
 
-        public void Begin()
+        public ItemDefinition Definition
         {
+            get;
+            private set;
+        }
+
+        public bool IsActive =>
+            active;
+
+        public void Begin(
+            ItemDefinition definition
+        )
+        {
+            Definition = definition;
             active = true;
             nextTickTime = Time.time;
         }
@@ -45,7 +57,8 @@ namespace ProjectJ.Items.Effects
             }
 
             nextTickTime =
-                Time.time + TickInterval;
+                Time.time +
+                TickInterval;
 
             ApplyWaterForce();
         }

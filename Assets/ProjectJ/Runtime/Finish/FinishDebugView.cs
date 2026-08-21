@@ -1,3 +1,4 @@
+using ProjectJ.Debugging;
 using UnityEngine;
 
 namespace ProjectJ.Finish
@@ -25,6 +26,14 @@ namespace ProjectJ.Finish
 
         private void OnGUI()
         {
+            if (
+                !ProjectJDebugOverlayController
+                    .IsVisible
+            )
+            {
+                return;
+            }
+
             ResolveReferences();
 
             if (finishManager == null)
@@ -35,7 +44,7 @@ namespace ProjectJ.Finish
             EnsureStyle();
 
             string playerState =
-                "Not Finished";
+                "미완주";
 
             if (
                 localPlayer != null &&
@@ -43,17 +52,18 @@ namespace ProjectJ.Finish
             )
             {
                 playerState =
-                    "Finished #" +
+                    "완주 순위 " +
                     localPlayer.FinishOrder +
-                    " / Time " +
+                    "위 / 기록 " +
                     localPlayer.FinishTime
-                        .ToString("0.000");
+                        .ToString("0.000") +
+                    "초";
             }
 
             string text =
-                "Finish Count : " +
+                "완주 인원 : " +
                 finishManager.FinishCount +
-                "\nLocal Player : " +
+                "\n내 플레이어 : " +
                 playerState;
 
             GUI.Label(

@@ -18,6 +18,7 @@ namespace ProjectJ.Items.Effects
         )
         {
             owner = newOwner;
+
             Destroy(
                 gameObject,
                 Lifetime
@@ -49,8 +50,6 @@ namespace ProjectJ.Items.Effects
                 return;
             }
 
-            triggered = true;
-
             float sideSign =
                 receiver.GetInstanceID() % 2 == 0
                     ? 1f
@@ -64,11 +63,19 @@ namespace ProjectJ.Items.Effects
                     0.35f
                 ).normalized;
 
-            receiver.TryApplyVelocityChange(
-                ExternalForceSource.Item,
-                slipDirection * SlipForce
-            );
+            bool applied =
+                receiver.TryApplyVelocityChange(
+                    ExternalForceSource.Item,
+                    slipDirection *
+                    SlipForce
+                );
 
+            if (!applied)
+            {
+                return;
+            }
+
+            triggered = true;
             Destroy(gameObject);
         }
     }

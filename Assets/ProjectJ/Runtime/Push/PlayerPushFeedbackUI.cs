@@ -1,3 +1,4 @@
+using ProjectJ.Debugging;
 using ProjectJ.Finish;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -58,6 +59,12 @@ namespace ProjectJ.Push
             ResolveReferences();
             RefreshSwingGeometry();
 
+            if (feedbackCanvas != null)
+            {
+                feedbackCanvas.enabled =
+                    false;
+            }
+
             if (swingLine != null)
             {
                 swingLine.enabled =
@@ -92,7 +99,12 @@ namespace ProjectJ.Push
         {
             ResolveReferences();
 
+            bool debugVisible =
+                ProjectJDebugOverlayController
+                    .IsVisible;
+
             bool shouldShowLocalUi =
+                debugVisible &&
                 playerInput != null &&
                 playerInput.enabled &&
                 gameObject.activeInHierarchy;
@@ -101,6 +113,15 @@ namespace ProjectJ.Push
             {
                 feedbackCanvas.enabled =
                     shouldShowLocalUi;
+            }
+
+            if (
+                !debugVisible &&
+                swingLine != null
+            )
+            {
+                swingLine.enabled =
+                    false;
             }
 
             float now =
@@ -174,6 +195,18 @@ namespace ProjectJ.Push
             ResolveReferences();
             RefreshSwingGeometry();
 
+            if (feedbackCanvas != null)
+            {
+                feedbackCanvas.enabled =
+                    false;
+            }
+
+            if (swingLine != null)
+            {
+                swingLine.enabled =
+                    false;
+            }
+
             if (isActiveAndEnabled)
             {
                 SubscribeEvents();
@@ -188,22 +221,22 @@ namespace ProjectJ.Push
             switch (result)
             {
                 case PushAttemptResult.Success:
-                    return "JUDGMENT : HIT";
+                    return "판정 : 명중";
 
                 case PushAttemptResult.Miss:
-                    return "JUDGMENT : MISS";
+                    return "판정 : 빗나감";
 
                 case PushAttemptResult.Cooldown:
-                    return "JUDGMENT : COOLDOWN";
+                    return "판정 : 재사용 대기";
 
                 case PushAttemptResult.Protected:
-                    return "JUDGMENT : PROTECTED";
+                    return "판정 : 보호됨";
 
                 case PushAttemptResult.MissingReceiver:
-                    return "JUDGMENT : NO RECEIVER";
+                    return "판정 : 대상 없음";
 
                 default:
-                    return "JUDGMENT : INVALID";
+                    return "판정 : 사용 불가";
             }
         }
 
@@ -234,7 +267,7 @@ namespace ProjectJ.Push
                     Mathf.Epsilon
             )
             {
-                return "UNKNOWN";
+                return "알 수 없음";
             }
 
             Vector3 sourceDirection =
@@ -257,14 +290,14 @@ namespace ProjectJ.Push
             {
                 return
                     localDirection.x >= 0f
-                        ? "RIGHT"
-                        : "LEFT";
+                        ? "오른쪽"
+                        : "왼쪽";
             }
 
             return
                 localDirection.z >= 0f
-                    ? "FRONT"
-                    : "BACK";
+                    ? "앞"
+                    : "뒤";
         }
 
         private void HandlePushAttempted(
@@ -296,7 +329,7 @@ namespace ProjectJ.Push
                 );
 
             ShowJudgment(
-                "HIT FROM " +
+                "피격 방향 : " +
                 direction
             );
         }
@@ -337,22 +370,26 @@ namespace ProjectJ.Push
             if (pushController.IsOnCooldown)
             {
                 judgmentText.text =
-                    "PUSH COOLDOWN " +
+                    "밀치기 대기 " +
                     pushController
                         .RemainingCooldown
                         .ToString("0.0") +
-                    "s";
+                    "초";
 
                 return;
             }
 
             judgmentText.text =
-                "PUSH READY";
+                "밀치기 준비";
         }
 
         private void ShowSwing()
         {
-            if (swingLine == null)
+            if (
+                !ProjectJDebugOverlayController
+                    .IsVisible ||
+                swingLine == null
+            )
             {
                 return;
             }

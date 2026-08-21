@@ -5,30 +5,67 @@ using UnityEngine.InputSystem;
 namespace ProjectJ.Items.Effects
 {
     [DisallowMultipleComponent]
-    public sealed class SpringShoesBuffState : MonoBehaviour
+    public sealed class SpringShoesBuffState :
+        MonoBehaviour
     {
-        private const float ExtraJumpVelocity = 8f;
-        private const float CoyoteProtectionWindow = 0.15f;
+        private const float ExtraJumpVelocity =
+            8f;
+
+        private const float
+            CoyoteProtectionWindow =
+                0.15f;
 
         private Rigidbody body;
         private PlayerInput playerInput;
-        private PlayerCameraRelativeMovement movement;
-        private PlayerLedgeClimber ledgeClimber;
+
+        private PlayerCameraRelativeMovement
+            movement;
+
+        private PlayerLedgeClimber
+            ledgeClimber;
+
         private InputAction jumpAction;
 
         private float activeUntil;
         private float lastGroundedTime;
         private bool extraJumpAvailable;
 
+        public ItemDefinition Definition
+        {
+            get;
+            private set;
+        }
+
         public bool IsActive =>
             Time.time < activeUntil;
 
+        public float RemainingTime =>
+            Mathf.Max(
+                0f,
+                activeUntil - Time.time
+            );
+
+        public bool ExtraJumpAvailable =>
+            IsActive &&
+            extraJumpAvailable;
+
         private void Awake()
         {
-            body = GetComponent<Rigidbody>();
-            playerInput = GetComponent<PlayerInput>();
-            movement = GetComponent<PlayerCameraRelativeMovement>();
-            ledgeClimber = GetComponent<PlayerLedgeClimber>();
+            body =
+                GetComponent<Rigidbody>();
+
+            playerInput =
+                GetComponent<PlayerInput>();
+
+            movement =
+                GetComponent<
+                    PlayerCameraRelativeMovement
+                >();
+
+            ledgeClimber =
+                GetComponent<
+                    PlayerLedgeClimber
+                >();
         }
 
         private void OnEnable()
@@ -77,27 +114,41 @@ namespace ProjectJ.Items.Effects
                 movement.IsGrounded
             )
             {
-                lastGroundedTime = Time.time;
-                extraJumpAvailable = true;
+                lastGroundedTime =
+                    Time.time;
+
+                extraJumpAvailable =
+                    true;
             }
         }
 
-        public void Activate(float duration)
+        public void Activate(
+            float duration,
+            ItemDefinition definition
+        )
         {
+            Definition = definition;
+
             activeUntil =
                 Mathf.Max(
                     activeUntil,
-                    Time.time + Mathf.Max(0.1f, duration)
+                    Time.time +
+                    Mathf.Max(
+                        0.1f,
+                        duration
+                    )
                 );
 
-            extraJumpAvailable = true;
+            extraJumpAvailable =
+                true;
 
             if (
                 movement != null &&
                 movement.IsGrounded
             )
             {
-                lastGroundedTime = Time.time;
+                lastGroundedTime =
+                    Time.time;
             }
         }
 
@@ -129,7 +180,8 @@ namespace ProjectJ.Items.Effects
             }
 
             if (
-                Time.time - lastGroundedTime <=
+                Time.time -
+                lastGroundedTime <=
                 CoyoteProtectionWindow
             )
             {
@@ -139,10 +191,14 @@ namespace ProjectJ.Items.Effects
             Vector3 velocity =
                 body.linearVelocity;
 
-            velocity.y = ExtraJumpVelocity;
-            body.linearVelocity = velocity;
+            velocity.y =
+                ExtraJumpVelocity;
 
-            extraJumpAvailable = false;
+            body.linearVelocity =
+                velocity;
+
+            extraJumpAvailable =
+                false;
         }
     }
 }

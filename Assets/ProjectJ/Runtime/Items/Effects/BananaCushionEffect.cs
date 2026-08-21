@@ -1,3 +1,4 @@
+using ProjectJ.Items.Placement;
 using UnityEngine;
 
 namespace ProjectJ.Items.Effects
@@ -5,10 +6,25 @@ namespace ProjectJ.Items.Effects
     public sealed class BananaCushionEffect :
         IItemUseEffect
     {
-        private const float ForwardDistance = 1.5f;
-        private const float RayStartHeight = 1.5f;
-        private const float RayDistance = 4f;
-        private const float MinimumGroundDot = 0.65f;
+        private const float ForwardDistance =
+            1.5f;
+
+        private const float RayStartHeight =
+            1.5f;
+
+        private const float RayDistance =
+            4f;
+
+        private const float MinimumGroundDot =
+            0.65f;
+
+        private static readonly Vector3
+            PlacementSize =
+                new Vector3(
+                    1.3f,
+                    0.3f,
+                    1.3f
+                );
 
         public ItemUseResult TryUse(
             ItemUseContext context
@@ -27,8 +43,10 @@ namespace ProjectJ.Items.Effects
 
             Vector3 rayOrigin =
                 userTransform.position +
-                userTransform.forward * ForwardDistance +
-                Vector3.up * RayStartHeight;
+                userTransform.forward *
+                ForwardDistance +
+                Vector3.up *
+                RayStartHeight;
 
             if (
                 !Physics.Raycast(
@@ -41,23 +59,41 @@ namespace ProjectJ.Items.Effects
                 )
             )
             {
-                return ItemUseResult.Fail(
-                    ItemUseStatus.InvalidPosition,
-                    "바나나 쿠션을 설치할 바닥이 없습니다."
-                );
+                return
+                    CreateInvalidPositionResult();
             }
 
             if (
                 Vector3.Dot(
                     hit.normal,
                     Vector3.up
-                ) < MinimumGroundDot
+                ) <
+                MinimumGroundDot
             )
             {
-                return ItemUseResult.Fail(
-                    ItemUseStatus.InvalidPosition,
-                    "경사가 너무 큰 위치에는 설치할 수 없습니다."
+                return
+                    CreateInvalidPositionResult();
+            }
+
+            Bounds placementBounds =
+                new Bounds(
+                    hit.point +
+                    Vector3.up *
+                    (
+                        PlacementSize.y *
+                        0.5f
+                    ),
+                    PlacementSize
                 );
+
+            if (
+                !ItemPlacementValidator.CanPlace(
+                    placementBounds
+                )
+            )
+            {
+                return
+                    CreateInvalidPositionResult();
             }
 
             GameObject bananaObject =
@@ -99,6 +135,15 @@ namespace ProjectJ.Items.Effects
             return ItemUseResult.Success();
         }
 
+        private static ItemUseResult
+            CreateInvalidPositionResult()
+        {
+            return ItemUseResult.Fail(
+                ItemUseStatus.InvalidPosition,
+                "해당 위치는 설치할 수 없습니다."
+            );
+        }
+
         private static void CreateVisual(
             Transform parent
         )
@@ -109,6 +154,7 @@ namespace ProjectJ.Items.Effects
                 );
 
             visual.name = "Visual";
+
             visual.transform.SetParent(
                 parent,
                 false

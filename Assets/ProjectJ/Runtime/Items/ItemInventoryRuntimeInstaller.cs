@@ -1,132 +1,235 @@
-using System.Collections; // Coroutine 사용
-using ProjectJ.UI; // 인벤토리 Canvas UI 사용
-using UnityEngine; // 유니티 기능 사용
-using UnityEngine.InputSystem; // PlayerInput 사용
-using UnityEngine.SceneManagement; // Scene 변경 감지
+using System.Collections;
+using ProjectJ.Items.Status;
+using ProjectJ.UI;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
-namespace ProjectJ.Items // 아이템 시스템 네임스페이스
+namespace ProjectJ.Items
 {
-    public sealed class ItemInventoryRuntimeInstaller : MonoBehaviour // Local Player 인벤토리 자동 설치
+    public sealed class ItemInventoryRuntimeInstaller :
+        MonoBehaviour
     {
-        private PlayerInput installedPlayer; // 현재 연결된 Local Player
-        private ItemInventoryCanvasView canvasView; // 현재 Canvas UI
+        private PlayerInput installedPlayer;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)] // Play 시작 후 자동 실행
-        private static void CreateInstaller() // Installer 생성
+        private ItemInventoryCanvasView
+            inventoryView;
+
+        private ItemStatusHudView
+            statusHudView;
+
+        private ItemUseFeedbackCanvasView
+            feedbackView;
+
+        [RuntimeInitializeOnLoadMethod(
+            RuntimeInitializeLoadType.AfterSceneLoad
+        )]
+        private static void CreateInstaller()
         {
             ItemInventoryRuntimeInstaller existing =
-                FindFirstObjectByType<ItemInventoryRuntimeInstaller>(); // 기존 Installer 탐색
+                FindFirstObjectByType<
+                    ItemInventoryRuntimeInstaller
+                >();
 
-            if (existing != null) // 중복 검사
+            if (existing != null)
             {
-                return; // 기존 Installer 사용
+                return;
             }
 
             GameObject installerObject =
-                new GameObject("=== Item Inventory Runtime ==="); // Runtime Root 생성
+                new GameObject(
+                    "=== Item Inventory Runtime ==="
+                );
 
-            installerObject.AddComponent<ItemInventoryRuntimeInstaller>(); // Installer 추가
-            DontDestroyOnLoad(installerObject); // Scene 전환에도 유지
+            installerObject.AddComponent<
+                ItemInventoryRuntimeInstaller
+            >();
+
+            DontDestroyOnLoad(
+                installerObject
+            );
         }
 
-        private void OnEnable() // Scene 이벤트 연결
+        private void OnEnable()
         {
-            SceneManager.sceneLoaded += OnSceneLoaded; // Scene Load 이벤트 등록
+            SceneManager.sceneLoaded +=
+                OnSceneLoaded;
         }
 
-        private void OnDisable() // Scene 이벤트 해제
+        private void OnDisable()
         {
-            SceneManager.sceneLoaded -= OnSceneLoaded; // Scene Load 이벤트 해제
+            SceneManager.sceneLoaded -=
+                OnSceneLoaded;
         }
 
-        private void Start() // 최초 Player 연결 시도
+        private void Start()
         {
-            StartCoroutine(InstallWhenPlayerReady()); // Player 생성까지 기다림
+            StartCoroutine(
+                InstallWhenPlayerReady()
+            );
         }
 
-        private void OnSceneLoaded(Scene scene, LoadSceneMode mode) // 새 Scene 진입 처리
+        private void OnSceneLoaded(
+            Scene scene,
+            LoadSceneMode mode
+        )
         {
-            installedPlayer = null; // Player 참조 초기화
-            StartCoroutine(InstallWhenPlayerReady()); // 새 Local Player 연결
+            installedPlayer = null;
+
+            StartCoroutine(
+                InstallWhenPlayerReady()
+            );
         }
 
-        private IEnumerator InstallWhenPlayerReady() // Local Player 생성 대기
+        private IEnumerator
+            InstallWhenPlayerReady()
         {
-            while (installedPlayer == null) // Player 연결 전까지 반복
+            while (installedPlayer == null)
             {
-                PlayerInput playerInput = FindLocalPlayerInput(); // Local Player 탐색
+                PlayerInput playerInput =
+                    FindLocalPlayerInput();
 
-                if (playerInput != null) // Player 발견 검사
+                if (playerInput != null)
                 {
-                    InstallForPlayer(playerInput); // Inventory와 UI 설치
-                    yield break; // Coroutine 종료
+                    InstallForPlayer(
+                        playerInput
+                    );
+
+                    yield break;
                 }
 
-                yield return new WaitForSecondsRealtime(0.25f); // 짧게 대기 후 재시도
+                yield return
+                    new WaitForSecondsRealtime(
+                        0.25f
+                    );
             }
         }
 
-        private void InstallForPlayer(PlayerInput playerInput) // Local Player에 Inventory 구성
+        private void InstallForPlayer(
+            PlayerInput playerInput
+        )
         {
-            installedPlayer = playerInput; // 연결 Player 저장
+            installedPlayer =
+                playerInput;
 
             PlayerItemInventory inventory =
-                playerInput.GetComponent<PlayerItemInventory>(); // 기존 Inventory 탐색
+                playerInput.GetComponent<
+                    PlayerItemInventory
+                >();
 
-            if (inventory == null) // Inventory 누락 검사
+            if (inventory == null)
             {
                 inventory =
-                    playerInput.gameObject.AddComponent<PlayerItemInventory>(); // 두 슬롯 Inventory 추가
+                    playerInput.gameObject
+                        .AddComponent<
+                            PlayerItemInventory
+                        >();
             }
 
             PlayerItemUseController useController =
-                playerInput.GetComponent<PlayerItemUseController>(); // 기존 사용 Controller 탐색
+                playerInput.GetComponent<
+                    PlayerItemUseController
+                >();
 
-            if (useController == null) // 공통 사용 Controller 누락 검사
+            if (useController == null)
             {
-                playerInput.gameObject.AddComponent<PlayerItemUseController>(); // 사용 Controller 추가
+                useController =
+                    playerInput.gameObject
+                        .AddComponent<
+                            PlayerItemUseController
+                        >();
             }
 
             PlayerItemInventoryInput input =
-                playerInput.GetComponent<PlayerItemInventoryInput>(); // 기존 슬롯 입력 탐색
+                playerInput.GetComponent<
+                    PlayerItemInventoryInput
+                >();
 
-            if (input == null) // 슬롯 입력 누락 검사
+            if (input == null)
             {
-                playerInput.gameObject.AddComponent<PlayerItemInventoryInput>(); // Q/E/UseItem 입력 추가
+                playerInput.gameObject
+                    .AddComponent<
+                        PlayerItemInventoryInput
+                    >();
             }
 
-            if (canvasView == null) // Canvas UI 누락 검사
+            PlayerItemStatusTracker tracker =
+                playerInput.GetComponent<
+                    PlayerItemStatusTracker
+                >();
+
+            if (tracker == null)
             {
-                canvasView =
-                    ItemInventoryCanvasView.Create(transform); // Persistent Canvas 생성
+                tracker =
+                    playerInput.gameObject
+                        .AddComponent<
+                            PlayerItemStatusTracker
+                        >();
             }
 
-            canvasView.Bind(inventory); // 현재 Player Inventory와 UI 연결
+            if (inventoryView == null)
+            {
+                inventoryView =
+                    ItemInventoryCanvasView
+                        .Create(transform);
+            }
+
+            if (statusHudView == null)
+            {
+                statusHudView =
+                    ItemStatusHudView
+                        .Create(transform);
+            }
+
+            if (feedbackView == null)
+            {
+                feedbackView =
+                    ItemUseFeedbackCanvasView
+                        .Create(transform);
+            }
+
+            inventoryView.Bind(
+                inventory
+            );
+
+            statusHudView.Bind(
+                tracker
+            );
+
+            feedbackView.Bind(
+                useController
+            );
         }
 
-        private static PlayerInput FindLocalPlayerInput() // 활성 Local Player 탐색
+        private static PlayerInput
+            FindLocalPlayerInput()
         {
             PlayerInput[] inputs =
-                FindObjectsByType<PlayerInput>( // 활성 PlayerInput 전체 검색
+                FindObjectsByType<PlayerInput>(
                     FindObjectsInactive.Exclude,
                     FindObjectsSortMode.None
                 );
 
-            for (int i = 0; i < inputs.Length; i++) // 모든 PlayerInput 반복
+            for (
+                int i = 0;
+                i < inputs.Length;
+                i++
+            )
             {
-                PlayerInput input = inputs[i]; // 현재 입력 저장
+                PlayerInput input =
+                    inputs[i];
 
                 if (
                     input != null &&
                     input.isActiveAndEnabled &&
                     input.actions != null
-                ) // 사용 가능한 입력 검사
+                )
                 {
-                    return input; // 첫 활성 Local Player 반환
+                    return input;
                 }
             }
 
-            return null; // Player 없음 반환
+            return null;
         }
     }
 }

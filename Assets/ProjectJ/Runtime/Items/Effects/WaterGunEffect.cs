@@ -7,11 +7,14 @@ namespace ProjectJ.Items.Effects
             ItemUseContext context
         )
         {
-            if (context.User == null)
+            if (
+                context.User == null ||
+                context.Definition == null
+            )
             {
                 return ItemUseResult.Fail(
                     ItemUseStatus.InvalidItem,
-                    "물총 사용자를 찾을 수 없습니다."
+                    "물총 사용 정보를 찾을 수 없습니다."
                 );
             }
 
@@ -28,7 +31,9 @@ namespace ProjectJ.Items.Effects
                     >();
             }
 
-            runtime.Begin();
+            runtime.Begin(
+                context.Definition
+            );
 
             return ItemUseResult.Success();
         }

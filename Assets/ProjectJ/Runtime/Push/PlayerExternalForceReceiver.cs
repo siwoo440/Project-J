@@ -1,4 +1,5 @@
 using System;
+using ProjectJ.Checkpoint;
 using ProjectJ.Finish;
 using ProjectJ.Items.Effects;
 using UnityEngine;
@@ -25,7 +26,11 @@ namespace ProjectJ.Push
         private PlayerExternalForceAccumulator
             externalForceAccumulator;
 
-        private JellyShieldState jellyShieldState;
+        private JellyShieldState
+            jellyShieldState;
+
+        private PlayerRespawnProtection
+            respawnProtection;
 
         public event Action<
             ExternalForceSource,
@@ -37,7 +42,6 @@ namespace ProjectJ.Push
             get
             {
                 ResolveReferences();
-
                 return body;
             }
         }
@@ -48,9 +52,7 @@ namespace ProjectJ.Push
             get
             {
                 ResolveReferences();
-
-                return
-                    externalForceAccumulator;
+                return externalForceAccumulator;
             }
         }
 
@@ -77,7 +79,8 @@ namespace ProjectJ.Push
                 }
 
                 return
-                    externalForceAccumulator != null;
+                    externalForceAccumulator !=
+                    null;
             }
         }
 
@@ -93,12 +96,8 @@ namespace ProjectJ.Push
                 newExternalForceAccumulator
         )
         {
-            body =
-                newBody;
-
-            finishState =
-                newFinishState;
-
+            body = newBody;
+            finishState = newFinishState;
             externalForceAccumulator =
                 newExternalForceAccumulator;
 
@@ -111,6 +110,16 @@ namespace ProjectJ.Push
         )
         {
             if (!CanReceiveExternalForce)
+            {
+                return false;
+            }
+
+            if (
+                IsHostileSource(source) &&
+                respawnProtection != null &&
+                !respawnProtection
+                    .TryAcceptHostileEffect()
+            )
             {
                 return false;
             }
@@ -147,6 +156,17 @@ namespace ProjectJ.Push
             return applied;
         }
 
+        private static bool IsHostileSource(
+            ExternalForceSource source
+        )
+        {
+            return
+                source ==
+                    ExternalForceSource.Push ||
+                source ==
+                    ExternalForceSource.Item;
+        }
+
         private void ResolveReferences()
         {
             if (body == null)
@@ -164,7 +184,8 @@ namespace ProjectJ.Push
             }
 
             if (
-                externalForceAccumulator == null
+                externalForceAccumulator ==
+                null
             )
             {
                 externalForceAccumulator =
@@ -176,7 +197,17 @@ namespace ProjectJ.Push
             if (jellyShieldState == null)
             {
                 jellyShieldState =
-                    GetComponent<JellyShieldState>();
+                    GetComponent<
+                        JellyShieldState
+                    >();
+            }
+
+            if (respawnProtection == null)
+            {
+                respawnProtection =
+                    GetComponent<
+                        PlayerRespawnProtection
+                    >();
             }
         }
     }

@@ -1,3 +1,4 @@
+using ProjectJ.Debugging;
 using UnityEngine;
 
 namespace ProjectJ.Spectator
@@ -23,6 +24,14 @@ namespace ProjectJ.Spectator
 
         private void OnGUI()
         {
+            if (
+                !ProjectJDebugOverlayController
+                    .IsVisible
+            )
+            {
+                return;
+            }
+
             ResolveController();
 
             if (controller == null)
@@ -53,19 +62,24 @@ namespace ProjectJ.Spectator
                 controller
                     .LocalGameplayController
                     .enabled
-                    ? "ENABLED"
-                    : "DISABLED";
+                    ? "활성"
+                    : "비활성";
+
+            string spectatingState =
+                controller.IsSpectating
+                    ? "예"
+                    : "아니오";
 
             string text =
-                "Spectating : " +
-                controller.IsSpectating +
-                "\nTarget : " +
+                "관전 중 : " +
+                spectatingState +
+                "\n관전 대상 : " +
                 targetName +
-                "\nTargets : " +
+                "\n대상 수 : " +
                 controller.ValidTargetCount +
-                "\nCamera Input Owner : " +
+                "\n카메라 입력 소유자 : " +
                 localInputName +
-                "\nLocal Gameplay : " +
+                "\n로컬 조작 : " +
                 gameplayState;
 
             GUI.Label(
@@ -87,7 +101,7 @@ namespace ProjectJ.Spectator
                         150f,
                         36f
                     ),
-                    "Enter Spectator",
+                    "관전 시작",
                     buttonStyle
                 )
             )
@@ -103,7 +117,7 @@ namespace ProjectJ.Spectator
                         100f,
                         36f
                     ),
-                    "Previous",
+                    "이전",
                     buttonStyle
                 )
             )
@@ -119,7 +133,7 @@ namespace ProjectJ.Spectator
                         100f,
                         36f
                     ),
-                    "Next",
+                    "다음",
                     buttonStyle
                 )
             )
@@ -135,7 +149,7 @@ namespace ProjectJ.Spectator
                         130f,
                         36f
                     ),
-                    "Exit Spectator",
+                    "관전 종료",
                     buttonStyle
                 )
             )

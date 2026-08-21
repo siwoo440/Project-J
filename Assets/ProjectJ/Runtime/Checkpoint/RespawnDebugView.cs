@@ -1,3 +1,4 @@
+using ProjectJ.Debugging;
 using UnityEngine;
 
 namespace ProjectJ.Checkpoint
@@ -23,6 +24,14 @@ namespace ProjectJ.Checkpoint
 
         private void OnGUI()
         {
+            if (
+                !ProjectJDebugOverlayController
+                    .IsVisible
+            )
+            {
+                return;
+            }
+
             ResolveController();
 
             if (respawnController == null)
@@ -38,15 +47,15 @@ namespace ProjectJ.Checkpoint
 
             string checkpointText =
                 tracker != null
-                    ? tracker
-                        .CurrentCheckpointId
-                        .ToString()
-                    : "None";
+                    ? GetCheckpointLabel(
+                        tracker.CurrentCheckpointId
+                    )
+                    : "없음";
 
             string text =
-                "Respawn Target : " +
+                "부활 지점 : " +
                 checkpointText +
-                "\nRespawn Count : " +
+                "\n부활 횟수 : " +
                 respawnController
                     .RespawnCount;
 
@@ -69,7 +78,7 @@ namespace ProjectJ.Checkpoint
                         170f,
                         38f
                     ),
-                    "Direct Respawn",
+                    "즉시 부활",
                     buttonStyle
                 )
             )
@@ -86,7 +95,7 @@ namespace ProjectJ.Checkpoint
                         170f,
                         38f
                     ),
-                    "Test Fall",
+                    "낙하 테스트",
                     buttonStyle
                 )
             )
@@ -140,6 +149,34 @@ namespace ProjectJ.Checkpoint
                 FindFirstObjectByType<
                     PlayerRespawnController
                 >();
+        }
+
+        private static string
+            GetCheckpointLabel(
+                CheckpointId checkpointId
+            )
+        {
+            if (
+                checkpointId ==
+                CheckpointId.Start
+            )
+            {
+                return "시작 지점";
+            }
+
+            string value =
+                checkpointId.ToString();
+
+            if (
+                value.StartsWith("CP")
+            )
+            {
+                return
+                    "체크포인트 " +
+                    value.Substring(2);
+            }
+
+            return value;
         }
 
         private void EnsureStyles()

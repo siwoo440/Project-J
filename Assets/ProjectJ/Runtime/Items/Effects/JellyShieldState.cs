@@ -9,15 +9,36 @@ namespace ProjectJ.Items.Effects
     {
         private float activeUntil;
 
+        public ItemDefinition Definition
+        {
+            get;
+            private set;
+        }
+
         public bool IsActive =>
             Time.time < activeUntil;
 
-        public void Activate(float duration)
+        public float RemainingTime =>
+            Mathf.Max(
+                0f,
+                activeUntil - Time.time
+            );
+
+        public void Activate(
+            float duration,
+            ItemDefinition definition
+        )
         {
+            Definition = definition;
+
             activeUntil =
                 Mathf.Max(
                     activeUntil,
-                    Time.time + Mathf.Max(0.1f, duration)
+                    Time.time +
+                    Mathf.Max(
+                        0.1f,
+                        duration
+                    )
                 );
         }
 
@@ -31,8 +52,10 @@ namespace ProjectJ.Items.Effects
             }
 
             return
-                source == ExternalForceSource.Push ||
-                source == ExternalForceSource.Item;
+                source ==
+                    ExternalForceSource.Push ||
+                source ==
+                    ExternalForceSource.Item;
         }
     }
 }

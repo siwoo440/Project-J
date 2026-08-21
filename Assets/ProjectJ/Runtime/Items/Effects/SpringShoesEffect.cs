@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace ProjectJ.Items.Effects
 {
     public sealed class SpringShoesEffect :
@@ -38,7 +36,10 @@ namespace ProjectJ.Items.Effects
                     ? context.Definition.Duration
                     : 8f;
 
-            state.Activate(duration);
+            state.Activate(
+                duration,
+                context.Definition
+            );
 
             return ItemUseResult.Success();
         }

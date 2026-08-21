@@ -1,3 +1,4 @@
+using ProjectJ.Debugging;
 using UnityEngine;
 
 namespace ProjectJ.Checkpoint
@@ -20,6 +21,14 @@ namespace ProjectJ.Checkpoint
 
         private void OnGUI()
         {
+            if (
+                !ProjectJDebugOverlayController
+                    .IsVisible
+            )
+            {
+                return;
+            }
+
             ResolveTracker();
 
             if (fallTracker == null)
@@ -36,26 +45,27 @@ namespace ProjectJ.Checkpoint
 
             string checkpointText =
                 checkpointTracker != null
-                    ? checkpointTracker
-                        .CurrentCheckpointId
-                        .ToString()
-                    : "None";
+                    ? GetCheckpointLabel(
+                        checkpointTracker
+                            .CurrentCheckpointId
+                    )
+                    : "없음";
 
             string fallenText =
                 fallTracker.IsFallen
-                    ? "FALLEN"
-                    : "SAFE";
+                    ? "추락"
+                    : "안전";
 
             string text =
-                "Fall Check : " +
+                "추락 판정 : " +
                 fallenText +
-                "\nCheckpoint : " +
+                "\n체크포인트 : " +
                 checkpointText +
-                "\nPlayer Y : " +
+                "\n플레이어 Y : " +
                 fallTracker.transform
                     .position.y
                     .ToString("0.00") +
-                "\nFall Limit Y : " +
+                "\n추락 기준 Y : " +
                 fallTracker.ActiveFallLimitY
                     .ToString("0.00");
 
@@ -102,6 +112,34 @@ namespace ProjectJ.Checkpoint
 
             labelStyle.normal.textColor =
                 Color.black;
+        }
+
+        private static string
+            GetCheckpointLabel(
+                CheckpointId checkpointId
+            )
+        {
+            if (
+                checkpointId ==
+                CheckpointId.Start
+            )
+            {
+                return "시작 지점";
+            }
+
+            string value =
+                checkpointId.ToString();
+
+            if (
+                value.StartsWith("CP")
+            )
+            {
+                return
+                    "체크포인트 " +
+                    value.Substring(2);
+            }
+
+            return value;
         }
     }
 }

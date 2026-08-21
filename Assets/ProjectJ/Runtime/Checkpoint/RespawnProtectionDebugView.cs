@@ -1,3 +1,4 @@
+using ProjectJ.Debugging;
 using UnityEngine;
 
 namespace ProjectJ.Checkpoint
@@ -25,6 +26,14 @@ namespace ProjectJ.Checkpoint
 
         private void OnGUI()
         {
+            if (
+                !ProjectJDebugOverlayController
+                    .IsVisible
+            )
+            {
+                return;
+            }
+
             ResolveProtection();
 
             if (protection == null)
@@ -36,29 +45,29 @@ namespace ProjectJ.Checkpoint
 
             string protectionState =
                 protection.IsProtected
-                    ? "ON"
-                    : "OFF";
+                    ? "켜짐"
+                    : "꺼짐";
 
             string hostileState =
-                "Not Tested";
+                "미테스트";
 
             if (hasHostileEffectResult)
             {
                 hostileState =
                     lastHostileEffectAccepted
-                        ? "ACCEPTED"
-                        : "BLOCKED";
+                        ? "허용"
+                        : "차단";
             }
 
             string text =
-                "Respawn Protection : " +
+                "부활 보호 : " +
                 protectionState +
-                "\nRemaining : " +
+                "\n남은 시간 : " +
                 protection
                     .RemainingProtectionTime
                     .ToString("0.00") +
-                "s" +
-                "\nHostile Effect : " +
+                "초" +
+                "\n적대 효과 : " +
                 hostileState;
 
             GUI.Label(
@@ -80,7 +89,7 @@ namespace ProjectJ.Checkpoint
                         170f,
                         38f
                     ),
-                    "Direct Respawn",
+                    "즉시 부활",
                     buttonStyle
                 )
             )
@@ -105,7 +114,7 @@ namespace ProjectJ.Checkpoint
                         210f,
                         38f
                     ),
-                    "Test Hostile Effect",
+                    "적대 효과 테스트",
                     buttonStyle
                 )
             )

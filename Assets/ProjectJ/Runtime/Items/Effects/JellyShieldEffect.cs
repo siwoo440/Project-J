@@ -36,7 +36,10 @@ namespace ProjectJ.Items.Effects
                     ? context.Definition.Duration
                     : 4f;
 
-            state.Activate(duration);
+            state.Activate(
+                duration,
+                context.Definition
+            );
 
             return ItemUseResult.Success();
         }

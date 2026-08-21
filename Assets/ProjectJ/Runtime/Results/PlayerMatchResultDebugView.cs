@@ -1,3 +1,4 @@
+using ProjectJ.Debugging;
 using UnityEngine;
 
 namespace ProjectJ.Results
@@ -24,6 +25,14 @@ namespace ProjectJ.Results
 
         private void OnGUI()
         {
+            if (
+                !ProjectJDebugOverlayController
+                    .IsVisible
+            )
+            {
+                return;
+            }
+
             ResolveCollector();
 
             if (collector == null)
@@ -56,7 +65,7 @@ namespace ProjectJ.Results
                         220f,
                         38f
                     ),
-                    "Simulate Time End Result",
+                    "시간 종료 결과 생성",
                     buttonStyle
                 )
             )
@@ -71,8 +80,8 @@ namespace ProjectJ.Results
             if (!collector.HasResult)
             {
                 return
-                    "Personal Result : Waiting" +
-                    "\nFINISH 또는 시간 종료 시 생성";
+                    "개인 결과 : 대기 중" +
+                    "\n완주 또는 시간 종료 시 생성";
             }
 
             PlayerMatchResult result =
@@ -81,33 +90,41 @@ namespace ProjectJ.Results
             if (result == null)
             {
                 return
-                    "Personal Result : Missing";
+                    "개인 결과 : 없음";
             }
 
             string finishTime =
                 result.HasFinishTime
                     ? result.FinishTime
-                        .ToString("0.000")
+                        .ToString("0.000") +
+                        "초"
                     : "--";
 
+            string finishedText =
+                result.IsFinished
+                    ? "완주"
+                    : "미완주";
+
             return
-                "Personal Result : CREATED" +
-                "\nPlayer ID : " +
+                "개인 결과 : 생성됨" +
+                "\n플레이어 ID : " +
                 result.PlayerId +
-                "\nFinal Rank : " +
+                "\n최종 순위 : " +
                 result.FinalRank +
-                "\nFinished : " +
-                result.IsFinished +
-                "\nFinish Order : " +
+                "\n완주 여부 : " +
+                finishedText +
+                "\n완주 순서 : " +
                 result.FinishOrder +
-                "\nFinish Time : " +
+                "\n완주 기록 : " +
                 finishTime +
-                "\nHighest Height : " +
+                "\n최고 높이 : " +
                 result.HighestHeight
                     .ToString("0.00") +
                 "m" +
-                "\nHighest Checkpoint : " +
-                result.HighestCheckpoint;
+                "\n최고 체크포인트 : " +
+                GetCheckpointLabel(
+                    result.HighestCheckpoint
+                );
         }
 
         private void ResolveCollector()
@@ -121,6 +138,33 @@ namespace ProjectJ.Results
                 FindFirstObjectByType<
                     PlayerMatchResultCollector
                 >();
+        }
+
+        private static string GetCheckpointLabel(
+            ProjectJ.Checkpoint.CheckpointId checkpointId
+        )
+        {
+            if (
+                checkpointId ==
+                ProjectJ.Checkpoint.CheckpointId.Start
+            )
+            {
+                return "시작 지점";
+            }
+
+            string value =
+                checkpointId.ToString();
+
+            if (
+                value.StartsWith("CP")
+            )
+            {
+                return
+                    "체크포인트 " +
+                    value.Substring(2);
+            }
+
+            return value;
         }
 
         private void EnsureStyles()

@@ -115,6 +115,7 @@ GameObject:
   - component: {fileID: 1006880994580672889}
   - component: {fileID: 281446333843750267}
   - component: {fileID: 4559156944738506719}
+  - component: {fileID: 7541114180157678177}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -523,6 +524,7 @@ MonoBehaviour:
   respawnProtection: {fileID: 0}
   finishState: {fileID: 0}
   externalForceAccumulator: {fileID: 0}
+  externalForceReceiver: {fileID: 0}
 --- !u!114 &7013514302876382911
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -598,6 +600,21 @@ MonoBehaviour:
     m_Bits: 1536
   surfaceProbeDistance: 0.55
   springJumpRequestWindow: 0.25
+--- !u!114 &7541114180157678177
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5004573433238649458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bcc4d815d68a4d5bbdef7c8282825f9e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Push.PlayerExternalForceReceiver
+  body: {fileID: 1453315611713375265}
+  finishState: {fileID: 2189439433522827105}
+  externalForceAccumulator: {fileID: 1006880994580672889}
 --- !u!1 &6255624159156887663
 GameObject:
   m_ObjectHideFlags: 0

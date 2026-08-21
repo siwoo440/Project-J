@@ -12,6 +12,9 @@ namespace ProjectJ.Push
     [RequireComponent(
         typeof(PlayerExternalForceAccumulator)
     )]
+    [RequireComponent(
+        typeof(PlayerExternalForceReceiver)
+    )]
     public sealed class PlayerPushReceiver :
         MonoBehaviour
     {
@@ -29,6 +32,10 @@ namespace ProjectJ.Push
         private PlayerExternalForceAccumulator
             externalForceAccumulator;
 
+        [SerializeField]
+        private PlayerExternalForceReceiver
+            externalForceReceiver;
+
         public event Action<Vector3> PushReceived;
 
         public Rigidbody Body
@@ -45,6 +52,15 @@ namespace ProjectJ.Push
             get
             {
                 ResolveReferences();
+
+                if (
+                    externalForceReceiver != null
+                )
+                {
+                    return
+                        externalForceReceiver
+                            .ExternalForceAccumulator;
+                }
 
                 return
                     externalForceAccumulator;
@@ -70,16 +86,9 @@ namespace ProjectJ.Push
                 ResolveReferences();
 
                 if (
-                    body == null ||
-                    body.isKinematic
-                )
-                {
-                    return false;
-                }
-
-                if (
-                    finishState != null &&
-                    finishState.IsFinished
+                    externalForceReceiver == null ||
+                    !externalForceReceiver
+                        .CanReceiveExternalForce
                 )
                 {
                     return false;
@@ -94,8 +103,7 @@ namespace ProjectJ.Push
                     return false;
                 }
 
-                return
-                    externalForceAccumulator != null;
+                return true;
             }
         }
 
@@ -104,13 +112,19 @@ namespace ProjectJ.Push
             ResolveReferences();
 
             if (
-                externalForceAccumulator == null
+                externalForceReceiver == null
             )
             {
-                externalForceAccumulator =
+                externalForceReceiver =
                     gameObject.AddComponent<
-                        PlayerExternalForceAccumulator
+                        PlayerExternalForceReceiver
                     >();
+
+                externalForceReceiver.Configure(
+                    body,
+                    finishState,
+                    externalForceAccumulator
+                );
             }
         }
 
@@ -132,6 +146,17 @@ namespace ProjectJ.Push
                 newFinishState;
 
             ResolveReferences();
+
+            if (
+                externalForceReceiver != null
+            )
+            {
+                externalForceReceiver.Configure(
+                    body,
+                    finishState,
+                    externalForceAccumulator
+                );
+            }
         }
 
         public bool TryApplyPush(
@@ -144,8 +169,9 @@ namespace ProjectJ.Push
             }
 
             bool applied =
-                externalForceAccumulator
-                    .AddVelocityChange(
+                externalForceReceiver
+                    .TryApplyVelocityChange(
+                        ExternalForceSource.Push,
                         velocityChange
                     );
 
@@ -194,6 +220,16 @@ namespace ProjectJ.Push
                 externalForceAccumulator =
                     GetComponent<
                         PlayerExternalForceAccumulator
+                    >();
+            }
+
+            if (
+                externalForceReceiver == null
+            )
+            {
+                externalForceReceiver =
+                    GetComponent<
+                        PlayerExternalForceReceiver
                     >();
             }
         }

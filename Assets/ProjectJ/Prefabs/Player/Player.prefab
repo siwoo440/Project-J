@@ -25,6 +25,7 @@ GameObject:
   - component: {fileID: 627233017470694266}
   - component: {fileID: 2189439433522827105}
   - component: {fileID: 1335074682480903053}
+  - component: {fileID: 1706525272962792123}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -377,6 +378,7 @@ MonoBehaviour:
   isFinished: 0
   finishOrder: 0
   finishTime: 0
+  finishDepartureApplied: 0
 --- !u!114 &1335074682480903053
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -395,6 +397,25 @@ MonoBehaviour:
   checkpointTracker: {fileID: 7450761224545744870}
   matchTimer: {fileID: 0}
   hasResult: 0
+--- !u!114 &1706525272962792123
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5004573433238649458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72c8dc05f14a487b82eb26020a5313c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Push.PlayerPushTargetSelector
+  searchRange: 2.5
+  searchAngle: 90
+  playerLayers:
+    serializedVersion: 2
+    m_Bits: 256
+  selfFinishState: {fileID: 0}
+  currentTarget: {fileID: 0}
 --- !u!1 &6255624159156887663
 GameObject:
   m_ObjectHideFlags: 0

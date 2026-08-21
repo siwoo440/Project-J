@@ -26,6 +26,8 @@ GameObject:
   - component: {fileID: 2189439433522827105}
   - component: {fileID: 1335074682480903053}
   - component: {fileID: 1706525272962792123}
+  - component: {fileID: 7177704661622528219}
+  - component: {fileID: 7013514302876382911}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -416,6 +418,42 @@ MonoBehaviour:
     m_Bits: 256
   selfFinishState: {fileID: 0}
   currentTarget: {fileID: 0}
+--- !u!114 &7177704661622528219
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5004573433238649458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4999e3f9156447838f5f2a1a4fabe3ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Push.PlayerPushReceiver
+  body: {fileID: 0}
+  respawnProtection: {fileID: 0}
+  finishState: {fileID: 0}
+--- !u!114 &7013514302876382911
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5004573433238649458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8180df2cf1544b1893b03d7ea820bda0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Push.PlayerPushController
+  horizontalVelocityChange: 6
+  upwardVelocityChange: 1.5
+  cooldownDuration: 1.5
+  targetSelector: {fileID: 0}
+  playerInput: {fileID: 0}
+  selfFinishState: {fileID: 0}
+  lastResult: 4
+  lastTarget: {fileID: 0}
+  remainingCooldown: 0
 --- !u!1 &6255624159156887663
 GameObject:
   m_ObjectHideFlags: 0

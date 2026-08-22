@@ -21,6 +21,7 @@ namespace ProjectJ.Networking.Fusion
         private GUIStyle sectionStyle;
         private GUIStyle codeStyle;
         private GUIStyle labelStyle;
+        private GUIStyle smallStyle;
         private GUIStyle buttonStyle;
 
         private void Awake()
@@ -66,8 +67,8 @@ namespace ProjectJ.Networking.Fusion
 
             const float x = 20f;
             const float y = 20f;
-            const float width = 820f;
-            const float height = 730f;
+            const float width = 1000f;
+            const float height = 900f;
             const float left = x + 24f;
             const float contentWidth =
                 width - 48f;
@@ -86,10 +87,10 @@ namespace ProjectJ.Networking.Fusion
                 new Rect(
                     left,
                     y + 14f,
-                    420f,
+                    460f,
                     34f
                 ),
-                "Project J - Fusion 60일차",
+                "Project J - Fusion 61일차",
                 titleStyle
             );
 
@@ -186,137 +187,173 @@ namespace ProjectJ.Networking.Fusion
                 left,
                 y + 236f,
                 contentWidth,
-                "연결 Session",
-                bootstrap.ConnectedSessionName
+                "참가 / Spawn",
+                bootstrap.ParticipantCount +
+                " / 8   |   " +
+                bootstrap.SpawnedPlayerCount
             );
 
             DrawInfoRow(
                 left,
                 y + 266f,
                 contentWidth,
-                "참가 인원",
-                bootstrap.ParticipantCount +
-                " / 8"
-            );
-
-            DrawInfoRow(
-                left,
-                y + 296f,
-                contentWidth,
-                "공개 여부",
-                GetVisibilityText()
-            );
-
-            DrawInfoRow(
-                left,
-                y + 326f,
-                contentWidth,
                 "Region",
                 bootstrap.ConnectedRegion
-            );
-
-            DrawInfoRow(
-                left,
-                y + 356f,
-                contentWidth,
-                "상태 메시지",
-                bootstrap.StatusMessage
-            );
-
-            DrawInfoRow(
-                left,
-                y + 386f,
-                contentWidth,
-                "마지막 결과",
-                bootstrap.LastConnectionResult
             );
 
             GUI.Label(
                 new Rect(
                     left,
-                    y + 426f,
+                    y + 306f,
                     contentWidth,
                     28f
                 ),
-                "Network Player · Authority",
+                "Fusion Tick Input",
                 sectionStyle
+            );
+
+            DrawInfoRow(
+                left,
+                y + 340f,
+                contentWidth,
+                "ProvideInput",
+                GetProvideInputText()
+            );
+
+            DrawInfoRow(
+                left,
+                y + 370f,
+                contentWidth,
+                "Local PlayerRef",
+                GetLocalPlayerText()
+            );
+
+            DrawInfoRow(
+                left,
+                y + 400f,
+                contentWidth,
+                "Provider Move",
+                GetProviderMoveText()
+            );
+
+            DrawInfoRow(
+                left,
+                y + 430f,
+                contentWidth,
+                "Provider Buttons",
+                GetProviderButtonsText()
             );
 
             DrawInfoRow(
                 left,
                 y + 460f,
                 contentWidth,
-                "Spawn 수",
-                bootstrap.SpawnedPlayerCount
-                    .ToString()
-            );
-
-            DrawInfoRow(
-                left,
-                y + 490f,
-                contentWidth,
-                "Local PlayerRef",
-                GetLocalPlayerText()
+                "Input Tick / Count",
+                GetProviderTickText()
             );
 
             GUI.Label(
                 new Rect(
                     left,
-                    y + 525f,
-                    110f,
+                    y + 505f,
+                    90f,
                     26f
                 ),
                 "Player",
-                labelStyle
+                smallStyle
             );
 
             GUI.Label(
                 new Rect(
-                    left + 120f,
-                    y + 525f,
-                    150f,
+                    left + 90f,
+                    y + 505f,
+                    100f,
                     26f
                 ),
-                "State Authority",
-                labelStyle
+                "State",
+                smallStyle
             );
 
             GUI.Label(
                 new Rect(
-                    left + 285f,
-                    y + 525f,
-                    150f,
+                    left + 190f,
+                    y + 505f,
+                    100f,
                     26f
                 ),
-                "Input Authority",
-                labelStyle
+                "Input",
+                smallStyle
             );
 
             GUI.Label(
                 new Rect(
-                    left + 450f,
-                    y + 525f,
-                    120f,
+                    left + 290f,
+                    y + 505f,
+                    165f,
+                    26f
+                ),
+                "Move",
+                smallStyle
+            );
+
+            GUI.Label(
+                new Rect(
+                    left + 455f,
+                    y + 505f,
+                    85f,
+                    26f
+                ),
+                "Jump",
+                smallStyle
+            );
+
+            GUI.Label(
+                new Rect(
+                    left + 540f,
+                    y + 505f,
+                    85f,
+                    26f
+                ),
+                "Sprint",
+                smallStyle
+            );
+
+            GUI.Label(
+                new Rect(
+                    left + 625f,
+                    y + 505f,
+                    85f,
+                    26f
+                ),
+                "Crouch",
+                smallStyle
+            );
+
+            GUI.Label(
+                new Rect(
+                    left + 710f,
+                    y + 505f,
+                    90f,
                     26f
                 ),
                 "Camera",
-                labelStyle
+                smallStyle
             );
 
             GUI.Label(
                 new Rect(
-                    left + 585f,
-                    y + 525f,
-                    150f,
+                    left + 800f,
+                    y + 505f,
+                    130f,
                     26f
                 ),
-                "Local Input",
-                labelStyle
+                "Received Tick",
+                smallStyle
             );
 
             DrawPlayerRows(
                 left,
-                y + 554f
+                y + 534f
             );
 
             GUI.enabled =
@@ -326,8 +363,8 @@ namespace ProjectJ.Networking.Fusion
                 GUI.Button(
                     new Rect(
                         left,
-                        y + 674f,
-                        220f,
+                        y + 838f,
+                        260f,
                         42f
                     ),
                     "비공개 방 생성",
@@ -342,9 +379,9 @@ namespace ProjectJ.Networking.Fusion
             if (
                 GUI.Button(
                     new Rect(
-                        left + 240f,
-                        y + 674f,
-                        220f,
+                        left + 280f,
+                        y + 838f,
+                        260f,
                         42f
                     ),
                     "방 코드로 참가",
@@ -362,9 +399,9 @@ namespace ProjectJ.Networking.Fusion
             if (
                 GUI.Button(
                     new Rect(
-                        left + 480f,
-                        y + 674f,
-                        220f,
+                        left + 560f,
+                        y + 838f,
+                        260f,
                         42f
                     ),
                     "방 나가기",
@@ -414,14 +451,14 @@ namespace ProjectJ.Networking.Fusion
                 in runner.ActivePlayers
             )
             {
-                if (row >= 4)
+                if (row >= 8)
                 {
                     break;
                 }
 
                 float y =
                     startY +
-                    row * 28f;
+                    row * 32f;
 
                 NetworkObject playerObject =
                     null;
@@ -444,78 +481,121 @@ namespace ProjectJ.Networking.Fusion
                     );
                 }
 
-                GUI.Label(
-                    new Rect(
-                        x,
-                        y,
-                        110f,
-                        26f
-                    ),
-                    "P" +
-                    player.AsIndex,
-                    labelStyle
+                DrawSmall(
+                    x,
+                    y,
+                    90f,
+                    "P" + player.AsIndex
                 );
 
-                GUI.Label(
-                    new Rect(
-                        x + 120f,
-                        y,
-                        150f,
-                        26f
-                    ),
+                DrawSmall(
+                    x + 90f,
+                    y,
+                    100f,
                     hasObject &&
                     playerObject.HasStateAuthority
                         ? "TRUE"
-                        : "FALSE",
-                    labelStyle
+                        : "FALSE"
                 );
 
-                GUI.Label(
-                    new Rect(
-                        x + 285f,
-                        y,
-                        150f,
-                        26f
-                    ),
+                DrawSmall(
+                    x + 190f,
+                    y,
+                    100f,
                     hasObject &&
                     playerObject.HasInputAuthority
                         ? "TRUE"
-                        : "FALSE",
-                    labelStyle
+                        : "FALSE"
                 );
 
-                GUI.Label(
-                    new Rect(
-                        x + 450f,
-                        y,
-                        120f,
-                        26f
-                    ),
+                DrawSmall(
+                    x + 290f,
+                    y,
+                    165f,
+                    networkPlayer != null &&
+                    networkPlayer.HasReceivedInput
+                        ? FormatMove(
+                            networkPlayer
+                                .LastReceivedMove
+                        )
+                        : "-"
+                );
+
+                DrawSmall(
+                    x + 455f,
+                    y,
+                    85f,
+                    IsTrueText(
+                        networkPlayer != null &&
+                        networkPlayer
+                            .LastReceivedJump
+                    )
+                );
+
+                DrawSmall(
+                    x + 540f,
+                    y,
+                    85f,
+                    IsTrueText(
+                        networkPlayer != null &&
+                        networkPlayer
+                            .LastReceivedSprint
+                    )
+                );
+
+                DrawSmall(
+                    x + 625f,
+                    y,
+                    85f,
+                    IsTrueText(
+                        networkPlayer != null &&
+                        networkPlayer
+                            .LastReceivedCrouch
+                    )
+                );
+
+                DrawSmall(
+                    x + 710f,
+                    y,
+                    90f,
                     networkPlayer != null &&
                     networkPlayer
                         .AuthorityCameraEnabled
                         ? "ON"
-                        : "OFF",
-                    labelStyle
+                        : "OFF"
                 );
 
-                GUI.Label(
-                    new Rect(
-                        x + 585f,
-                        y,
-                        150f,
-                        26f
-                    ),
-                    networkPlayer != null &&
-                    networkPlayer
-                        .LocalInputSeenRecently
-                        ? "DETECTED"
-                        : "-",
-                    labelStyle
+                DrawSmall(
+                    x + 800f,
+                    y,
+                    130f,
+                    networkPlayer != null
+                        ? networkPlayer
+                            .LastReceivedTick
+                        : "-"
                 );
 
                 row++;
             }
+        }
+
+        private void DrawSmall(
+            float x,
+            float y,
+            float width,
+            string value
+        )
+        {
+            GUI.Label(
+                new Rect(
+                    x,
+                    y,
+                    width,
+                    26f
+                ),
+                value,
+                smallStyle
+            );
         }
 
         private void DrawInfoRow(
@@ -530,7 +610,7 @@ namespace ProjectJ.Networking.Fusion
                 new Rect(
                     x,
                     y,
-                    160f,
+                    170f,
                     28f
                 ),
                 label,
@@ -539,14 +619,32 @@ namespace ProjectJ.Networking.Fusion
 
             GUI.Label(
                 new Rect(
-                    x + 165f,
+                    x + 175f,
                     y,
-                    width - 165f,
+                    width - 175f,
                     28f
                 ),
                 ": " + value,
                 labelStyle
             );
+        }
+
+        private string GetProvideInputText()
+        {
+            NetworkRunner runner =
+                bootstrap.Runner;
+
+            if (
+                runner == null ||
+                !runner.IsRunning
+            )
+            {
+                return "-";
+            }
+
+            return runner.ProvideInput
+                ? "TRUE"
+                : "FALSE";
         }
 
         private string GetLocalPlayerText()
@@ -567,23 +665,81 @@ namespace ProjectJ.Networking.Fusion
                 runner.LocalPlayer.AsIndex;
         }
 
-        private string GetVisibilityText()
+        private string GetProviderMoveText()
         {
-            if (
-                !bootstrap.HasValidSessionInfo
-            )
+            ProjectJFusionInputProvider provider =
+                bootstrap.InputProvider;
+
+            if (provider == null)
             {
                 return "-";
             }
 
-            if (!bootstrap.IsSessionOpen)
+            return FormatMove(
+                provider.LastSubmittedMove
+            );
+        }
+
+        private string GetProviderButtonsText()
+        {
+            ProjectJFusionInputProvider provider =
+                bootstrap.InputProvider;
+
+            if (provider == null)
             {
-                return "비공개 / 참가 닫힘";
+                return "-";
             }
 
-            return bootstrap.IsSessionVisible
-                ? "공개"
-                : "비공개";
+            return
+                "Jump " +
+                IsTrueText(
+                    provider.LastSubmittedJump
+                ) +
+                "   Sprint " +
+                IsTrueText(
+                    provider.LastSubmittedSprint
+                ) +
+                "   Crouch " +
+                IsTrueText(
+                    provider.LastSubmittedCrouch
+                );
+        }
+
+        private string GetProviderTickText()
+        {
+            ProjectJFusionInputProvider provider =
+                bootstrap.InputProvider;
+
+            if (provider == null)
+            {
+                return "-";
+            }
+
+            return
+                provider.LastSubmittedTick +
+                " / " +
+                provider.SubmitCount;
+        }
+
+        private static string FormatMove(
+            Vector2 move
+        )
+        {
+            return
+                "(" +
+                move.x.ToString("0.00") +
+                ", " +
+                move.y.ToString("0.00") +
+                ")";
+        }
+
+        private static string IsTrueText(
+            bool value
+        )
+        {
+            return value
+                ? "TRUE"
+                : "-";
         }
 
         private static string GetStateText(
@@ -688,6 +844,16 @@ namespace ProjectJ.Networking.Fusion
                     );
 
                 labelStyle.fontSize = 16;
+            }
+
+            if (smallStyle == null)
+            {
+                smallStyle =
+                    new GUIStyle(
+                        GUI.skin.label
+                    );
+
+                smallStyle.fontSize = 14;
             }
 
             if (buttonStyle == null)

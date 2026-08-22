@@ -26,6 +26,9 @@ namespace ProjectJ.Networking.Fusion
         private ProjectJNetworkPlayerSpawner
             playerSpawner;
 
+        private ProjectJFusionInputProvider
+            inputProvider;
+
         public ProjectJFusionBootstrapState State
         {
             get;
@@ -39,6 +42,10 @@ namespace ProjectJ.Networking.Fusion
         public ProjectJNetworkPlayerSpawner
             PlayerSpawner =>
                 playerSpawner;
+
+        public ProjectJFusionInputProvider
+            InputProvider =>
+                inputProvider;
 
         public GameMode? ActiveMode
         {
@@ -206,6 +213,7 @@ namespace ProjectJ.Networking.Fusion
                 runner = null;
                 runnerObject = null;
                 playerSpawner = null;
+                inputProvider = null;
                 ActiveMode = null;
 
                 State =
@@ -357,7 +365,12 @@ namespace ProjectJ.Networking.Fusion
                 >();
 
             runner.ProvideInput =
-                false;
+                true;
+
+            inputProvider =
+                runnerObject.AddComponent<
+                    ProjectJFusionInputProvider
+                >();
 
             GameObject playerPrefabObject =
                 Resources.Load<GameObject>(
@@ -389,6 +402,7 @@ namespace ProjectJ.Networking.Fusion
 
                 runner = null;
                 runnerObject = null;
+                inputProvider = null;
                 ActiveMode = null;
 
                 Debug.LogError(
@@ -507,7 +521,9 @@ namespace ProjectJ.Networking.Fusion
                 " / 방 코드: " +
                 ConnectedRoomCode +
                 " / 세션: " +
-                sessionName
+                sessionName +
+                " / ProvideInput: " +
+                runner.ProvideInput
             );
         }
 
@@ -520,6 +536,7 @@ namespace ProjectJ.Networking.Fusion
 
                 ActiveMode = null;
                 playerSpawner = null;
+                inputProvider = null;
 
                 StatusMessage =
                     "대기 중";
@@ -538,6 +555,7 @@ namespace ProjectJ.Networking.Fusion
 
             runner = null;
             playerSpawner = null;
+            inputProvider = null;
 
             if (targetRunner.IsRunning)
             {
@@ -598,6 +616,7 @@ namespace ProjectJ.Networking.Fusion
             }
 
             playerSpawner = null;
+            inputProvider = null;
             ActiveMode = null;
         }
     }

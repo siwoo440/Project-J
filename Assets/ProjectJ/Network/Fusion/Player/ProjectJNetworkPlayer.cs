@@ -1,6 +1,5 @@
 using Fusion;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace ProjectJ.Networking.Fusion
 {
@@ -39,7 +38,44 @@ namespace ProjectJ.Networking.Fusion
             authorityCamera != null &&
             authorityCamera.enabled;
 
-        public bool LocalInputSeenRecently =>
+        public bool HasReceivedInput
+        {
+            get;
+            private set;
+        }
+
+        public Vector2 LastReceivedMove
+        {
+            get;
+            private set;
+        }
+
+        public bool LastReceivedJump
+        {
+            get;
+            private set;
+        }
+
+        public bool LastReceivedSprint
+        {
+            get;
+            private set;
+        }
+
+        public bool LastReceivedCrouch
+        {
+            get;
+            private set;
+        }
+
+        public string LastReceivedTick
+        {
+            get;
+            private set;
+        } =
+            "-";
+
+        public bool InputSeenRecently =>
             Time.unscaledTime <
             inputPulseUntil;
 
@@ -60,33 +96,49 @@ namespace ProjectJ.Networking.Fusion
             );
         }
 
-        private void Update()
+        public override void FixedUpdateNetwork()
         {
             if (
-                Object == null ||
-                !Object.IsValid ||
-                !Object.HasInputAuthority
+                !GetInput<ProjectJNetworkInput>(
+                    out ProjectJNetworkInput input
+                )
             )
             {
                 return;
             }
 
-            Keyboard keyboard =
-                Keyboard.current;
+            HasReceivedInput =
+                true;
 
-            if (keyboard == null)
-            {
-                return;
-            }
+            LastReceivedMove =
+                input.Move;
 
-            bool receivedLocalInput =
-                keyboard.wKey.isPressed ||
-                keyboard.aKey.isPressed ||
-                keyboard.sKey.isPressed ||
-                keyboard.dKey.isPressed ||
-                keyboard.spaceKey.isPressed;
+            LastReceivedJump =
+                input.Buttons.IsSet(
+                    ProjectJNetworkButton.Jump
+                );
 
-            if (receivedLocalInput)
+            LastReceivedSprint =
+                input.Buttons.IsSet(
+                    ProjectJNetworkButton.Sprint
+                );
+
+            LastReceivedCrouch =
+                input.Buttons.IsSet(
+                    ProjectJNetworkButton.Crouch
+                );
+
+            LastReceivedTick =
+                Runner.Tick.ToString();
+
+            bool hasActivity =
+                LastReceivedMove.sqrMagnitude >
+                    0.0001f ||
+                LastReceivedJump ||
+                LastReceivedSprint ||
+                LastReceivedCrouch;
+
+            if (hasActivity)
             {
                 inputPulseUntil =
                     Time.unscaledTime +

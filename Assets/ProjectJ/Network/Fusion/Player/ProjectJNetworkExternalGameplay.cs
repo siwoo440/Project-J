@@ -30,6 +30,7 @@ namespace ProjectJ.Networking.Fusion
             new HashSet<ProjectJNetworkExternalGameplay>(); // 현재 프로세스 Player Registry
 
         private ProjectJNetworkPlayer networkPlayer; // 이동 상태 초기화 대상
+        private ProjectJNetworkItemInventory itemInventory; // 73일차 젤리 보호막 상태 조회
         private NetworkTransform networkTransform; // 순간이동 동기화 대상
         private CheckpointFallLimitSet fallLimitSet; // 체크포인트별 낙하 한계
 
@@ -550,6 +551,16 @@ namespace ProjectJ.Networking.Fusion
                 return false; // 경기 전·완주 후·경기 종료 외력 차단
             }
 
+            ResolveReferences(); // 아이템 보호 상태 참조 보정
+
+            if (
+                itemInventory != null &&
+                itemInventory.BlocksExternalForce(source)
+            )
+            {
+                return false; // 젤리 보호막이 Push·Item 외력 차단
+            }
+
             if (
                 IsRespawnProtected &&
                 IsHostileExternalForce(source)
@@ -923,6 +934,11 @@ namespace ProjectJ.Networking.Fusion
                 networkPlayer = GetComponent<ProjectJNetworkPlayer>(); // 같은 오브젝트 Network Player 조회
             }
 
+            if (itemInventory == null)
+            {
+                itemInventory = GetComponent<ProjectJNetworkItemInventory>(); // 젤리 보호막 상태 조회
+            }
+
             if (networkTransform == null)
             {
                 networkTransform = GetComponent<NetworkTransform>(); // 같은 오브젝트 NetworkTransform 조회
@@ -1073,9 +1089,20 @@ namespace ProjectJ.Networking.Fusion
             NetworkLastPushTargetIndex =
                 target.Object.InputAuthority.AsIndex; // Target 저장
 
+            target.ResolveReferences(); // Target 보호 상태 참조 보정
+
+            if (
+                target.itemInventory != null &&
+                target.itemInventory.BlocksExternalForce(ProjectJExternalForceSource.Push)
+            )
+            {
+                NetworkLastPushResult = (int)ProjectJNetworkPushResult.Shielded; // 젤리 보호막 차단
+                return;
+            }
+
             if (target.IsRespawnProtected)
             {
-                NetworkLastPushResult = (int)ProjectJNetworkPushResult.Protected; // 보호 차단
+                NetworkLastPushResult = (int)ProjectJNetworkPushResult.Protected; // 부활 보호 차단
                 return;
             }
 

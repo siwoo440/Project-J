@@ -143,10 +143,10 @@ namespace ProjectJ.Networking.Fusion
             ApplyCollectedPresentation(); // Host 즉시 외형 제거
 
             Debug.Log(
-                "[Project J/Fusion] 72일차 Item Box 획득 / P" +
+                "[Project J/Fusion] 73일차 Item Box 획득 / P" +
                 NetworkCollectorIndex +
-                " / ITM-" +
-                NetworkAwardedItemId.ToString("000") +
+                " / " +
+                ProjectJNetworkItemCatalog.GetKey(NetworkAwardedItemId) +
                 " / Slot " +
                 (NetworkStoredSlotIndex + 1),
                 this

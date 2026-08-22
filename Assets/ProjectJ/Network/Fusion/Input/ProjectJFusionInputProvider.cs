@@ -19,6 +19,7 @@ namespace ProjectJ.Networking.Fusion
         private bool pendingPush; // 밀치기 단발 입력 보존
         private bool pendingItemSlotLeft; // Q 단발 입력 보존
         private bool pendingItemSlotRight; // E 단발 입력 보존
+        private bool pendingItemUse; // 우클릭 사용 시작 단발 입력 보존
 
         public Vector2 LastSubmittedMove => // 마지막 이동 입력 조회
             lastSubmittedInput.Move;
@@ -51,6 +52,16 @@ namespace ProjectJ.Networking.Fusion
         public bool LastSubmittedItemSlotRight => // 마지막 E 입력 조회
             lastSubmittedInput.Buttons.IsSet(
                 ProjectJNetworkButton.ItemSlotRight
+            );
+
+        public bool LastSubmittedItemUse => // 마지막 아이템 사용 시작 조회
+            lastSubmittedInput.Buttons.IsSet(
+                ProjectJNetworkButton.ItemUse
+            );
+
+        public bool LastSubmittedItemUseHeld => // 마지막 아이템 사용 유지 조회
+            lastSubmittedInput.Buttons.IsSet(
+                ProjectJNetworkButton.ItemUseHeld
             );
 
         public string LastSubmittedTick // 마지막 입력 Tick 문자열
@@ -144,12 +155,29 @@ namespace ProjectJ.Networking.Fusion
                 );
             }
 
-            if (
-                mouse != null && // 마우스 연결 확인
-                mouse.leftButton.wasPressedThisFrame // 좌클릭 밀치기 확인
-            )
+            if (mouse != null) // 마우스 연결 확인
             {
-                pendingPush = true; // 다음 Fusion Tick까지 밀치기 보존
+                if (mouse.leftButton.wasPressedThisFrame) // 좌클릭 밀치기 확인
+                {
+                    pendingPush = true; // 다음 Fusion Tick까지 밀치기 보존
+                }
+
+                if (mouse.rightButton.wasPressedThisFrame) // 우클릭 사용 시작 확인
+                {
+                    pendingItemUse = true; // 다음 Fusion Tick까지 사용 시작 보존
+                }
+
+                cachedInput.Buttons.Set( // 우클릭 유지 상태 저장
+                    ProjectJNetworkButton.ItemUseHeld,
+                    mouse.rightButton.isPressed
+                );
+            }
+            else
+            {
+                cachedInput.Buttons.Set( // 마우스 없음 시 사용 유지 해제
+                    ProjectJNetworkButton.ItemUseHeld,
+                    false
+                );
             }
 
             if (move.sqrMagnitude > 1f) // 대각선 입력 크기 제한
@@ -188,6 +216,11 @@ namespace ProjectJ.Networking.Fusion
                 pendingItemSlotRight
             );
 
+            networkInput.Buttons.Set( // 우클릭 사용 시작 입력 삽입
+                ProjectJNetworkButton.ItemUse,
+                pendingItemUse
+            );
+
             input.Set( // Fusion 입력 제출
                 networkInput
             );
@@ -203,6 +236,7 @@ namespace ProjectJ.Networking.Fusion
             pendingPush = false; // 밀치기 단발 입력 초기화
             pendingItemSlotLeft = false; // Q 단발 입력 초기화
             pendingItemSlotRight = false; // E 단발 입력 초기화
+            pendingItemUse = false; // 우클릭 사용 시작 단발 입력 초기화
         }
 
         public void OnObjectExitAOI(

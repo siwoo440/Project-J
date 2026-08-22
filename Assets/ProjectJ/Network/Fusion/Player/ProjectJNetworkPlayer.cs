@@ -451,6 +451,28 @@ namespace ProjectJ.Networking.Fusion
             hasForwardPosition = true; // Prediction 기준 유지
         }
 
+        public bool TrySetItemVerticalVelocityAuthority(
+            float verticalVelocity
+        )
+        {
+            if (
+                Object == null ||
+                !Object.IsValid ||
+                !Object.HasStateAuthority ||
+                externalGameplay == null ||
+                !externalGameplay.GameplayInputAllowed ||
+                verticalVelocity <= 0f
+            )
+            {
+                return false; // State Authority의 유효한 경기 중 아이템 점프만 허용
+            }
+
+            NetworkVerticalVelocity = verticalVelocity; // 스프링 신발 추가 점프 속도 적용
+            NetworkGrounded = false; // 공중 상태 유지
+            LastSimulationPosition = transform.position; // Simulation 기준 갱신
+            return true;
+        }
+
         private void UpdateCrouchState()
         {
             if (LastReceivedCrouch)

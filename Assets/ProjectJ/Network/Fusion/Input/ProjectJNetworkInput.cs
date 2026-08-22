@@ -10,7 +10,9 @@ namespace ProjectJ.Networking.Fusion
         Crouch = 2, // 앉기 입력
         Push = 3, // 밀치기 입력
         ItemSlotLeft = 4, // Q 첫 번째 아이템 슬롯 선택
-        ItemSlotRight = 5 // E 두 번째 아이템 슬롯 선택
+        ItemSlotRight = 5, // E 두 번째 아이템 슬롯 선택
+        ItemUse = 6, // 우클릭 아이템 사용 시작
+        ItemUseHeld = 7 // 우클릭 아이템 사용 유지
     }
 
     public struct ProjectJNetworkInput : // Fusion 입력 데이터

@@ -451,6 +451,32 @@ namespace ProjectJ.Networking.Fusion
             hasForwardPosition = true; // Prediction 기준 유지
         }
 
+        public bool ApplyPlatformPassengerPositionAuthority(
+            Vector3 targetPosition
+        )
+        {
+            if (
+                Object == null ||
+                !Object.IsValid ||
+                !Object.HasStateAuthority ||
+                externalGameplay == null ||
+                !externalGameplay.GameplayInputAllowed
+            )
+            {
+                return false; // Host의 경기 중 Network Player만 플랫폼 이동 적용
+            }
+
+            if (!IsGrounded)
+            {
+                return false; // 점프·낙하 중인 Player는 플랫폼에 끌려가지 않음
+            }
+
+            transform.position = targetPosition; // 플랫폼 이동량을 Player 위치에 적용
+            LastSimulationPosition = targetPosition; // Simulation 디버그 기준 위치 갱신
+
+            return true;
+        }
+
         public bool TrySetItemVerticalVelocityAuthority(
             float verticalVelocity
         )

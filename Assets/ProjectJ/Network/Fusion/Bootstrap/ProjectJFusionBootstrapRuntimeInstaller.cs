@@ -28,6 +28,17 @@ namespace ProjectJ.Networking.Fusion
                     >(); // 기존 Bootstrap에도 74일차 Flow 보장
                 }
 
+                if (
+                    existing.GetComponent<
+                        ProjectJPhase6GateDebugView
+                    >() == null
+                )
+                {
+                    existing.gameObject.AddComponent<
+                        ProjectJPhase6GateDebugView
+                    >(); // F3 Phase 6 통합 Gate 자동 설치
+                }
+
                 return;
             }
 
@@ -51,6 +62,10 @@ namespace ProjectJ.Networking.Fusion
             bootstrapObject.AddComponent<
                 ProjectJNetworkLobbyFlow
             >(); // Lobby Ready → Game Flow 자동 설치
+
+            bootstrapObject.AddComponent<
+                ProjectJPhase6GateDebugView
+            >(); // F3 Phase 6 통합 Gate 자동 설치
         }
     }
 }

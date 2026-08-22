@@ -28,6 +28,8 @@ namespace ProjectJ.Networking.Fusion
         private const int LobbyMatchMinimumPlayerCount = 2; // 74일차 Ready 경기 시작 최소 인원
         private const string LobbySceneName = "Lobby"; // Ready를 입력하는 Lobby Scene
         private const string GameSceneName = "Game"; // 실제 경기 Scene
+        private const string Day49AllSystemsTestSceneName =
+            "Day49_AllSystemsTest"; // Phase 6 멀티플레이 통합 테스트 Scene
 
         private static readonly HashSet<ProjectJNetworkExternalGameplay> ActivePlayers =
             new HashSet<ProjectJNetworkExternalGameplay>(); // 현재 프로세스 Player Registry
@@ -1577,7 +1579,10 @@ namespace ProjectJ.Networking.Fusion
 
             return
                 activeScene.IsValid() &&
-                activeScene.name == GameSceneName; // Game Scene 여부
+                (
+                    activeScene.name == GameSceneName ||
+                    activeScene.name == Day49AllSystemsTestSceneName
+                ); // Game 또는 Day49 통합 테스트 Scene 여부
         }
 
         private static float GetRemainingTime(

@@ -30,7 +30,10 @@ namespace ProjectJ.Networking.Fusion
 
         private const string LobbySceneName = "Lobby";
         private const string GameSceneName = "Game";
+        private const string DirectTestSceneName =
+            "Day49_AllSystemsTest"; // 75일차 멀티플레이 통합 테스트 Scene
 
+        private const bool DirectGameTestMode = true; // 방 생성·참가 후 Lobby를 건너뛰고 Day49 테스트 Scene으로 바로 이동
         private const int MinimumReadyPlayers = 2;
         private const float SpawnSpacing = 3f;
         private const float SpawnY = 2f;
@@ -109,6 +112,15 @@ namespace ProjectJ.Networking.Fusion
             Scene activeScene =
                 SceneManager.GetActiveScene();
 
+            if (DirectGameTestMode)
+            {
+                UpdateDirectGameTest(
+                    runner,
+                    activeScene
+                ); // 멀티 테스트 중에는 Lobby 없이 Game으로 바로 이동
+                return;
+            }
+
             if (
                 activeScene.IsValid() &&
                 activeScene.name == LobbySceneName
@@ -132,6 +144,95 @@ namespace ProjectJ.Networking.Fusion
             }
 
             UpdateEnteringLobby(runner);
+        }
+
+        private void UpdateDirectGameTest(
+            NetworkRunner runner,
+            Scene activeScene
+        )
+        {
+            if (
+                activeScene.IsValid() &&
+                activeScene.name == DirectTestSceneName
+            )
+            {
+                UpdateGame(runner); // Day49 테스트 Scene에서도 기존 Player 준비·Countdown 흐름 재사용
+                return;
+            }
+
+            Phase =
+                ProjectJNetworkLobbyFlowPhase.MatchLoading;
+
+            StatusText =
+                "Day49_AllSystemsTest 진입";
+
+            if (
+                !runner.IsSceneAuthority ||
+                gameLoadRequested
+            )
+            {
+                return; // Host Scene Authority만 Game 로드 요청
+            }
+
+            int testSceneBuildIndex =
+                FindBuildSceneIndexByName(
+                    DirectTestSceneName
+                ); // Build Settings에서 Day49 테스트 Scene 탐색
+
+            if (testSceneBuildIndex < 0)
+            {
+                StatusText =
+                    "Day49_AllSystemsTest가 Build Settings에 없습니다.";
+
+                Debug.LogError(
+                    "[Project J/Fusion] 75일차 Direct Test / Day49_AllSystemsTest Build Index 없음"
+                );
+
+                return;
+            }
+
+            gameLoadRequested = true;
+
+            runner.LoadScene(
+                SceneRef.FromIndex(testSceneBuildIndex),
+                LoadSceneMode.Single
+            ); // Host가 Day49 테스트 Scene을 로드하고 Client는 Fusion Scene 동기화로 따라감
+
+            Debug.Log(
+                "[Project J/Fusion] 75일차 Direct Test / Day49_AllSystemsTest Scene 로드 요청"
+            );
+        }
+
+        private static int FindBuildSceneIndexByName(
+            string sceneName
+        )
+        {
+            int sceneCount =
+                SceneManager.sceneCountInBuildSettings;
+
+            for (
+                int index = 0;
+                index < sceneCount;
+                index++
+            )
+            {
+                string scenePath =
+                    SceneUtility.GetScenePathByBuildIndex(
+                        index
+                    );
+
+                if (
+                    scenePath.EndsWith(
+                        "/" + sceneName + ".unity",
+                        System.StringComparison.OrdinalIgnoreCase
+                    )
+                )
+                {
+                    return index; // 정확한 Scene 이름의 Build Index 반환
+                }
+            }
+
+            return -1; // Build Settings에 대상 Scene 없음
         }
 
         private void UpdateEnteringLobby(

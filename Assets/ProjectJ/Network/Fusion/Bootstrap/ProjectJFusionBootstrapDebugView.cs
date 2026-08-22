@@ -87,10 +87,10 @@ namespace ProjectJ.Networking.Fusion
                 new Rect(
                     left,
                     y + 14f,
-                    540f,
+                    560f,
                     34f
                 ),
-                "Project J - Fusion 63일차",
+                "Project J - Fusion 64일차",
                 titleStyle
             );
 
@@ -320,127 +320,22 @@ namespace ProjectJ.Networking.Fusion
             GUI.Label(
                 new Rect(
                     left,
-                    y + 700f,
-                    70f,
-                    26f
+                    y + 696f,
+                    contentWidth,
+                    28f
                 ),
-                "Player",
-                smallStyle
+                "Remote NetworkTransform Interpolation",
+                sectionStyle
             );
 
-            GUI.Label(
-                new Rect(
-                    left + 70f,
-                    y + 700f,
-                    80f,
-                    26f
-                ),
-                "State",
-                smallStyle
-            );
-
-            GUI.Label(
-                new Rect(
-                    left + 150f,
-                    y + 700f,
-                    80f,
-                    26f
-                ),
-                "Input",
-                smallStyle
-            );
-
-            GUI.Label(
-                new Rect(
-                    left + 230f,
-                    y + 700f,
-                    145f,
-                    26f
-                ),
-                "Move",
-                smallStyle
-            );
-
-            GUI.Label(
-                new Rect(
-                    left + 375f,
-                    y + 700f,
-                    245f,
-                    26f
-                ),
-                "Position",
-                smallStyle
-            );
-
-            GUI.Label(
-                new Rect(
-                    left + 620f,
-                    y + 700f,
-                    70f,
-                    26f
-                ),
-                "Jump",
-                smallStyle
-            );
-
-            GUI.Label(
-                new Rect(
-                    left + 690f,
-                    y + 700f,
-                    75f,
-                    26f
-                ),
-                "Sprint",
-                smallStyle
-            );
-
-            GUI.Label(
-                new Rect(
-                    left + 765f,
-                    y + 700f,
-                    75f,
-                    26f
-                ),
-                "Crouch",
-                smallStyle
-            );
-
-            GUI.Label(
-                new Rect(
-                    left + 840f,
-                    y + 700f,
-                    80f,
-                    26f
-                ),
-                "Camera",
-                smallStyle
-            );
-
-            GUI.Label(
-                new Rect(
-                    left + 920f,
-                    y + 700f,
-                    130f,
-                    26f
-                ),
-                "Received Tick",
-                smallStyle
-            );
-
-            GUI.Label(
-                new Rect(
-                    left + 1050f,
-                    y + 700f,
-                    90f,
-                    26f
-                ),
-                "Speed",
-                smallStyle
+            DrawInterpolationHeader(
+                left,
+                y + 730f
             );
 
             DrawPlayerRows(
                 left,
-                y + 729f
+                y + 759f
             );
 
             GUI.enabled =
@@ -502,6 +397,61 @@ namespace ProjectJ.Networking.Fusion
 
             GUI.enabled = true;
 #endif
+        }
+
+        private void DrawInterpolationHeader(
+            float x,
+            float y
+        )
+        {
+            DrawSmall(
+                x,
+                y,
+                60f,
+                "Player"
+            );
+
+            DrawSmall(
+                x + 60f,
+                y,
+                150f,
+                "Role"
+            );
+
+            DrawSmall(
+                x + 210f,
+                y,
+                240f,
+                "Simulation Position"
+            );
+
+            DrawSmall(
+                x + 450f,
+                y,
+                240f,
+                "Render Position"
+            );
+
+            DrawSmall(
+                x + 690f,
+                y,
+                120f,
+                "Offset"
+            );
+
+            DrawSmall(
+                x + 810f,
+                y,
+                120f,
+                "Render Δ"
+            );
+
+            DrawSmall(
+                x + 930f,
+                y,
+                160f,
+                "Interpolation"
+            );
         }
 
         private ProjectJNetworkPlayer
@@ -688,122 +638,127 @@ namespace ProjectJ.Networking.Fusion
                 DrawSmall(
                     x,
                     y,
-                    70f,
+                    60f,
                     "P" + player.AsIndex
                 );
 
                 DrawSmall(
-                    x + 70f,
+                    x + 60f,
                     y,
-                    80f,
-                    hasObject &&
-                    playerObject.HasStateAuthority
-                        ? "TRUE"
-                        : "FALSE"
+                    150f,
+                    GetInterpolationRoleText(
+                        networkPlayer
+                    )
                 );
 
                 DrawSmall(
-                    x + 150f,
+                    x + 210f,
                     y,
-                    80f,
-                    hasObject &&
-                    playerObject.HasInputAuthority
-                        ? "TRUE"
-                        : "FALSE"
-                );
-
-                DrawSmall(
-                    x + 230f,
-                    y,
-                    145f,
-                    networkPlayer != null &&
-                    networkPlayer.HasReceivedInput
-                        ? FormatMove(
-                            networkPlayer
-                                .LastReceivedMove
-                        )
-                        : "-"
-                );
-
-                DrawSmall(
-                    x + 375f,
-                    y,
-                    245f,
+                    240f,
                     networkPlayer != null
                         ? FormatPosition(
                             networkPlayer
-                                .CurrentPosition
+                                .LastSimulationPosition
                         )
                         : "-"
                 );
 
                 DrawSmall(
-                    x + 620f,
+                    x + 450f,
                     y,
-                    70f,
-                    IsTrueText(
-                        networkPlayer != null &&
-                        networkPlayer
-                            .LastReceivedJump
-                    )
+                    240f,
+                    networkPlayer != null
+                        ? FormatPosition(
+                            networkPlayer
+                                .LastRenderPosition
+                        )
+                        : "-"
                 );
 
                 DrawSmall(
                     x + 690f,
                     y,
-                    75f,
-                    IsTrueText(
-                        networkPlayer != null &&
-                        networkPlayer
-                            .LastReceivedSprint
-                    )
-                );
-
-                DrawSmall(
-                    x + 765f,
-                    y,
-                    75f,
-                    IsTrueText(
-                        networkPlayer != null &&
-                        networkPlayer
-                            .LastReceivedCrouch
-                    )
-                );
-
-                DrawSmall(
-                    x + 840f,
-                    y,
-                    80f,
-                    networkPlayer != null &&
-                    networkPlayer
-                        .AuthorityCameraEnabled
-                        ? "ON"
-                        : "OFF"
-                );
-
-                DrawSmall(
-                    x + 920f,
-                    y,
-                    130f,
+                    120f,
                     networkPlayer != null
                         ? networkPlayer
-                            .LastReceivedTick
+                            .RenderSimulationOffset
+                            .ToString("0.000")
                         : "-"
                 );
 
                 DrawSmall(
-                    x + 1050f,
+                    x + 810f,
                     y,
-                    90f,
+                    120f,
                     networkPlayer != null
                         ? networkPlayer
-                            .MovementSpeed
-                            .ToString("0.0")
+                            .LastRenderStepDistance
+                            .ToString("0.000")
                         : "-"
+                );
+
+                DrawSmall(
+                    x + 930f,
+                    y,
+                    160f,
+                    GetInterpolationStateText(
+                        networkPlayer
+                    )
                 );
 
                 row++;
             }
+        }
+
+        private static string
+            GetInterpolationRoleText(
+                ProjectJNetworkPlayer player
+            )
+        {
+            if (player == null)
+            {
+                return "-";
+            }
+
+            if (player.HasLocalInputAuthority)
+            {
+                return "LOCAL";
+            }
+
+            if (player.IsRemoteProxy)
+            {
+                return "REMOTE PROXY";
+            }
+
+            if (player.HasLocalStateAuthority)
+            {
+                return "REMOTE STATE";
+            }
+
+            return "REMOTE";
+        }
+
+        private static string
+            GetInterpolationStateText(
+                ProjectJNetworkPlayer player
+            )
+        {
+            if (player == null)
+            {
+                return "-";
+            }
+
+            if (!player.HasNetworkTransform)
+            {
+                return "NO NT";
+            }
+
+            if (player.RemoteInterpolationExpected)
+            {
+                return "AUTO";
+            }
+
+            return "LOCAL";
         }
 
         private void DrawSmall(

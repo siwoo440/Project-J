@@ -17,6 +17,7 @@ namespace ProjectJ.Networking.Fusion
 
         private Renderer visualRenderer;
         private Camera authorityCamera;
+        private NetworkTransform networkTransform;
 
         private Material runtimeMaterial;
         private RenderTexture authorityCameraTexture;
@@ -26,6 +27,9 @@ namespace ProjectJ.Networking.Fusion
         private bool hasForwardPosition;
         private Vector3 lastForwardPosition;
         private Vector3 predictedPositionBeforeResimulation;
+
+        private bool hasRenderPosition;
+        private Vector3 previousRenderPosition;
 
         public PlayerRef Owner =>
             Object != null &&
@@ -42,6 +46,24 @@ namespace ProjectJ.Networking.Fusion
             Object != null &&
             Object.IsValid &&
             Object.HasInputAuthority;
+
+        public bool IsRemoteView =>
+            Object != null &&
+            Object.IsValid &&
+            !Object.HasInputAuthority;
+
+        public bool IsRemoteProxy =>
+            Object != null &&
+            Object.IsValid &&
+            !Object.HasInputAuthority &&
+            !Object.HasStateAuthority;
+
+        public bool HasNetworkTransform =>
+            networkTransform != null;
+
+        public bool RemoteInterpolationExpected =>
+            IsRemoteView &&
+            HasNetworkTransform;
 
         public bool AuthorityCameraEnabled =>
             authorityCamera != null &&
@@ -86,6 +108,36 @@ namespace ProjectJ.Networking.Fusion
 
         public Vector3 CurrentPosition =>
             transform.position;
+
+        public Vector3 LastSimulationPosition
+        {
+            get;
+            private set;
+        }
+
+        public Vector3 LastRenderPosition
+        {
+            get;
+            private set;
+        }
+
+        public float RenderSimulationOffset
+        {
+            get;
+            private set;
+        }
+
+        public float LastRenderStepDistance
+        {
+            get;
+            private set;
+        }
+
+        public int RenderSampleCount
+        {
+            get;
+            private set;
+        }
 
         public float MovementSpeed =>
             BaseMoveSpeed;
@@ -165,6 +217,18 @@ namespace ProjectJ.Networking.Fusion
             hasForwardPosition =
                 true;
 
+            LastSimulationPosition =
+                transform.position;
+
+            LastRenderPosition =
+                transform.position;
+
+            previousRenderPosition =
+                transform.position;
+
+            hasRenderPosition =
+                true;
+
             Debug.Log(
                 "[Project J/Fusion] " +
                 "Network Player 연결 / " +
@@ -173,12 +237,17 @@ namespace ProjectJ.Networking.Fusion
                 " / State Authority: " +
                 Object.HasStateAuthority +
                 " / Input Authority: " +
-                Object.HasInputAuthority
+                Object.HasInputAuthority +
+                " / NetworkTransform: " +
+                HasNetworkTransform
             );
         }
 
         public override void FixedUpdateNetwork()
         {
+            LastSimulationPosition =
+                transform.position;
+
             if (
                 !GetInput<ProjectJNetworkInput>(
                     out ProjectJNetworkInput input
@@ -235,6 +304,9 @@ namespace ProjectJ.Networking.Fusion
                 BaseMoveSpeed *
                 Runner.DeltaTime;
 
+            LastSimulationPosition =
+                transform.position;
+
             bool hasActivity =
                 moveInput.sqrMagnitude >
                     0.0001f ||
@@ -248,6 +320,51 @@ namespace ProjectJ.Networking.Fusion
                     Time.unscaledTime +
                     InputPulseDuration;
             }
+        }
+
+        private void LateUpdate()
+        {
+            if (
+                Object == null ||
+                !Object.IsValid
+            )
+            {
+                return;
+            }
+
+            Vector3 renderPosition =
+                transform.position;
+
+            LastRenderPosition =
+                renderPosition;
+
+            RenderSimulationOffset =
+                Vector3.Distance(
+                    LastSimulationPosition,
+                    renderPosition
+                );
+
+            if (hasRenderPosition)
+            {
+                LastRenderStepDistance =
+                    Vector3.Distance(
+                        previousRenderPosition,
+                        renderPosition
+                    );
+            }
+            else
+            {
+                LastRenderStepDistance =
+                    0f;
+
+                hasRenderPosition =
+                    true;
+            }
+
+            previousRenderPosition =
+                renderPosition;
+
+            RenderSampleCount++;
         }
 
         public void BeforeAllTicks(
@@ -359,6 +476,11 @@ namespace ProjectJ.Networking.Fusion
                 >(
                     true
                 );
+
+            networkTransform =
+                GetComponent<
+                    NetworkTransform
+                >();
         }
 
         private void ApplyAuthorityPresentation()

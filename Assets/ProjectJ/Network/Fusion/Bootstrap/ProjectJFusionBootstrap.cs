@@ -1,5 +1,7 @@
 using System.Threading.Tasks;
 using Fusion;
+using Photon.Realtime;
+using ProjectJ.Steam;
 using UnityEngine;
 
 namespace ProjectJ.Networking.Fusion
@@ -340,6 +342,43 @@ namespace ProjectJ.Networking.Fusion
         {
             await DestroyPreviousRunnerAsync();
 
+            if (
+                !ProjectJSteamIdentityService
+                    .TryGetAuthenticated(
+                        out ProjectJSteamIdentityService
+                            steamIdentity
+                    )
+            )
+            {
+                State =
+                    ProjectJFusionBootstrapState.Failed;
+
+                ActiveMode =
+                    null;
+
+                ProjectJSteamIdentityService
+                    currentIdentity =
+                        ProjectJSteamIdentityService
+                            .Instance;
+
+                StatusMessage =
+                    currentIdentity == null
+                        ? "Steam 인증 서비스가 없습니다."
+                        : "Steam 인증 필요: " +
+                            currentIdentity
+                                .StatusMessage;
+
+                LastConnectionResult =
+                    "Steam 인증 실패";
+
+                Debug.LogWarning(
+                    "[Project J/Fusion] " +
+                    StatusMessage
+                );
+
+                return;
+            }
+
             State =
                 ProjectJFusionBootstrapState.Starting;
 
@@ -428,6 +467,13 @@ namespace ProjectJ.Networking.Fusion
                         NetworkSceneManagerDefault
                     >();
 
+            AuthenticationValues
+                authenticationValues =
+                    new AuthenticationValues(
+                        steamIdentity
+                            .ProjectAccountId
+                    );
+
             StartGameArgs startArgs =
                 new StartGameArgs
                 {
@@ -436,7 +482,9 @@ namespace ProjectJ.Networking.Fusion
                     SessionName =
                         sessionName,
                     SceneManager =
-                        sceneManager
+                        sceneManager,
+                    AuthValues =
+                        authenticationValues
                 };
 
             if (gameMode == GameMode.Host)
@@ -522,6 +570,8 @@ namespace ProjectJ.Networking.Fusion
                 ConnectedRoomCode +
                 " / 세션: " +
                 sessionName +
+                " / ProjectAccountId: " +
+                steamIdentity.ProjectAccountId +
                 " / ProvideInput: " +
                 runner.ProvideInput
             );

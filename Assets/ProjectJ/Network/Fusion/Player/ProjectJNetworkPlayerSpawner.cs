@@ -1,3 +1,4 @@
+using System; // Account ID 비교
 using Fusion;
 using UnityEngine;
 
@@ -33,6 +34,20 @@ namespace ProjectJ.Networking.Fusion
                 playerPrefab == null
             )
             {
+                return;
+            }
+
+            if (
+                !TryValidateProjectAccountId(
+                    player,
+                    out string projectAccountId
+                )
+            )
+            {
+                Runner.Disconnect(
+                    player
+                );
+
                 return;
             }
 
@@ -84,6 +99,8 @@ namespace ProjectJ.Networking.Fusion
                 "Network Player Spawn 완료 / " +
                 "PlayerRef: " +
                 player.AsIndex +
+                " / ProjectAccountId: " +
+                projectAccountId +
                 " / Input Authority: " +
                 player
             );
@@ -123,6 +140,76 @@ namespace ProjectJ.Networking.Fusion
                 "PlayerRef: " +
                 player.AsIndex
             );
+        }
+
+        private bool TryValidateProjectAccountId(
+            PlayerRef joiningPlayer,
+            out string projectAccountId
+        )
+        {
+            projectAccountId =
+                Runner.GetPlayerUserId(
+                    joiningPlayer
+                );
+
+            if (
+                string.IsNullOrWhiteSpace(
+                    projectAccountId
+                )
+            )
+            {
+                Debug.LogWarning(
+                    "[Project J/Fusion] " +
+                    "Project Account ID가 없는 Player 연결 거부 / P" +
+                    joiningPlayer.AsIndex
+                );
+
+                return false;
+            }
+
+            foreach (
+                PlayerRef activePlayer
+                in Runner.ActivePlayers
+            )
+            {
+                if (
+                    activePlayer ==
+                    joiningPlayer
+                )
+                {
+                    continue;
+                }
+
+                string activeAccountId =
+                    Runner.GetPlayerUserId(
+                        activePlayer
+                    );
+
+                if (
+                    !string.Equals(
+                        projectAccountId,
+                        activeAccountId,
+                        StringComparison.Ordinal
+                    )
+                )
+                {
+                    continue;
+                }
+
+                Debug.LogWarning(
+                    "[Project J/Fusion] " +
+                    "중복 Project Account ID 연결 거부 / " +
+                    projectAccountId +
+                    " / Existing P" +
+                    activePlayer.AsIndex +
+                    " / Joining P" +
+                    joiningPlayer.AsIndex
+                );
+
+                return false;
+            }
+
+            return true;
         }
 
         private Vector3 GetSpawnPosition(

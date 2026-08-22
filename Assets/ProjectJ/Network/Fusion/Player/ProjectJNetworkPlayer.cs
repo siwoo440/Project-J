@@ -9,62 +9,25 @@ namespace ProjectJ.Networking.Fusion
         IBeforeAllTicks,
         IAfterAllTicks
     {
-        private const float InputPulseDuration =
-            0.35f;
-
-        private const float BaseMoveSpeed =
-            5f;
-
-        private const float JumpVelocity =
-            7f;
-
-        private const float Gravity =
-            -20f;
-
-        private const float GroundProbeStartHeight =
-            0.15f;
-
-        private const float GroundProbeDistance =
-            0.25f;
-
-        private const float SprintMoveSpeed =
-            8f;
-
-        private const float MaxStamina =
-            100f;
-
-        private const float SprintStaminaDrainPerSecond =
-            25f;
-
-        private const float StaminaRecoveryPerSecond =
-            20f;
-
-        private const float SprintRestartStamina =
-            20f;
-
-        private const float StandingColliderHeight =
-            2f;
-
-        private const float CrouchColliderHeight =
-            1f;
-
-        private const float BodyColliderRadius =
-            0.4f;
-
-        private const float StandingVisualY =
-            1f;
-
-        private const float CrouchVisualY =
-            0.5f;
-
-        private const float StandingVisualScaleY =
-            1f;
-
-        private const float CrouchVisualScaleY =
-            0.5f;
-
-        private const float StandClearanceRadiusScale =
-            0.95f;
+        private const float InputPulseDuration = 0.35f;
+        private const float BaseMoveSpeed = 5f;
+        private const float JumpVelocity = 7f;
+        private const float Gravity = -20f;
+        private const float GroundProbeStartHeight = 0.15f;
+        private const float GroundProbeDistance = 0.25f;
+        private const float SprintMoveSpeed = 8f;
+        private const float MaxStamina = 100f;
+        private const float SprintStaminaDrainPerSecond = 25f;
+        private const float StaminaRecoveryPerSecond = 20f;
+        private const float SprintRestartStamina = 20f;
+        private const float StandingColliderHeight = 2f;
+        private const float CrouchColliderHeight = 1f;
+        private const float BodyColliderRadius = 0.4f;
+        private const float StandingVisualY = 1f;
+        private const float CrouchVisualY = 0.5f;
+        private const float StandingVisualScaleY = 1f;
+        private const float CrouchVisualScaleY = 0.5f;
+        private const float StandClearanceRadiusScale = 0.95f;
 
         private Renderer visualRenderer;
         private Transform visualTransform;
@@ -72,20 +35,14 @@ namespace ProjectJ.Networking.Fusion
         private NetworkTransform networkTransform;
         private CapsuleCollider bodyCollider;
 
-        private readonly RaycastHit[] groundHitBuffer =
-            new RaycastHit[16];
-
-        private readonly Collider[] standOverlapBuffer =
-            new Collider[16];
+        private readonly RaycastHit[] groundHitBuffer = new RaycastHit[16];
+        private readonly Collider[] standOverlapBuffer = new Collider[16];
 
         private Material runtimeMaterial;
-
         private float inputPulseUntil;
-
         private bool hasForwardPosition;
         private Vector3 lastForwardPosition;
         private Vector3 predictedPositionBeforeResimulation;
-
         private bool hasRenderPosition;
         private Vector3 previousRenderPosition;
 
@@ -132,42 +89,30 @@ namespace ProjectJ.Networking.Fusion
         }
 
         public PlayerRef Owner =>
-            Object != null &&
-            Object.IsValid
+            Object != null && Object.IsValid
                 ? Object.InputAuthority
                 : default;
 
         public bool HasLocalStateAuthority =>
-            Object != null &&
-            Object.IsValid &&
-            Object.HasStateAuthority;
+            Object != null && Object.IsValid && Object.HasStateAuthority;
 
         public bool HasLocalInputAuthority =>
-            Object != null &&
-            Object.IsValid &&
-            Object.HasInputAuthority;
+            Object != null && Object.IsValid && Object.HasInputAuthority;
 
         public bool IsRemoteView =>
-            Object != null &&
-            Object.IsValid &&
-            !Object.HasInputAuthority;
+            Object != null && Object.IsValid && !Object.HasInputAuthority;
 
         public bool IsRemoteProxy =>
-            Object != null &&
-            Object.IsValid &&
-            !Object.HasInputAuthority &&
-            !Object.HasStateAuthority;
+            Object != null && Object.IsValid && !Object.HasInputAuthority && !Object.HasStateAuthority;
 
         public bool HasNetworkTransform =>
             networkTransform != null;
 
         public bool RemoteInterpolationExpected =>
-            IsRemoteView &&
-            HasNetworkTransform;
+            IsRemoteView && HasNetworkTransform;
 
         public bool AuthorityCameraEnabled =>
-            authorityCamera != null &&
-            authorityCamera.enabled;
+            authorityCamera != null && authorityCamera.enabled;
 
         public bool HasReceivedInput
         {
@@ -203,11 +148,9 @@ namespace ProjectJ.Networking.Fusion
         {
             get;
             private set;
-        } =
-            "-";
+        } = "-";
 
-        public Vector3 CurrentPosition =>
-            transform.position;
+        public Vector3 CurrentPosition => transform.position;
 
         public Vector3 LastSimulationPosition
         {
@@ -239,63 +182,29 @@ namespace ProjectJ.Networking.Fusion
             private set;
         }
 
-        public float MovementSpeed =>
-            CurrentMoveSpeed;
-
-        public float WalkSpeed =>
-            BaseMoveSpeed;
-
-        public float SprintSpeed =>
-            SprintMoveSpeed;
-
-        public float CurrentMoveSpeed =>
-            NetworkIsSprinting
-                ? SprintMoveSpeed
-                : BaseMoveSpeed;
-
-        public float Stamina =>
-            NetworkStamina;
-
-        public float StaminaMaximum =>
-            MaxStamina;
-
-        public bool IsSprinting =>
-            NetworkIsSprinting;
-
-        public bool IsSprintExhausted =>
-            NetworkSprintExhausted;
-
-        public bool IsCrouching =>
-            NetworkIsCrouching;
+        public float MovementSpeed => CurrentMoveSpeed;
+        public float WalkSpeed => BaseMoveSpeed;
+        public float SprintSpeed => SprintMoveSpeed;
+        public float CurrentMoveSpeed => NetworkIsSprinting ? SprintMoveSpeed : BaseMoveSpeed;
+        public float Stamina => NetworkStamina;
+        public float StaminaMaximum => MaxStamina;
+        public bool IsSprinting => NetworkIsSprinting;
+        public bool IsSprintExhausted => NetworkSprintExhausted;
+        public bool IsCrouching => NetworkIsCrouching;
 
         public float ColliderHeight =>
             bodyCollider != null
                 ? bodyCollider.height
-                : (
-                    NetworkIsCrouching
-                        ? CrouchColliderHeight
-                        : StandingColliderHeight
-                );
+                : (NetworkIsCrouching ? CrouchColliderHeight : StandingColliderHeight);
 
         public bool CanStandUp =>
-            !NetworkIsCrouching ||
-            HasStandingClearance();
+            !NetworkIsCrouching || HasStandingClearance();
 
-        public float VerticalVelocity =>
-            NetworkVerticalVelocity;
-
-        public bool IsGrounded =>
-            NetworkGrounded;
-
-        public float JumpSpeed =>
-            JumpVelocity;
-
-        public float GravityAcceleration =>
-            Gravity;
-
-        public bool InputSeenRecently =>
-            Time.unscaledTime <
-            inputPulseUntil;
+        public float VerticalVelocity => NetworkVerticalVelocity;
+        public bool IsGrounded => NetworkGrounded;
+        public float JumpSpeed => JumpVelocity;
+        public float GravityAcceleration => Gravity;
+        public bool InputSeenRecently => Time.unscaledTime < inputPulseUntil;
 
         public int ResimulationBatchCount
         {
@@ -362,37 +271,19 @@ namespace ProjectJ.Networking.Fusion
             CachePresentation();
             ApplyAuthorityPresentation();
 
-            lastForwardPosition =
-                transform.position;
-
-            hasForwardPosition =
-                true;
-
-            LastSimulationPosition =
-                transform.position;
-
-            LastRenderPosition =
-                transform.position;
-
-            previousRenderPosition =
-                transform.position;
-
-            hasRenderPosition =
-                true;
+            lastForwardPosition = transform.position;
+            hasForwardPosition = true;
+            LastSimulationPosition = transform.position;
+            LastRenderPosition = transform.position;
+            previousRenderPosition = transform.position;
+            hasRenderPosition = true;
 
             if (Object.HasStateAuthority)
             {
-                NetworkStamina =
-                    MaxStamina;
-
-                NetworkIsSprinting =
-                    false;
-
-                NetworkSprintExhausted =
-                    false;
-
-                NetworkIsCrouching =
-                    false;
+                NetworkStamina = MaxStamina;
+                NetworkIsSprinting = false;
+                NetworkSprintExhausted = false;
+                NetworkIsCrouching = false;
             }
 
             ApplyColliderPosture();
@@ -400,203 +291,104 @@ namespace ProjectJ.Networking.Fusion
 
             if (Object.HasInputAuthority)
             {
-                ProjectJLocalPlayerPresentationController
-                    .BindLocalPlayer(
-                        this
-                    );
+                ProjectJLocalPlayerPresentationController.BindLocalPlayer(this);
             }
 
             Debug.Log(
-                "[Project J/Fusion] " +
-                "Network Player 연결 / " +
-                "Owner: " +
+                "[Project J/Fusion] Network Player 연결 / Owner: " +
                 Object.InputAuthority.AsIndex +
-                " / State Authority: " +
-                Object.HasStateAuthority +
-                " / Input Authority: " +
-                Object.HasInputAuthority +
-                " / NetworkTransform: " +
-                HasNetworkTransform
+                " / State Authority: " + Object.HasStateAuthority +
+                " / Input Authority: " + Object.HasInputAuthority +
+                " / NetworkTransform: " + HasNetworkTransform
             );
         }
 
-        public override void Despawned(
-            NetworkRunner runner,
-            bool hasState
-        )
+        public override void Despawned(NetworkRunner runner, bool hasState)
         {
-            ProjectJLocalPlayerPresentationController
-                .UnbindLocalPlayer(
-                    this
-                );
+            ProjectJLocalPlayerPresentationController.UnbindLocalPlayer(this);
         }
 
         public override void FixedUpdateNetwork()
         {
-            LastSimulationPosition =
-                transform.position;
+            LastSimulationPosition = transform.position;
 
-            if (
-                !GetInput<ProjectJNetworkInput>(
-                    out ProjectJNetworkInput input
-                )
-            )
+            if (!GetInput<ProjectJNetworkInput>(out ProjectJNetworkInput input))
             {
                 return;
             }
 
-            HasReceivedInput =
-                true;
+            HasReceivedInput = true;
 
-            Vector2 moveInput =
-                input.Move;
+            Vector2 moveInput = input.Move;
 
-            if (
-                moveInput.sqrMagnitude >
-                1f
-            )
+            if (moveInput.sqrMagnitude > 1f)
             {
                 moveInput.Normalize();
             }
 
-            LastReceivedMove =
-                moveInput;
+            LastReceivedMove = moveInput;
+            LastReceivedJump = input.Buttons.IsSet(ProjectJNetworkButton.Jump);
+            LastReceivedSprint = input.Buttons.IsSet(ProjectJNetworkButton.Sprint);
+            LastReceivedCrouch = input.Buttons.IsSet(ProjectJNetworkButton.Crouch);
+            LastReceivedTick = Runner.Tick.ToString();
 
-            LastReceivedJump =
-                input.Buttons.IsSet(
-                    ProjectJNetworkButton.Jump
-                );
-
-            LastReceivedSprint =
-                input.Buttons.IsSet(
-                    ProjectJNetworkButton.Sprint
-                );
-
-            LastReceivedCrouch =
-                input.Buttons.IsSet(
-                    ProjectJNetworkButton.Crouch
-                );
-
-            LastReceivedTick =
-                Runner.Tick.ToString();
-
-            float deltaTime =
-                Runner.DeltaTime;
-
-            bool hasMoveInput =
-                moveInput.sqrMagnitude >
-                0.0001f;
+            float deltaTime = Runner.DeltaTime;
+            bool hasMoveInput = moveInput.sqrMagnitude > 0.0001f;
 
             UpdateCrouchState();
             ApplyColliderPosture();
+            UpdateSprintState(hasMoveInput, deltaTime);
 
-            UpdateSprintState(
-                hasMoveInput,
-                deltaTime
+            bool groundedBeforeMove = TryGetGroundHeight(
+                transform.position,
+                GroundProbeDistance,
+                out float groundHeight
             );
 
-            bool groundedBeforeMove =
-                TryGetGroundHeight(
-                    transform.position,
-                    GroundProbeDistance,
-                    out float groundHeight
-                );
-
-            if (
-                groundedBeforeMove &&
-                NetworkVerticalVelocity <=
-                    0f
-            )
+            if (groundedBeforeMove && NetworkVerticalVelocity <= 0f)
             {
-                Vector3 groundedPosition =
-                    transform.position;
-
-                groundedPosition.y =
-                    groundHeight;
-
-                transform.position =
-                    groundedPosition;
-
-                NetworkVerticalVelocity =
-                    0f;
-
-                NetworkGrounded =
-                    true;
+                Vector3 groundedPosition = transform.position;
+                groundedPosition.y = groundHeight;
+                transform.position = groundedPosition;
+                NetworkVerticalVelocity = 0f;
+                NetworkGrounded = true;
             }
             else
             {
-                NetworkGrounded =
-                    false;
+                NetworkGrounded = false;
             }
 
-            if (
-                LastReceivedJump &&
-                NetworkGrounded &&
-                !NetworkIsCrouching
-            )
+            if (LastReceivedJump && NetworkGrounded && !NetworkIsCrouching)
             {
-                NetworkVerticalVelocity =
-                    JumpVelocity;
-
-                NetworkGrounded =
-                    false;
+                NetworkVerticalVelocity = JumpVelocity;
+                NetworkGrounded = false;
             }
 
             if (!NetworkGrounded)
             {
-                NetworkVerticalVelocity +=
-                    Gravity *
-                    deltaTime;
+                NetworkVerticalVelocity += Gravity * deltaTime;
             }
 
-            float horizontalMoveSpeed =
-                CurrentMoveSpeed;
+            float horizontalMoveSpeed = CurrentMoveSpeed;
+            Vector3 currentPosition = transform.position;
+            Vector3 nextPosition = currentPosition;
 
-            Vector3 currentPosition =
-                transform.position;
-
-            Vector3 nextPosition =
-                currentPosition;
-
-            nextPosition.x +=
-                moveInput.x *
-                horizontalMoveSpeed *
-                deltaTime;
-
-            nextPosition.z +=
-                moveInput.y *
-                horizontalMoveSpeed *
-                deltaTime;
-
-            nextPosition.y +=
-                NetworkVerticalVelocity *
-                deltaTime;
+            nextPosition.x += moveInput.x * horizontalMoveSpeed * deltaTime;
+            nextPosition.z += moveInput.y * horizontalMoveSpeed * deltaTime;
+            nextPosition.y += NetworkVerticalVelocity * deltaTime;
 
             if (
-                NetworkVerticalVelocity <=
-                    0f &&
-                TryGetLandingGroundHeight(
-                    currentPosition,
-                    nextPosition,
-                    out float landingHeight
-                )
+                NetworkVerticalVelocity <= 0f &&
+                TryGetLandingGroundHeight(currentPosition, nextPosition, out float landingHeight)
             )
             {
-                nextPosition.y =
-                    landingHeight;
-
-                NetworkVerticalVelocity =
-                    0f;
-
-                NetworkGrounded =
-                    true;
+                nextPosition.y = landingHeight;
+                NetworkVerticalVelocity = 0f;
+                NetworkGrounded = true;
             }
 
-            transform.position =
-                nextPosition;
-
-            LastSimulationPosition =
-                transform.position;
+            transform.position = nextPosition;
+            LastSimulationPosition = transform.position;
 
             bool hasActivity =
                 hasMoveInput ||
@@ -606,72 +398,62 @@ namespace ProjectJ.Networking.Fusion
 
             if (hasActivity)
             {
-                inputPulseUntil =
-                    Time.unscaledTime +
-                    InputPulseDuration;
+                inputPulseUntil = Time.unscaledTime + InputPulseDuration;
             }
+        }
+
+        public void ResetMotionForRespawn()
+        {
+            if (
+                Object == null || // NetworkObject 존재 확인
+                !Object.IsValid || // NetworkObject 유효 확인
+                !Object.HasStateAuthority // State Authority 확인
+            )
+            {
+                return; // Client 상태 변경 차단
+            }
+
+            NetworkVerticalVelocity = 0f; // 이전 점프·낙하 수직 속도 제거
+            NetworkGrounded = false; // 부활 위치에서 Ground를 다시 판정
+            LastSimulationPosition = transform.position; // Simulation 기준 위치 갱신
+            lastForwardPosition = transform.position; // Prediction 기준 위치 갱신
+            hasForwardPosition = true; // Prediction 기준 위치 활성화
         }
 
         private void UpdateCrouchState()
         {
             if (LastReceivedCrouch)
             {
-                NetworkIsCrouching =
-                    true;
-
+                NetworkIsCrouching = true;
                 return;
             }
 
-            if (
-                NetworkIsCrouching &&
-                !HasStandingClearance()
-            )
+            if (NetworkIsCrouching && !HasStandingClearance())
             {
                 return;
             }
 
-            NetworkIsCrouching =
-                false;
+            NetworkIsCrouching = false;
         }
 
-        private void UpdateSprintState(
-            bool hasMoveInput,
-            float deltaTime
-        )
+        private void UpdateSprintState(bool hasMoveInput, float deltaTime)
         {
-            float stamina =
-                Mathf.Clamp(
-                    NetworkStamina,
-                    0f,
-                    MaxStamina
-                );
+            float stamina = Mathf.Clamp(NetworkStamina, 0f, MaxStamina);
 
             if (NetworkSprintExhausted)
             {
-                NetworkIsSprinting =
-                    false;
+                NetworkIsSprinting = false;
+                stamina = Mathf.Min(
+                    MaxStamina,
+                    stamina + StaminaRecoveryPerSecond * deltaTime
+                );
 
-                stamina =
-                    Mathf.Min(
-                        MaxStamina,
-                        stamina +
-                        StaminaRecoveryPerSecond *
-                        deltaTime
-                    );
-
-                if (
-                    !LastReceivedSprint &&
-                    stamina >=
-                        SprintRestartStamina
-                )
+                if (!LastReceivedSprint && stamina >= SprintRestartStamina)
                 {
-                    NetworkSprintExhausted =
-                        false;
+                    NetworkSprintExhausted = false;
                 }
 
-                NetworkStamina =
-                    stamina;
-
+                NetworkStamina = stamina;
                 return;
             }
 
@@ -683,45 +465,29 @@ namespace ProjectJ.Networking.Fusion
 
             if (sprintRequested)
             {
-                NetworkIsSprinting =
-                    true;
-
-                stamina =
-                    Mathf.Max(
-                        0f,
-                        stamina -
-                        SprintStaminaDrainPerSecond *
-                        deltaTime
-                    );
+                NetworkIsSprinting = true;
+                stamina = Mathf.Max(
+                    0f,
+                    stamina - SprintStaminaDrainPerSecond * deltaTime
+                );
 
                 if (stamina <= 0f)
                 {
-                    stamina =
-                        0f;
-
-                    NetworkIsSprinting =
-                        false;
-
-                    NetworkSprintExhausted =
-                        true;
+                    stamina = 0f;
+                    NetworkIsSprinting = false;
+                    NetworkSprintExhausted = true;
                 }
             }
             else
             {
-                NetworkIsSprinting =
-                    false;
-
-                stamina =
-                    Mathf.Min(
-                        MaxStamina,
-                        stamina +
-                        StaminaRecoveryPerSecond *
-                        deltaTime
-                    );
+                NetworkIsSprinting = false;
+                stamina = Mathf.Min(
+                    MaxStamina,
+                    stamina + StaminaRecoveryPerSecond * deltaTime
+                );
             }
 
-            NetworkStamina =
-                stamina;
+            NetworkStamina = stamina;
         }
 
         private bool TryGetGroundHeight(
@@ -730,20 +496,10 @@ namespace ProjectJ.Networking.Fusion
             out float groundHeight
         )
         {
-            Vector3 origin =
-                position +
-                Vector3.up *
-                GroundProbeStartHeight;
+            Vector3 origin = position + Vector3.up * GroundProbeStartHeight;
+            float castDistance = GroundProbeStartHeight + probeDistance;
 
-            float castDistance =
-                GroundProbeStartHeight +
-                probeDistance;
-
-            return TryFindGroundHit(
-                origin,
-                castDistance,
-                out groundHeight
-            );
+            return TryFindGroundHit(origin, castDistance, out groundHeight);
         }
 
         private bool TryGetLandingGroundHeight(
@@ -752,31 +508,23 @@ namespace ProjectJ.Networking.Fusion
             out float groundHeight
         )
         {
-            float downwardTravel =
-                Mathf.Max(
-                    0f,
-                    currentPosition.y -
-                    nextPosition.y
-                );
+            float downwardTravel = Mathf.Max(
+                0f,
+                currentPosition.y - nextPosition.y
+            );
 
-            Vector3 origin =
-                new Vector3(
-                    nextPosition.x,
-                    currentPosition.y +
-                        GroundProbeStartHeight,
-                    nextPosition.z
-                );
+            Vector3 origin = new Vector3(
+                nextPosition.x,
+                currentPosition.y + GroundProbeStartHeight,
+                nextPosition.z
+            );
 
             float castDistance =
                 GroundProbeStartHeight +
                 downwardTravel +
                 GroundProbeDistance;
 
-            return TryFindGroundHit(
-                origin,
-                castDistance,
-                out groundHeight
-            );
+            return TryFindGroundHit(origin, castDistance, out groundHeight);
         }
 
         private bool TryFindGroundHit(
@@ -785,57 +533,36 @@ namespace ProjectJ.Networking.Fusion
             out float groundHeight
         )
         {
-            int hitCount =
-                Physics.RaycastNonAlloc(
-                    origin,
-                    Vector3.down,
-                    groundHitBuffer,
-                    castDistance,
-                    Physics.AllLayers,
-                    QueryTriggerInteraction.Ignore
-                );
+            int hitCount = Physics.RaycastNonAlloc(
+                origin,
+                Vector3.down,
+                groundHitBuffer,
+                castDistance,
+                Physics.AllLayers,
+                QueryTriggerInteraction.Ignore
+            );
 
-            float closestDistance =
-                float.PositiveInfinity;
+            float closestDistance = float.PositiveInfinity;
+            bool foundGround = false;
+            groundHeight = 0f;
 
-            bool foundGround =
-                false;
-
-            groundHeight =
-                0f;
-
-            for (
-                int i = 0;
-                i < hitCount;
-                i++
-            )
+            for (int i = 0; i < hitCount; i++)
             {
-                RaycastHit hit =
-                    groundHitBuffer[i];
-
-                Collider hitCollider =
-                    hit.collider;
+                RaycastHit hit = groundHitBuffer[i];
+                Collider hitCollider = hit.collider;
 
                 if (
                     hitCollider == null ||
-                    IsOwnCollider(
-                        hitCollider
-                    ) ||
-                    hit.distance >=
-                        closestDistance
+                    IsOwnCollider(hitCollider) ||
+                    hit.distance >= closestDistance
                 )
                 {
                     continue;
                 }
 
-                closestDistance =
-                    hit.distance;
-
-                groundHeight =
-                    hit.point.y;
-
-                foundGround =
-                    true;
+                closestDistance = hit.distance;
+                groundHeight = hit.point.y;
+                foundGround = true;
             }
 
             return foundGround;
@@ -843,51 +570,28 @@ namespace ProjectJ.Networking.Fusion
 
         private bool HasStandingClearance()
         {
-            float clearanceRadius =
-                BodyColliderRadius *
-                StandClearanceRadiusScale;
+            float clearanceRadius = BodyColliderRadius * StandClearanceRadiusScale;
 
-            Vector3 bottomPoint =
-                transform.position +
-                Vector3.up *
-                (
-                    CrouchColliderHeight +
-                    clearanceRadius
-                );
+            Vector3 bottomPoint = transform.position + Vector3.up *
+                (CrouchColliderHeight + clearanceRadius);
 
-            Vector3 topPoint =
-                transform.position +
-                Vector3.up *
-                (
-                    StandingColliderHeight -
-                    clearanceRadius
-                );
+            Vector3 topPoint = transform.position + Vector3.up *
+                (StandingColliderHeight - clearanceRadius);
 
-            int overlapCount =
-                Physics.OverlapCapsuleNonAlloc(
-                    bottomPoint,
-                    topPoint,
-                    clearanceRadius,
-                    standOverlapBuffer,
-                    Physics.AllLayers,
-                    QueryTriggerInteraction.Ignore
-                );
+            int overlapCount = Physics.OverlapCapsuleNonAlloc(
+                bottomPoint,
+                topPoint,
+                clearanceRadius,
+                standOverlapBuffer,
+                Physics.AllLayers,
+                QueryTriggerInteraction.Ignore
+            );
 
-            for (
-                int i = 0;
-                i < overlapCount;
-                i++
-            )
+            for (int i = 0; i < overlapCount; i++)
             {
-                Collider candidate =
-                    standOverlapBuffer[i];
+                Collider candidate = standOverlapBuffer[i];
 
-                if (
-                    candidate == null ||
-                    IsOwnCollider(
-                        candidate
-                    )
-                )
+                if (candidate == null || IsOwnCollider(candidate))
                 {
                     continue;
                 }
@@ -898,20 +602,13 @@ namespace ProjectJ.Networking.Fusion
             return true;
         }
 
-        private bool IsOwnCollider(
-            Collider candidate
-        )
+        private bool IsOwnCollider(Collider candidate)
         {
-            Transform candidateTransform =
-                candidate.transform;
+            Transform candidateTransform = candidate.transform;
 
             return
-                candidateTransform ==
-                    transform ||
-                candidateTransform
-                    .IsChildOf(
-                        transform
-                    );
+                candidateTransform == transform ||
+                candidateTransform.IsChildOf(transform);
         }
 
         private void ApplyColliderPosture()
@@ -921,26 +618,12 @@ namespace ProjectJ.Networking.Fusion
                 return;
             }
 
-            bool crouching =
-                NetworkIsCrouching;
+            bool crouching = NetworkIsCrouching;
+            float height = crouching ? CrouchColliderHeight : StandingColliderHeight;
 
-            float height =
-                crouching
-                    ? CrouchColliderHeight
-                    : StandingColliderHeight;
-
-            bodyCollider.height =
-                height;
-
-            bodyCollider.radius =
-                BodyColliderRadius;
-
-            bodyCollider.center =
-                new Vector3(
-                    0f,
-                    height * 0.5f,
-                    0f
-                );
+            bodyCollider.height = height;
+            bodyCollider.radius = BodyColliderRadius;
+            bodyCollider.center = new Vector3(0f, height * 0.5f, 0f);
         }
 
         private void ApplyCrouchPresentation()
@@ -950,38 +633,19 @@ namespace ProjectJ.Networking.Fusion
                 return;
             }
 
-            bool crouching =
-                NetworkIsCrouching;
+            bool crouching = NetworkIsCrouching;
+            Vector3 localPosition = visualTransform.localPosition;
+            localPosition.y = crouching ? CrouchVisualY : StandingVisualY;
+            visualTransform.localPosition = localPosition;
 
-            Vector3 localPosition =
-                visualTransform.localPosition;
-
-            localPosition.y =
-                crouching
-                    ? CrouchVisualY
-                    : StandingVisualY;
-
-            visualTransform.localPosition =
-                localPosition;
-
-            Vector3 localScale =
-                visualTransform.localScale;
-
-            localScale.y =
-                crouching
-                    ? CrouchVisualScaleY
-                    : StandingVisualScaleY;
-
-            visualTransform.localScale =
-                localScale;
+            Vector3 localScale = visualTransform.localScale;
+            localScale.y = crouching ? CrouchVisualScaleY : StandingVisualScaleY;
+            visualTransform.localScale = localScale;
         }
 
         private void LateUpdate()
         {
-            if (
-                Object == null ||
-                !Object.IsValid
-            )
+            if (Object == null || !Object.IsValid)
             {
                 return;
             }
@@ -989,45 +653,31 @@ namespace ProjectJ.Networking.Fusion
             ApplyColliderPosture();
             ApplyCrouchPresentation();
 
-            Vector3 renderPosition =
-                transform.position;
-
-            LastRenderPosition =
-                renderPosition;
-
-            RenderSimulationOffset =
-                Vector3.Distance(
-                    LastSimulationPosition,
-                    renderPosition
-                );
+            Vector3 renderPosition = transform.position;
+            LastRenderPosition = renderPosition;
+            RenderSimulationOffset = Vector3.Distance(
+                LastSimulationPosition,
+                renderPosition
+            );
 
             if (hasRenderPosition)
             {
-                LastRenderStepDistance =
-                    Vector3.Distance(
-                        previousRenderPosition,
-                        renderPosition
-                    );
+                LastRenderStepDistance = Vector3.Distance(
+                    previousRenderPosition,
+                    renderPosition
+                );
             }
             else
             {
-                LastRenderStepDistance =
-                    0f;
-
-                hasRenderPosition =
-                    true;
+                LastRenderStepDistance = 0f;
+                hasRenderPosition = true;
             }
 
-            previousRenderPosition =
-                renderPosition;
-
+            previousRenderPosition = renderPosition;
             RenderSampleCount++;
         }
 
-        public void BeforeAllTicks(
-            bool resimulation,
-            int tickCount
-        )
+        public void BeforeAllTicks(bool resimulation, int tickCount)
         {
             if (
                 Object == null ||
@@ -1040,41 +690,27 @@ namespace ProjectJ.Networking.Fusion
 
             if (!resimulation)
             {
-                LastForwardTickCount =
-                    tickCount;
-
+                LastForwardTickCount = tickCount;
                 return;
             }
 
             ResimulationBatchCount++;
-            ResimulationTickCount +=
-                tickCount;
+            ResimulationTickCount += tickCount;
+            LastResimulationTickCount = tickCount;
 
-            LastResimulationTickCount =
-                tickCount;
+            predictedPositionBeforeResimulation = hasForwardPosition
+                ? lastForwardPosition
+                : transform.position;
 
-            predictedPositionBeforeResimulation =
-                hasForwardPosition
-                    ? lastForwardPosition
-                    : transform.position;
-
-            PredictionPositionBeforeResimulation =
-                predictedPositionBeforeResimulation;
-
-            RollbackPosition =
-                transform.position;
-
-            LastRollbackDistance =
-                Vector3.Distance(
-                    predictedPositionBeforeResimulation,
-                    RollbackPosition
-                );
+            PredictionPositionBeforeResimulation = predictedPositionBeforeResimulation;
+            RollbackPosition = transform.position;
+            LastRollbackDistance = Vector3.Distance(
+                predictedPositionBeforeResimulation,
+                RollbackPosition
+            );
         }
 
-        public void AfterAllTicks(
-            bool resimulation,
-            int tickCount
-        )
+        public void AfterAllTicks(bool resimulation, int tickCount)
         {
             if (
                 Object == null ||
@@ -1087,93 +723,44 @@ namespace ProjectJ.Networking.Fusion
 
             if (resimulation)
             {
-                CorrectedPositionAfterResimulation =
-                    transform.position;
+                CorrectedPositionAfterResimulation = transform.position;
+                LastCorrectionDistance = Vector3.Distance(
+                    predictedPositionBeforeResimulation,
+                    CorrectedPositionAfterResimulation
+                );
 
-                LastCorrectionDistance =
-                    Vector3.Distance(
-                        predictedPositionBeforeResimulation,
-                        CorrectedPositionAfterResimulation
-                    );
-
-                if (
-                    LastCorrectionDistance >
-                    MaxCorrectionDistance
-                )
+                if (LastCorrectionDistance > MaxCorrectionDistance)
                 {
-                    MaxCorrectionDistance =
-                        LastCorrectionDistance;
+                    MaxCorrectionDistance = LastCorrectionDistance;
                 }
 
                 return;
             }
 
-            LastForwardTickCount =
-                tickCount;
-
-            lastForwardPosition =
-                transform.position;
-
-            hasForwardPosition =
-                true;
+            LastForwardTickCount = tickCount;
+            lastForwardPosition = transform.position;
+            hasForwardPosition = true;
         }
 
         private void CachePresentation()
         {
-            visualRenderer =
-                GetComponentInChildren<
-                    Renderer
-                >(
-                    true
-                );
-
-            visualTransform =
-                visualRenderer != null
-                    ? visualRenderer.transform
-                    : null;
-
-            authorityCamera =
-                GetComponentInChildren<
-                    Camera
-                >(
-                    true
-                );
-
-            bodyCollider =
-                GetComponent<
-                    CapsuleCollider
-                >();
-
-            networkTransform =
-                GetComponent<
-                    NetworkTransform
-                >();
+            visualRenderer = GetComponentInChildren<Renderer>(true);
+            visualTransform = visualRenderer != null ? visualRenderer.transform : null;
+            authorityCamera = GetComponentInChildren<Camera>(true);
+            bodyCollider = GetComponent<CapsuleCollider>();
+            networkTransform = GetComponent<NetworkTransform>();
         }
 
         private void ApplyAuthorityPresentation()
         {
-            bool isLocalOwner =
-                Object.HasInputAuthority;
+            bool isLocalOwner = Object.HasInputAuthority;
 
             if (visualRenderer != null)
             {
-                runtimeMaterial =
-                    visualRenderer.material;
-
-                runtimeMaterial.color =
-                    isLocalOwner
-                        ? new Color(
-                            0.2f,
-                            0.9f,
-                            0.35f,
-                            1f
-                        )
-                        : new Color(
-                            1f,
-                            0.55f,
-                            0.15f,
-                            1f
-                        );
+                runtimeMaterial = visualRenderer.material;
+                runtimeMaterial.color = isLocalOwner
+                    ? new Color(0.2f, 0.9f, 0.35f, 1f)
+                    : new Color(1f, 0.55f, 0.15f, 1f);
             }
 
             if (authorityCamera == null)
@@ -1181,37 +768,24 @@ namespace ProjectJ.Networking.Fusion
                 return;
             }
 
-            authorityCamera.enabled =
-                false;
-
-            authorityCamera.targetTexture =
-                null;
+            authorityCamera.enabled = false;
+            authorityCamera.targetTexture = null;
         }
 
         private void OnDestroy()
         {
-            ProjectJLocalPlayerPresentationController
-                .UnbindLocalPlayer(
-                    this
-                );
+            ProjectJLocalPlayerPresentationController.UnbindLocalPlayer(this);
 
             if (authorityCamera != null)
             {
-                authorityCamera.enabled =
-                    false;
-
-                authorityCamera.targetTexture =
-                    null;
+                authorityCamera.enabled = false;
+                authorityCamera.targetTexture = null;
             }
 
             if (runtimeMaterial != null)
             {
-                Destroy(
-                    runtimeMaterial
-                );
-
-                runtimeMaterial =
-                    null;
+                Destroy(runtimeMaterial);
+                runtimeMaterial = null;
             }
         }
     }

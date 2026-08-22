@@ -8,7 +8,9 @@ namespace ProjectJ.Networking.Fusion
         Jump = 0, // 점프 입력
         Sprint = 1, // 달리기 입력
         Crouch = 2, // 앉기 입력
-        Push = 3 // 밀치기 입력
+        Push = 3, // 밀치기 입력
+        ItemSlotLeft = 4, // Q 첫 번째 아이템 슬롯 선택
+        ItemSlotRight = 5 // E 두 번째 아이템 슬롯 선택
     }
 
     public struct ProjectJNetworkInput : // Fusion 입력 데이터

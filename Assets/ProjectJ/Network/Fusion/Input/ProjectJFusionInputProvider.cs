@@ -17,6 +17,8 @@ namespace ProjectJ.Networking.Fusion
 
         private bool pendingJump; // 점프 단발 입력 보존
         private bool pendingPush; // 밀치기 단발 입력 보존
+        private bool pendingItemSlotLeft; // Q 단발 입력 보존
+        private bool pendingItemSlotRight; // E 단발 입력 보존
 
         public Vector2 LastSubmittedMove => // 마지막 이동 입력 조회
             lastSubmittedInput.Move;
@@ -39,6 +41,16 @@ namespace ProjectJ.Networking.Fusion
         public bool LastSubmittedPush => // 마지막 밀치기 입력 조회
             lastSubmittedInput.Buttons.IsSet(
                 ProjectJNetworkButton.Push
+            );
+
+        public bool LastSubmittedItemSlotLeft => // 마지막 Q 입력 조회
+            lastSubmittedInput.Buttons.IsSet(
+                ProjectJNetworkButton.ItemSlotLeft
+            );
+
+        public bool LastSubmittedItemSlotRight => // 마지막 E 입력 조회
+            lastSubmittedInput.Buttons.IsSet(
+                ProjectJNetworkButton.ItemSlotRight
             );
 
         public string LastSubmittedTick // 마지막 입력 Tick 문자열
@@ -92,9 +104,19 @@ namespace ProjectJ.Networking.Fusion
                     pendingJump = true; // 다음 Fusion Tick까지 점프 보존
                 }
 
-                if (keyboard.gKey.wasPressedThisFrame) // 69일차 테스트 밀치기 키 확인
+                if (keyboard.gKey.wasPressedThisFrame) // 개발 테스트 밀치기 키 확인
                 {
                     pendingPush = true; // 다음 Fusion Tick까지 밀치기 보존
+                }
+
+                if (keyboard.qKey.wasPressedThisFrame) // 첫 슬롯 선택 확인
+                {
+                    pendingItemSlotLeft = true; // 다음 Fusion Tick까지 Q 보존
+                }
+
+                if (keyboard.eKey.wasPressedThisFrame) // 두 번째 슬롯 선택 확인
+                {
+                    pendingItemSlotRight = true; // 다음 Fusion Tick까지 E 보존
                 }
 
                 cachedInput.Buttons.Set( // 달리기 버튼 저장
@@ -124,7 +146,7 @@ namespace ProjectJ.Networking.Fusion
 
             if (
                 mouse != null && // 마우스 연결 확인
-                mouse.leftButton.wasPressedThisFrame // 기획서 좌클릭 밀치기 확인
+                mouse.leftButton.wasPressedThisFrame // 좌클릭 밀치기 확인
             )
             {
                 pendingPush = true; // 다음 Fusion Tick까지 밀치기 보존
@@ -156,6 +178,16 @@ namespace ProjectJ.Networking.Fusion
                 pendingPush
             );
 
+            networkInput.Buttons.Set( // Q 슬롯 선택 입력 삽입
+                ProjectJNetworkButton.ItemSlotLeft,
+                pendingItemSlotLeft
+            );
+
+            networkInput.Buttons.Set( // E 슬롯 선택 입력 삽입
+                ProjectJNetworkButton.ItemSlotRight,
+                pendingItemSlotRight
+            );
+
             input.Set( // Fusion 입력 제출
                 networkInput
             );
@@ -169,6 +201,8 @@ namespace ProjectJ.Networking.Fusion
 
             pendingJump = false; // 점프 단발 입력 초기화
             pendingPush = false; // 밀치기 단발 입력 초기화
+            pendingItemSlotLeft = false; // Q 단발 입력 초기화
+            pendingItemSlotRight = false; // E 단발 입력 초기화
         }
 
         public void OnObjectExitAOI(

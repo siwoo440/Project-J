@@ -10,6 +10,9 @@ namespace ProjectJ.Networking.Fusion
         private const float InputPulseDuration =
             0.35f;
 
+        private const float BaseMoveSpeed =
+            5f;
+
         private Renderer visualRenderer;
         private Camera authorityCamera;
 
@@ -75,6 +78,12 @@ namespace ProjectJ.Networking.Fusion
         } =
             "-";
 
+        public Vector3 CurrentPosition =>
+            transform.position;
+
+        public float MovementSpeed =>
+            BaseMoveSpeed;
+
         public bool InputSeenRecently =>
             Time.unscaledTime <
             inputPulseUntil;
@@ -110,8 +119,19 @@ namespace ProjectJ.Networking.Fusion
             HasReceivedInput =
                 true;
 
-            LastReceivedMove =
+            Vector2 moveInput =
                 input.Move;
+
+            if (
+                moveInput.sqrMagnitude >
+                1f
+            )
+            {
+                moveInput.Normalize();
+            }
+
+            LastReceivedMove =
+                moveInput;
 
             LastReceivedJump =
                 input.Buttons.IsSet(
@@ -131,8 +151,20 @@ namespace ProjectJ.Networking.Fusion
             LastReceivedTick =
                 Runner.Tick.ToString();
 
+            Vector3 moveDirection =
+                new Vector3(
+                    moveInput.x,
+                    0f,
+                    moveInput.y
+                );
+
+            transform.position +=
+                moveDirection *
+                BaseMoveSpeed *
+                Runner.DeltaTime;
+
             bool hasActivity =
-                LastReceivedMove.sqrMagnitude >
+                moveInput.sqrMagnitude >
                     0.0001f ||
                 LastReceivedJump ||
                 LastReceivedSprint ||

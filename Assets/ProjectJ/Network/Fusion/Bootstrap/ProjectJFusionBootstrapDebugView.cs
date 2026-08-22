@@ -67,7 +67,7 @@ namespace ProjectJ.Networking.Fusion
 
             const float x = 20f;
             const float y = 20f;
-            const float width = 1000f;
+            const float width = 1180f;
             const float height = 900f;
             const float left = x + 24f;
             const float contentWidth =
@@ -87,10 +87,10 @@ namespace ProjectJ.Networking.Fusion
                 new Rect(
                     left,
                     y + 14f,
-                    460f,
+                    500f,
                     34f
                 ),
-                "Project J - Fusion 61일차",
+                "Project J - Fusion 62일차",
                 titleStyle
             );
 
@@ -208,7 +208,7 @@ namespace ProjectJ.Networking.Fusion
                     contentWidth,
                     28f
                 ),
-                "Fusion Tick Input",
+                "Fusion Tick Input · Basic Movement",
                 sectionStyle
             );
 
@@ -256,7 +256,7 @@ namespace ProjectJ.Networking.Fusion
                 new Rect(
                     left,
                     y + 505f,
-                    90f,
+                    70f,
                     26f
                 ),
                 "Player",
@@ -265,9 +265,9 @@ namespace ProjectJ.Networking.Fusion
 
             GUI.Label(
                 new Rect(
-                    left + 90f,
+                    left + 70f,
                     y + 505f,
-                    100f,
+                    80f,
                     26f
                 ),
                 "State",
@@ -276,9 +276,9 @@ namespace ProjectJ.Networking.Fusion
 
             GUI.Label(
                 new Rect(
-                    left + 190f,
+                    left + 150f,
                     y + 505f,
-                    100f,
+                    80f,
                     26f
                 ),
                 "Input",
@@ -287,9 +287,9 @@ namespace ProjectJ.Networking.Fusion
 
             GUI.Label(
                 new Rect(
-                    left + 290f,
+                    left + 230f,
                     y + 505f,
-                    165f,
+                    145f,
                     26f
                 ),
                 "Move",
@@ -298,9 +298,20 @@ namespace ProjectJ.Networking.Fusion
 
             GUI.Label(
                 new Rect(
-                    left + 455f,
+                    left + 375f,
                     y + 505f,
-                    85f,
+                    245f,
+                    26f
+                ),
+                "Position",
+                smallStyle
+            );
+
+            GUI.Label(
+                new Rect(
+                    left + 620f,
+                    y + 505f,
+                    70f,
                     26f
                 ),
                 "Jump",
@@ -309,9 +320,9 @@ namespace ProjectJ.Networking.Fusion
 
             GUI.Label(
                 new Rect(
-                    left + 540f,
+                    left + 690f,
                     y + 505f,
-                    85f,
+                    75f,
                     26f
                 ),
                 "Sprint",
@@ -320,9 +331,9 @@ namespace ProjectJ.Networking.Fusion
 
             GUI.Label(
                 new Rect(
-                    left + 625f,
+                    left + 765f,
                     y + 505f,
-                    85f,
+                    75f,
                     26f
                 ),
                 "Crouch",
@@ -331,9 +342,9 @@ namespace ProjectJ.Networking.Fusion
 
             GUI.Label(
                 new Rect(
-                    left + 710f,
+                    left + 840f,
                     y + 505f,
-                    90f,
+                    80f,
                     26f
                 ),
                 "Camera",
@@ -342,12 +353,23 @@ namespace ProjectJ.Networking.Fusion
 
             GUI.Label(
                 new Rect(
-                    left + 800f,
+                    left + 920f,
                     y + 505f,
                     130f,
                     26f
                 ),
                 "Received Tick",
+                smallStyle
+            );
+
+            GUI.Label(
+                new Rect(
+                    left + 1050f,
+                    y + 505f,
+                    90f,
+                    26f
+                ),
+                "Speed",
                 smallStyle
             );
 
@@ -484,14 +506,14 @@ namespace ProjectJ.Networking.Fusion
                 DrawSmall(
                     x,
                     y,
-                    90f,
+                    70f,
                     "P" + player.AsIndex
                 );
 
                 DrawSmall(
-                    x + 90f,
+                    x + 70f,
                     y,
-                    100f,
+                    80f,
                     hasObject &&
                     playerObject.HasStateAuthority
                         ? "TRUE"
@@ -499,9 +521,9 @@ namespace ProjectJ.Networking.Fusion
                 );
 
                 DrawSmall(
-                    x + 190f,
+                    x + 150f,
                     y,
-                    100f,
+                    80f,
                     hasObject &&
                     playerObject.HasInputAuthority
                         ? "TRUE"
@@ -509,9 +531,9 @@ namespace ProjectJ.Networking.Fusion
                 );
 
                 DrawSmall(
-                    x + 290f,
+                    x + 230f,
                     y,
-                    165f,
+                    145f,
                     networkPlayer != null &&
                     networkPlayer.HasReceivedInput
                         ? FormatMove(
@@ -522,9 +544,21 @@ namespace ProjectJ.Networking.Fusion
                 );
 
                 DrawSmall(
-                    x + 455f,
+                    x + 375f,
                     y,
-                    85f,
+                    245f,
+                    networkPlayer != null
+                        ? FormatPosition(
+                            networkPlayer
+                                .CurrentPosition
+                        )
+                        : "-"
+                );
+
+                DrawSmall(
+                    x + 620f,
+                    y,
+                    70f,
                     IsTrueText(
                         networkPlayer != null &&
                         networkPlayer
@@ -533,9 +567,9 @@ namespace ProjectJ.Networking.Fusion
                 );
 
                 DrawSmall(
-                    x + 540f,
+                    x + 690f,
                     y,
-                    85f,
+                    75f,
                     IsTrueText(
                         networkPlayer != null &&
                         networkPlayer
@@ -544,9 +578,9 @@ namespace ProjectJ.Networking.Fusion
                 );
 
                 DrawSmall(
-                    x + 625f,
+                    x + 765f,
                     y,
-                    85f,
+                    75f,
                     IsTrueText(
                         networkPlayer != null &&
                         networkPlayer
@@ -555,9 +589,9 @@ namespace ProjectJ.Networking.Fusion
                 );
 
                 DrawSmall(
-                    x + 710f,
+                    x + 840f,
                     y,
-                    90f,
+                    80f,
                     networkPlayer != null &&
                     networkPlayer
                         .AuthorityCameraEnabled
@@ -566,12 +600,23 @@ namespace ProjectJ.Networking.Fusion
                 );
 
                 DrawSmall(
-                    x + 800f,
+                    x + 920f,
                     y,
                     130f,
                     networkPlayer != null
                         ? networkPlayer
                             .LastReceivedTick
+                        : "-"
+                );
+
+                DrawSmall(
+                    x + 1050f,
+                    y,
+                    90f,
+                    networkPlayer != null
+                        ? networkPlayer
+                            .MovementSpeed
+                            .ToString("0.0")
                         : "-"
                 );
 
@@ -730,6 +775,20 @@ namespace ProjectJ.Networking.Fusion
                 move.x.ToString("0.00") +
                 ", " +
                 move.y.ToString("0.00") +
+                ")";
+        }
+
+        private static string FormatPosition(
+            Vector3 position
+        )
+        {
+            return
+                "(" +
+                position.x.ToString("0.00") +
+                ", " +
+                position.y.ToString("0.00") +
+                ", " +
+                position.z.ToString("0.00") +
                 ")";
         }
 

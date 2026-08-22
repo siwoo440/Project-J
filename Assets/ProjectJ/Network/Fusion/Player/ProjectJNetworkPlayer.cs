@@ -27,6 +27,21 @@ namespace ProjectJ.Networking.Fusion
         private const float GroundProbeDistance =
             0.25f;
 
+        private const float SprintMoveSpeed =
+            8f;
+
+        private const float MaxStamina =
+            100f;
+
+        private const float SprintStaminaDrainPerSecond =
+            25f;
+
+        private const float StaminaRecoveryPerSecond =
+            20f;
+
+        private const float SprintRestartStamina =
+            20f;
+
         private Renderer visualRenderer;
         private Camera authorityCamera;
         private NetworkTransform networkTransform;
@@ -52,6 +67,27 @@ namespace ProjectJ.Networking.Fusion
 
         [Networked]
         private NetworkBool NetworkGrounded
+        {
+            get;
+            set;
+        }
+
+        [Networked]
+        private float NetworkStamina
+        {
+            get;
+            set;
+        }
+
+        [Networked]
+        private NetworkBool NetworkIsSprinting
+        {
+            get;
+            set;
+        }
+
+        [Networked]
+        private NetworkBool NetworkSprintExhausted
         {
             get;
             set;
@@ -166,7 +202,30 @@ namespace ProjectJ.Networking.Fusion
         }
 
         public float MovementSpeed =>
+            CurrentMoveSpeed;
+
+        public float WalkSpeed =>
             BaseMoveSpeed;
+
+        public float SprintSpeed =>
+            SprintMoveSpeed;
+
+        public float CurrentMoveSpeed =>
+            NetworkIsSprinting
+                ? SprintMoveSpeed
+                : BaseMoveSpeed;
+
+        public float Stamina =>
+            NetworkStamina;
+
+        public float StaminaMaximum =>
+            MaxStamina;
+
+        public bool IsSprinting =>
+            NetworkIsSprinting;
+
+        public bool IsSprintExhausted =>
+            NetworkSprintExhausted;
 
         public float VerticalVelocity =>
             NetworkVerticalVelocity;
@@ -267,6 +326,18 @@ namespace ProjectJ.Networking.Fusion
             hasRenderPosition =
                 true;
 
+            if (Object.HasStateAuthority)
+            {
+                NetworkStamina =
+                    MaxStamina;
+
+                NetworkIsSprinting =
+                    false;
+
+                NetworkSprintExhausted =
+                    false;
+            }
+
             Debug.Log(
                 "[Project J/Fusion] " +
                 "Network Player 연결 / " +
@@ -333,6 +404,15 @@ namespace ProjectJ.Networking.Fusion
             float deltaTime =
                 Runner.DeltaTime;
 
+            bool hasMoveInput =
+                moveInput.sqrMagnitude >
+                0.0001f;
+
+            UpdateSprintState(
+                hasMoveInput,
+                deltaTime
+            );
+
             bool groundedBeforeMove =
                 TryGetGroundHeight(
                     transform.position,
@@ -386,6 +466,9 @@ namespace ProjectJ.Networking.Fusion
                     deltaTime;
             }
 
+            float horizontalMoveSpeed =
+                CurrentMoveSpeed;
+
             Vector3 currentPosition =
                 transform.position;
 
@@ -394,12 +477,12 @@ namespace ProjectJ.Networking.Fusion
 
             nextPosition.x +=
                 moveInput.x *
-                BaseMoveSpeed *
+                horizontalMoveSpeed *
                 deltaTime;
 
             nextPosition.z +=
                 moveInput.y *
-                BaseMoveSpeed *
+                horizontalMoveSpeed *
                 deltaTime;
 
             nextPosition.y +=
@@ -433,8 +516,7 @@ namespace ProjectJ.Networking.Fusion
                 transform.position;
 
             bool hasActivity =
-                moveInput.sqrMagnitude >
-                    0.0001f ||
+                hasMoveInput ||
                 LastReceivedJump ||
                 LastReceivedSprint ||
                 LastReceivedCrouch;
@@ -445,6 +527,95 @@ namespace ProjectJ.Networking.Fusion
                     Time.unscaledTime +
                     InputPulseDuration;
             }
+        }
+
+        private void UpdateSprintState(
+            bool hasMoveInput,
+            float deltaTime
+        )
+        {
+            float stamina =
+                Mathf.Clamp(
+                    NetworkStamina,
+                    0f,
+                    MaxStamina
+                );
+
+            if (NetworkSprintExhausted)
+            {
+                NetworkIsSprinting =
+                    false;
+
+                stamina =
+                    Mathf.Min(
+                        MaxStamina,
+                        stamina +
+                        StaminaRecoveryPerSecond *
+                        deltaTime
+                    );
+
+                if (
+                    !LastReceivedSprint &&
+                    stamina >=
+                        SprintRestartStamina
+                )
+                {
+                    NetworkSprintExhausted =
+                        false;
+                }
+
+                NetworkStamina =
+                    stamina;
+
+                return;
+            }
+
+            bool sprintRequested =
+                LastReceivedSprint &&
+                hasMoveInput &&
+                stamina > 0f;
+
+            if (sprintRequested)
+            {
+                NetworkIsSprinting =
+                    true;
+
+                stamina =
+                    Mathf.Max(
+                        0f,
+                        stamina -
+                        SprintStaminaDrainPerSecond *
+                        deltaTime
+                    );
+
+                if (stamina <= 0f)
+                {
+                    stamina =
+                        0f;
+
+                    NetworkIsSprinting =
+                        false;
+
+                    NetworkSprintExhausted =
+                        true;
+                }
+            }
+            else
+            {
+                NetworkIsSprinting =
+                    false;
+
+                stamina =
+                    Mathf.Min(
+                        MaxStamina,
+                        stamina +
+                        StaminaRecoveryPerSecond *
+                        deltaTime
+                    );
+            }
+
+            NetworkStamina =
+                stamina;
         }
 
         private static bool TryGetGroundHeight(

@@ -68,7 +68,7 @@ namespace ProjectJ.Networking.Fusion
             const float x = 20f;
             const float y = 20f;
             const float width = 1180f;
-            const float height = 900f;
+            const float height = 1020f;
             const float left = x + 24f;
             const float contentWidth =
                 width - 48f;
@@ -87,10 +87,10 @@ namespace ProjectJ.Networking.Fusion
                 new Rect(
                     left,
                     y + 14f,
-                    500f,
+                    540f,
                     34f
                 ),
-                "Project J - Fusion 62일차",
+                "Project J - Fusion 63일차",
                 titleStyle
             );
 
@@ -208,7 +208,7 @@ namespace ProjectJ.Networking.Fusion
                     contentWidth,
                     28f
                 ),
-                "Fusion Tick Input · Basic Movement",
+                "Fusion Tick Input · Prediction / Resimulation",
                 sectionStyle
             );
 
@@ -252,10 +252,75 @@ namespace ProjectJ.Networking.Fusion
                 GetProviderTickText()
             );
 
+            ProjectJNetworkPlayer
+                localPlayer =
+                    GetLocalNetworkPlayer();
+
             GUI.Label(
                 new Rect(
                     left,
-                    y + 505f,
+                    y + 500f,
+                    contentWidth,
+                    28f
+                ),
+                "Local Prediction Diagnostics",
+                sectionStyle
+            );
+
+            DrawInfoRow(
+                left,
+                y + 534f,
+                contentWidth,
+                "Resim Batch / Ticks",
+                GetResimulationCountText(
+                    localPlayer
+                )
+            );
+
+            DrawInfoRow(
+                left,
+                y + 564f,
+                contentWidth,
+                "Last Resim / Forward",
+                GetSimulationTickCountText(
+                    localPlayer
+                )
+            );
+
+            DrawInfoRow(
+                left,
+                y + 594f,
+                contentWidth,
+                "Rollback Distance",
+                GetRollbackText(
+                    localPlayer
+                )
+            );
+
+            DrawInfoRow(
+                left,
+                y + 624f,
+                contentWidth,
+                "Correction / Max",
+                GetCorrectionText(
+                    localPlayer
+                )
+            );
+
+            DrawInfoRow(
+                left,
+                y + 654f,
+                contentWidth,
+                "Before → Corrected",
+                GetPredictionPositionText(
+                    localPlayer
+                )
+            );
+
+            GUI.Label(
+                new Rect(
+                    left,
+                    y + 700f,
                     70f,
                     26f
                 ),
@@ -266,7 +331,7 @@ namespace ProjectJ.Networking.Fusion
             GUI.Label(
                 new Rect(
                     left + 70f,
-                    y + 505f,
+                    y + 700f,
                     80f,
                     26f
                 ),
@@ -277,7 +342,7 @@ namespace ProjectJ.Networking.Fusion
             GUI.Label(
                 new Rect(
                     left + 150f,
-                    y + 505f,
+                    y + 700f,
                     80f,
                     26f
                 ),
@@ -288,7 +353,7 @@ namespace ProjectJ.Networking.Fusion
             GUI.Label(
                 new Rect(
                     left + 230f,
-                    y + 505f,
+                    y + 700f,
                     145f,
                     26f
                 ),
@@ -299,7 +364,7 @@ namespace ProjectJ.Networking.Fusion
             GUI.Label(
                 new Rect(
                     left + 375f,
-                    y + 505f,
+                    y + 700f,
                     245f,
                     26f
                 ),
@@ -310,7 +375,7 @@ namespace ProjectJ.Networking.Fusion
             GUI.Label(
                 new Rect(
                     left + 620f,
-                    y + 505f,
+                    y + 700f,
                     70f,
                     26f
                 ),
@@ -321,7 +386,7 @@ namespace ProjectJ.Networking.Fusion
             GUI.Label(
                 new Rect(
                     left + 690f,
-                    y + 505f,
+                    y + 700f,
                     75f,
                     26f
                 ),
@@ -332,7 +397,7 @@ namespace ProjectJ.Networking.Fusion
             GUI.Label(
                 new Rect(
                     left + 765f,
-                    y + 505f,
+                    y + 700f,
                     75f,
                     26f
                 ),
@@ -343,7 +408,7 @@ namespace ProjectJ.Networking.Fusion
             GUI.Label(
                 new Rect(
                     left + 840f,
-                    y + 505f,
+                    y + 700f,
                     80f,
                     26f
                 ),
@@ -354,7 +419,7 @@ namespace ProjectJ.Networking.Fusion
             GUI.Label(
                 new Rect(
                     left + 920f,
-                    y + 505f,
+                    y + 700f,
                     130f,
                     26f
                 ),
@@ -365,7 +430,7 @@ namespace ProjectJ.Networking.Fusion
             GUI.Label(
                 new Rect(
                     left + 1050f,
-                    y + 505f,
+                    y + 700f,
                     90f,
                     26f
                 ),
@@ -375,7 +440,7 @@ namespace ProjectJ.Networking.Fusion
 
             DrawPlayerRows(
                 left,
-                y + 534f
+                y + 729f
             );
 
             GUI.enabled =
@@ -385,7 +450,7 @@ namespace ProjectJ.Networking.Fusion
                 GUI.Button(
                     new Rect(
                         left,
-                        y + 838f,
+                        y + 958f,
                         260f,
                         42f
                     ),
@@ -402,7 +467,7 @@ namespace ProjectJ.Networking.Fusion
                 GUI.Button(
                     new Rect(
                         left + 280f,
-                        y + 838f,
+                        y + 958f,
                         260f,
                         42f
                     ),
@@ -422,7 +487,7 @@ namespace ProjectJ.Networking.Fusion
                 GUI.Button(
                     new Rect(
                         left + 560f,
-                        y + 838f,
+                        y + 958f,
                         260f,
                         42f
                     ),
@@ -437,6 +502,123 @@ namespace ProjectJ.Networking.Fusion
 
             GUI.enabled = true;
 #endif
+        }
+
+        private ProjectJNetworkPlayer
+            GetLocalNetworkPlayer()
+        {
+            NetworkRunner runner =
+                bootstrap.Runner;
+
+            if (
+                runner == null ||
+                !runner.IsRunning
+            )
+            {
+                return null;
+            }
+
+            if (
+                !runner.TryGetPlayerObject(
+                    runner.LocalPlayer,
+                    out NetworkObject playerObject
+                ) ||
+                playerObject == null
+            )
+            {
+                return null;
+            }
+
+            playerObject.TryGetComponent(
+                out ProjectJNetworkPlayer
+                    networkPlayer
+            );
+
+            return networkPlayer;
+        }
+
+        private string GetResimulationCountText(
+            ProjectJNetworkPlayer player
+        )
+        {
+            if (player == null)
+            {
+                return "-";
+            }
+
+            return
+                player.ResimulationBatchCount +
+                " / " +
+                player.ResimulationTickCount;
+        }
+
+        private string GetSimulationTickCountText(
+            ProjectJNetworkPlayer player
+        )
+        {
+            if (player == null)
+            {
+                return "-";
+            }
+
+            return
+                player.LastResimulationTickCount +
+                " / " +
+                player.LastForwardTickCount;
+        }
+
+        private string GetRollbackText(
+            ProjectJNetworkPlayer player
+        )
+        {
+            if (player == null)
+            {
+                return "-";
+            }
+
+            return
+                player.LastRollbackDistance
+                    .ToString("0.000") +
+                " m";
+        }
+
+        private string GetCorrectionText(
+            ProjectJNetworkPlayer player
+        )
+        {
+            if (player == null)
+            {
+                return "-";
+            }
+
+            return
+                player.LastCorrectionDistance
+                    .ToString("0.000") +
+                " m / " +
+                player.MaxCorrectionDistance
+                    .ToString("0.000") +
+                " m";
+        }
+
+        private string GetPredictionPositionText(
+            ProjectJNetworkPlayer player
+        )
+        {
+            if (player == null)
+            {
+                return "-";
+            }
+
+            return
+                FormatPosition(
+                    player
+                        .PredictionPositionBeforeResimulation
+                ) +
+                " → " +
+                FormatPosition(
+                    player
+                        .CorrectedPositionAfterResimulation
+                );
         }
 
         private void DrawPlayerRows(
@@ -473,7 +655,7 @@ namespace ProjectJ.Networking.Fusion
                 in runner.ActivePlayers
             )
             {
-                if (row >= 8)
+                if (row >= 6)
                 {
                     break;
                 }
@@ -655,7 +837,7 @@ namespace ProjectJ.Networking.Fusion
                 new Rect(
                     x,
                     y,
-                    170f,
+                    190f,
                     28f
                 ),
                 label,
@@ -664,9 +846,9 @@ namespace ProjectJ.Networking.Fusion
 
             GUI.Label(
                 new Rect(
-                    x + 175f,
+                    x + 195f,
                     y,
-                    width - 175f,
+                    width - 195f,
                     28f
                 ),
                 ": " + value,

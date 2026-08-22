@@ -38,6 +38,14 @@ namespace ProjectJ.Items.Effects
         public void OnUseReleased()
         {
             active = false;
+
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+#endif
+
             Destroy(this);
         }
 

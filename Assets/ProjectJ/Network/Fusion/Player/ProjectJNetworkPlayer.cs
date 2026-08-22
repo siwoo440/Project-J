@@ -5,7 +5,9 @@ namespace ProjectJ.Networking.Fusion
 {
     [DisallowMultipleComponent]
     public sealed class ProjectJNetworkPlayer :
-        NetworkBehaviour
+        NetworkBehaviour,
+        IBeforeAllTicks,
+        IAfterAllTicks
     {
         private const float InputPulseDuration =
             0.35f;
@@ -20,6 +22,10 @@ namespace ProjectJ.Networking.Fusion
         private RenderTexture authorityCameraTexture;
 
         private float inputPulseUntil;
+
+        private bool hasForwardPosition;
+        private Vector3 lastForwardPosition;
+        private Vector3 predictedPositionBeforeResimulation;
 
         public PlayerRef Owner =>
             Object != null &&
@@ -88,10 +94,76 @@ namespace ProjectJ.Networking.Fusion
             Time.unscaledTime <
             inputPulseUntil;
 
+        public int ResimulationBatchCount
+        {
+            get;
+            private set;
+        }
+
+        public int ResimulationTickCount
+        {
+            get;
+            private set;
+        }
+
+        public int LastResimulationTickCount
+        {
+            get;
+            private set;
+        }
+
+        public int LastForwardTickCount
+        {
+            get;
+            private set;
+        }
+
+        public float LastRollbackDistance
+        {
+            get;
+            private set;
+        }
+
+        public float LastCorrectionDistance
+        {
+            get;
+            private set;
+        }
+
+        public float MaxCorrectionDistance
+        {
+            get;
+            private set;
+        }
+
+        public Vector3 PredictionPositionBeforeResimulation
+        {
+            get;
+            private set;
+        }
+
+        public Vector3 RollbackPosition
+        {
+            get;
+            private set;
+        }
+
+        public Vector3 CorrectedPositionAfterResimulation
+        {
+            get;
+            private set;
+        }
+
         public override void Spawned()
         {
             CachePresentation();
             ApplyAuthorityPresentation();
+
+            lastForwardPosition =
+                transform.position;
+
+            hasForwardPosition =
+                true;
 
             Debug.Log(
                 "[Project J/Fusion] " +
@@ -176,6 +248,100 @@ namespace ProjectJ.Networking.Fusion
                     Time.unscaledTime +
                     InputPulseDuration;
             }
+        }
+
+        public void BeforeAllTicks(
+            bool resimulation,
+            int tickCount
+        )
+        {
+            if (
+                Object == null ||
+                !Object.IsValid ||
+                !Object.HasInputAuthority
+            )
+            {
+                return;
+            }
+
+            if (!resimulation)
+            {
+                LastForwardTickCount =
+                    tickCount;
+
+                return;
+            }
+
+            ResimulationBatchCount++;
+            ResimulationTickCount +=
+                tickCount;
+
+            LastResimulationTickCount =
+                tickCount;
+
+            predictedPositionBeforeResimulation =
+                hasForwardPosition
+                    ? lastForwardPosition
+                    : transform.position;
+
+            PredictionPositionBeforeResimulation =
+                predictedPositionBeforeResimulation;
+
+            RollbackPosition =
+                transform.position;
+
+            LastRollbackDistance =
+                Vector3.Distance(
+                    predictedPositionBeforeResimulation,
+                    RollbackPosition
+                );
+        }
+
+        public void AfterAllTicks(
+            bool resimulation,
+            int tickCount
+        )
+        {
+            if (
+                Object == null ||
+                !Object.IsValid ||
+                !Object.HasInputAuthority
+            )
+            {
+                return;
+            }
+
+            if (resimulation)
+            {
+                CorrectedPositionAfterResimulation =
+                    transform.position;
+
+                LastCorrectionDistance =
+                    Vector3.Distance(
+                        predictedPositionBeforeResimulation,
+                        CorrectedPositionAfterResimulation
+                    );
+
+                if (
+                    LastCorrectionDistance >
+                    MaxCorrectionDistance
+                )
+                {
+                    MaxCorrectionDistance =
+                        LastCorrectionDistance;
+                }
+
+                return;
+            }
+
+            LastForwardTickCount =
+                tickCount;
+
+            lastForwardPosition =
+                transform.position;
+
+            hasForwardPosition =
+                true;
         }
 
         private void CachePresentation()

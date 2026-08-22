@@ -90,7 +90,7 @@ namespace ProjectJ.Networking.Fusion
                     560f,
                     34f
                 ),
-                "Project J - Fusion 66일차",
+                "Project J - Fusion 67일차",
                 titleStyle
             );
 
@@ -324,7 +324,7 @@ namespace ProjectJ.Networking.Fusion
                     contentWidth,
                     28f
                 ),
-                "Sprint · Stamina · Jump / Interpolation",
+                "Crouch · Collider · Sprint / Jump",
                 sectionStyle
             );
 
@@ -407,68 +407,75 @@ namespace ProjectJ.Networking.Fusion
             DrawSmall(
                 x,
                 y,
-                60f,
+                50f,
                 "Player"
             );
 
             DrawSmall(
-                x + 60f,
+                x + 50f,
                 y,
-                120f,
+                110f,
                 "Role"
             );
 
             DrawSmall(
-                x + 180f,
+                x + 160f,
                 y,
                 80f,
-                "Ground"
+                "Crouch"
             );
 
             DrawSmall(
-                x + 260f,
+                x + 240f,
+                y,
+                90f,
+                "Collider H"
+            );
+
+            DrawSmall(
+                x + 330f,
+                y,
+                90f,
+                "Can Stand"
+            );
+
+            DrawSmall(
+                x + 420f,
                 y,
                 80f,
                 "Sprint"
             );
 
             DrawSmall(
-                x + 340f,
+                x + 500f,
                 y,
                 150f,
                 "Stamina"
             );
 
             DrawSmall(
-                x + 490f,
+                x + 650f,
                 y,
-                90f,
+                80f,
                 "Speed"
             );
 
             DrawSmall(
-                x + 580f,
+                x + 730f,
                 y,
-                110f,
-                "Exhausted"
+                80f,
+                "Ground"
             );
 
             DrawSmall(
-                x + 690f,
+                x + 810f,
                 y,
                 100f,
                 "Vertical V"
             );
 
             DrawSmall(
-                x + 790f,
-                y,
-                100f,
-                "Sim Y"
-            );
-
-            DrawSmall(
-                x + 890f,
+                x + 910f,
                 y,
                 150f,
                 "Interpolation"
@@ -610,7 +617,7 @@ namespace ProjectJ.Networking.Fusion
                         x,
                         startY,
                         700f,
-                        26f
+                        24f
                     ),
                     "연결된 Network Player 없음",
                     labelStyle
@@ -626,14 +633,14 @@ namespace ProjectJ.Networking.Fusion
                 in runner.ActivePlayers
             )
             {
-                if (row >= 6)
+                if (row >= 8)
                 {
                     break;
                 }
 
                 float y =
                     startY +
-                    row * 32f;
+                    row * 24f;
 
                 NetworkObject playerObject =
                     null;
@@ -659,31 +666,52 @@ namespace ProjectJ.Networking.Fusion
                 DrawSmall(
                     x,
                     y,
-                    60f,
+                    50f,
                     "P" + player.AsIndex
                 );
 
                 DrawSmall(
-                    x + 60f,
+                    x + 50f,
                     y,
-                    120f,
+                    110f,
                     GetInterpolationRoleText(
                         networkPlayer
                     )
                 );
 
                 DrawSmall(
-                    x + 180f,
+                    x + 160f,
                     y,
                     80f,
                     networkPlayer != null &&
-                    networkPlayer.IsGrounded
+                    networkPlayer.IsCrouching
                         ? "TRUE"
                         : "-"
                 );
 
                 DrawSmall(
-                    x + 260f,
+                    x + 240f,
+                    y,
+                    90f,
+                    networkPlayer != null
+                        ? networkPlayer
+                            .ColliderHeight
+                            .ToString("0.00")
+                        : "-"
+                );
+
+                DrawSmall(
+                    x + 330f,
+                    y,
+                    90f,
+                    networkPlayer != null &&
+                    networkPlayer.CanStandUp
+                        ? "TRUE"
+                        : "-"
+                );
+
+                DrawSmall(
+                    x + 420f,
                     y,
                     80f,
                     networkPlayer != null &&
@@ -693,7 +721,7 @@ namespace ProjectJ.Networking.Fusion
                 );
 
                 DrawSmall(
-                    x + 340f,
+                    x + 500f,
                     y,
                     150f,
                     networkPlayer != null
@@ -708,9 +736,9 @@ namespace ProjectJ.Networking.Fusion
                 );
 
                 DrawSmall(
-                    x + 490f,
+                    x + 650f,
                     y,
-                    90f,
+                    80f,
                     networkPlayer != null
                         ? networkPlayer
                             .CurrentMoveSpeed
@@ -719,18 +747,17 @@ namespace ProjectJ.Networking.Fusion
                 );
 
                 DrawSmall(
-                    x + 580f,
+                    x + 730f,
                     y,
-                    110f,
+                    80f,
                     networkPlayer != null &&
-                    networkPlayer
-                        .IsSprintExhausted
+                    networkPlayer.IsGrounded
                         ? "TRUE"
                         : "-"
                 );
 
                 DrawSmall(
-                    x + 690f,
+                    x + 810f,
                     y,
                     100f,
                     networkPlayer != null
@@ -741,19 +768,7 @@ namespace ProjectJ.Networking.Fusion
                 );
 
                 DrawSmall(
-                    x + 790f,
-                    y,
-                    100f,
-                    networkPlayer != null
-                        ? networkPlayer
-                            .LastSimulationPosition
-                            .y
-                            .ToString("0.00")
-                        : "-"
-                );
-
-                DrawSmall(
-                    x + 890f,
+                    x + 910f,
                     y,
                     150f,
                     GetInterpolationStateText(
@@ -828,7 +843,7 @@ namespace ProjectJ.Networking.Fusion
                     x,
                     y,
                     width,
-                    26f
+                    24f
                 ),
                 value,
                 smallStyle

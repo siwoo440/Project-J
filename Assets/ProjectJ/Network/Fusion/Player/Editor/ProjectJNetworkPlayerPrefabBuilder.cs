@@ -14,6 +14,12 @@ namespace ProjectJ.Networking.Fusion.Editor
             "Assets/ProjectJ/Network/Fusion/Player/" +
             "Resources/ProjectJNetworkPlayer.prefab";
 
+        private const float StandingColliderHeight =
+            2f;
+
+        private const float BodyColliderRadius =
+            0.4f;
+
         static
             ProjectJNetworkPlayerPrefabBuilder()
         {
@@ -23,23 +29,10 @@ namespace ProjectJ.Networking.Fusion.Editor
 
         [MenuItem(
             "Tools/Project J/Fusion/" +
-            "60일차 Network Player Prefab 재생성"
+            "67일차 Network Player Prefab 검증"
         )]
         private static void RebuildPrefab()
         {
-            if (
-                AssetDatabase.LoadAssetAtPath<
-                    GameObject
-                >(
-                    PrefabPath
-                ) != null
-            )
-            {
-                AssetDatabase.DeleteAsset(
-                    PrefabPath
-                );
-            }
-
             EnsurePrefab();
 
             Selection.activeObject =
@@ -69,6 +62,8 @@ namespace ProjectJ.Networking.Fusion.Editor
 
             if (existing != null)
             {
+                EnsureExistingPrefabConfiguration();
+
                 return;
             }
 
@@ -104,6 +99,15 @@ namespace ProjectJ.Networking.Fusion.Editor
             root.AddComponent<
                 ProjectJNetworkPlayer
             >();
+
+            CapsuleCollider bodyCollider =
+                root.AddComponent<
+                    CapsuleCollider
+                >();
+
+            ConfigureBodyCollider(
+                bodyCollider
+            );
 
             GameObject visual =
                 GameObject.CreatePrimitive(
@@ -190,9 +194,182 @@ namespace ProjectJ.Networking.Fusion.Editor
 
             Debug.Log(
                 "[Project J/Fusion] " +
-                "60일차 Network Player Prefab 생성 완료: " +
+                "67일차 Network Player Prefab 생성 완료: " +
                 PrefabPath
             );
+        }
+
+        private static void
+            EnsureExistingPrefabConfiguration()
+        {
+            GameObject root =
+                PrefabUtility.LoadPrefabContents(
+                    PrefabPath
+                );
+
+            bool changed =
+                false;
+
+            try
+            {
+                CapsuleCollider bodyCollider =
+                    root.GetComponent<
+                        CapsuleCollider
+                    >();
+
+                if (bodyCollider == null)
+                {
+                    bodyCollider =
+                        root.AddComponent<
+                            CapsuleCollider
+                        >();
+
+                    changed =
+                        true;
+                }
+
+                if (
+                    !Mathf.Approximately(
+                        bodyCollider.height,
+                        StandingColliderHeight
+                    ) ||
+                    !Mathf.Approximately(
+                        bodyCollider.radius,
+                        BodyColliderRadius
+                    ) ||
+                    bodyCollider.center !=
+                        new Vector3(
+                            0f,
+                            1f,
+                            0f
+                        ) ||
+                    bodyCollider.direction !=
+                        1 ||
+                    bodyCollider.isTrigger
+                )
+                {
+                    ConfigureBodyCollider(
+                        bodyCollider
+                    );
+
+                    changed =
+                        true;
+                }
+
+                Transform visual =
+                    root.transform.Find(
+                        "Visual"
+                    );
+
+                if (visual != null)
+                {
+                    Vector3 targetPosition =
+                        new Vector3(
+                            0f,
+                            1f,
+                            0f
+                        );
+
+                    Vector3 targetScale =
+                        new Vector3(
+                            0.8f,
+                            1f,
+                            0.8f
+                        );
+
+                    if (
+                        visual.localPosition !=
+                            targetPosition
+                    )
+                    {
+                        visual.localPosition =
+                            targetPosition;
+
+                        changed =
+                            true;
+                    }
+
+                    if (
+                        visual.localScale !=
+                            targetScale
+                    )
+                    {
+                        visual.localScale =
+                            targetScale;
+
+                        changed =
+                            true;
+                    }
+
+                    Collider visualCollider =
+                        visual.GetComponent<
+                            Collider
+                        >();
+
+                    if (visualCollider != null)
+                    {
+                        Object.DestroyImmediate(
+                            visualCollider
+                        );
+
+                        changed =
+                            true;
+                    }
+                }
+
+                if (!changed)
+                {
+                    return;
+                }
+
+                PrefabUtility.SaveAsPrefabAsset(
+                    root,
+                    PrefabPath
+                );
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(
+                    root
+                );
+            }
+
+            AssetDatabase.ImportAsset(
+                PrefabPath,
+                ImportAssetOptions.ForceUpdate
+            );
+
+            AssetDatabase.SaveAssets();
+
+            Debug.Log(
+                "[Project J/Fusion] " +
+                "67일차 Network Player CapsuleCollider 구성 완료"
+            );
+        }
+
+        private static void ConfigureBodyCollider(
+            CapsuleCollider bodyCollider
+        )
+        {
+            bodyCollider.direction =
+                1;
+
+            bodyCollider.radius =
+                BodyColliderRadius;
+
+            bodyCollider.height =
+                StandingColliderHeight;
+
+            bodyCollider.center =
+                new Vector3(
+                    0f,
+                    StandingColliderHeight *
+                    0.5f,
+                    0f
+                );
+
+            bodyCollider.isTrigger =
+                false;
         }
     }
 }

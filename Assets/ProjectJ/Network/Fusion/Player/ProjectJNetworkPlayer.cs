@@ -42,9 +42,41 @@ namespace ProjectJ.Networking.Fusion
         private const float SprintRestartStamina =
             20f;
 
+        private const float StandingColliderHeight =
+            2f;
+
+        private const float CrouchColliderHeight =
+            1f;
+
+        private const float BodyColliderRadius =
+            0.4f;
+
+        private const float StandingVisualY =
+            1f;
+
+        private const float CrouchVisualY =
+            0.5f;
+
+        private const float StandingVisualScaleY =
+            1f;
+
+        private const float CrouchVisualScaleY =
+            0.5f;
+
+        private const float StandClearanceRadiusScale =
+            0.95f;
+
         private Renderer visualRenderer;
+        private Transform visualTransform;
         private Camera authorityCamera;
         private NetworkTransform networkTransform;
+        private CapsuleCollider bodyCollider;
+
+        private readonly RaycastHit[] groundHitBuffer =
+            new RaycastHit[16];
+
+        private readonly Collider[] standOverlapBuffer =
+            new Collider[16];
 
         private Material runtimeMaterial;
         private RenderTexture authorityCameraTexture;
@@ -88,6 +120,13 @@ namespace ProjectJ.Networking.Fusion
 
         [Networked]
         private NetworkBool NetworkSprintExhausted
+        {
+            get;
+            set;
+        }
+
+        [Networked]
+        private NetworkBool NetworkIsCrouching
         {
             get;
             set;
@@ -227,6 +266,22 @@ namespace ProjectJ.Networking.Fusion
         public bool IsSprintExhausted =>
             NetworkSprintExhausted;
 
+        public bool IsCrouching =>
+            NetworkIsCrouching;
+
+        public float ColliderHeight =>
+            bodyCollider != null
+                ? bodyCollider.height
+                : (
+                    NetworkIsCrouching
+                        ? CrouchColliderHeight
+                        : StandingColliderHeight
+                );
+
+        public bool CanStandUp =>
+            !NetworkIsCrouching ||
+            HasStandingClearance();
+
         public float VerticalVelocity =>
             NetworkVerticalVelocity;
 
@@ -336,7 +391,13 @@ namespace ProjectJ.Networking.Fusion
 
                 NetworkSprintExhausted =
                     false;
+
+                NetworkIsCrouching =
+                    false;
             }
+
+            ApplyColliderPosture();
+            ApplyCrouchPresentation();
 
             Debug.Log(
                 "[Project J/Fusion] " +
@@ -408,6 +469,9 @@ namespace ProjectJ.Networking.Fusion
                 moveInput.sqrMagnitude >
                 0.0001f;
 
+            UpdateCrouchState();
+            ApplyColliderPosture();
+
             UpdateSprintState(
                 hasMoveInput,
                 deltaTime
@@ -449,7 +513,8 @@ namespace ProjectJ.Networking.Fusion
 
             if (
                 LastReceivedJump &&
-                NetworkGrounded
+                NetworkGrounded &&
+                !NetworkIsCrouching
             )
             {
                 NetworkVerticalVelocity =
@@ -529,6 +594,28 @@ namespace ProjectJ.Networking.Fusion
             }
         }
 
+        private void UpdateCrouchState()
+        {
+            if (LastReceivedCrouch)
+            {
+                NetworkIsCrouching =
+                    true;
+
+                return;
+            }
+
+            if (
+                NetworkIsCrouching &&
+                !HasStandingClearance()
+            )
+            {
+                return;
+            }
+
+            NetworkIsCrouching =
+                false;
+        }
+
         private void UpdateSprintState(
             bool hasMoveInput,
             float deltaTime
@@ -573,6 +660,7 @@ namespace ProjectJ.Networking.Fusion
             bool sprintRequested =
                 LastReceivedSprint &&
                 hasMoveInput &&
+                !NetworkIsCrouching &&
                 stamina > 0f;
 
             if (sprintRequested)
@@ -618,7 +706,7 @@ namespace ProjectJ.Networking.Fusion
                 stamina;
         }
 
-        private static bool TryGetGroundHeight(
+        private bool TryGetGroundHeight(
             Vector3 position,
             float probeDistance,
             out float groundHeight
@@ -633,35 +721,18 @@ namespace ProjectJ.Networking.Fusion
                 GroundProbeStartHeight +
                 probeDistance;
 
-            if (
-                Physics.Raycast(
-                    origin,
-                    Vector3.down,
-                    out RaycastHit hit,
-                    castDistance,
-                    Physics.AllLayers,
-                    QueryTriggerInteraction.Ignore
-                )
-            )
-            {
-                groundHeight =
-                    hit.point.y;
-
-                return true;
-            }
-
-            groundHeight =
-                0f;
-
-            return false;
+            return TryFindGroundHit(
+                origin,
+                castDistance,
+                out groundHeight
+            );
         }
 
-        private static bool
-            TryGetLandingGroundHeight(
-                Vector3 currentPosition,
-                Vector3 nextPosition,
-                out float groundHeight
-            )
+        private bool TryGetLandingGroundHeight(
+            Vector3 currentPosition,
+            Vector3 nextPosition,
+            out float groundHeight
+        )
         {
             float downwardTravel =
                 Mathf.Max(
@@ -683,27 +754,208 @@ namespace ProjectJ.Networking.Fusion
                 downwardTravel +
                 GroundProbeDistance;
 
-            if (
-                Physics.Raycast(
+            return TryFindGroundHit(
+                origin,
+                castDistance,
+                out groundHeight
+            );
+        }
+
+        private bool TryFindGroundHit(
+            Vector3 origin,
+            float castDistance,
+            out float groundHeight
+        )
+        {
+            int hitCount =
+                Physics.RaycastNonAlloc(
                     origin,
                     Vector3.down,
-                    out RaycastHit hit,
+                    groundHitBuffer,
                     castDistance,
                     Physics.AllLayers,
                     QueryTriggerInteraction.Ignore
-                )
-            )
-            {
-                groundHeight =
-                    hit.point.y;
+                );
 
-                return true;
-            }
+            float closestDistance =
+                float.PositiveInfinity;
+
+            bool foundGround =
+                false;
 
             groundHeight =
                 0f;
 
-            return false;
+            for (
+                int i = 0;
+                i < hitCount;
+                i++
+            )
+            {
+                RaycastHit hit =
+                    groundHitBuffer[i];
+
+                Collider hitCollider =
+                    hit.collider;
+
+                if (
+                    hitCollider == null ||
+                    IsOwnCollider(
+                        hitCollider
+                    ) ||
+                    hit.distance >=
+                        closestDistance
+                )
+                {
+                    continue;
+                }
+
+                closestDistance =
+                    hit.distance;
+
+                groundHeight =
+                    hit.point.y;
+
+                foundGround =
+                    true;
+            }
+
+            return foundGround;
+        }
+
+        private bool HasStandingClearance()
+        {
+            float clearanceRadius =
+                BodyColliderRadius *
+                StandClearanceRadiusScale;
+
+            Vector3 bottomPoint =
+                transform.position +
+                Vector3.up *
+                (
+                    CrouchColliderHeight +
+                    clearanceRadius
+                );
+
+            Vector3 topPoint =
+                transform.position +
+                Vector3.up *
+                (
+                    StandingColliderHeight -
+                    clearanceRadius
+                );
+
+            int overlapCount =
+                Physics.OverlapCapsuleNonAlloc(
+                    bottomPoint,
+                    topPoint,
+                    clearanceRadius,
+                    standOverlapBuffer,
+                    Physics.AllLayers,
+                    QueryTriggerInteraction.Ignore
+                );
+
+            for (
+                int i = 0;
+                i < overlapCount;
+                i++
+            )
+            {
+                Collider candidate =
+                    standOverlapBuffer[i];
+
+                if (
+                    candidate == null ||
+                    IsOwnCollider(
+                        candidate
+                    )
+                )
+                {
+                    continue;
+                }
+
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool IsOwnCollider(
+            Collider candidate
+        )
+        {
+            Transform candidateTransform =
+                candidate.transform;
+
+            return
+                candidateTransform ==
+                    transform ||
+                candidateTransform
+                    .IsChildOf(
+                        transform
+                    );
+        }
+
+        private void ApplyColliderPosture()
+        {
+            if (bodyCollider == null)
+            {
+                return;
+            }
+
+            bool crouching =
+                NetworkIsCrouching;
+
+            float height =
+                crouching
+                    ? CrouchColliderHeight
+                    : StandingColliderHeight;
+
+            bodyCollider.height =
+                height;
+
+            bodyCollider.radius =
+                BodyColliderRadius;
+
+            bodyCollider.center =
+                new Vector3(
+                    0f,
+                    height * 0.5f,
+                    0f
+                );
+        }
+
+        private void ApplyCrouchPresentation()
+        {
+            if (visualTransform == null)
+            {
+                return;
+            }
+
+            bool crouching =
+                NetworkIsCrouching;
+
+            Vector3 localPosition =
+                visualTransform.localPosition;
+
+            localPosition.y =
+                crouching
+                    ? CrouchVisualY
+                    : StandingVisualY;
+
+            visualTransform.localPosition =
+                localPosition;
+
+            Vector3 localScale =
+                visualTransform.localScale;
+
+            localScale.y =
+                crouching
+                    ? CrouchVisualScaleY
+                    : StandingVisualScaleY;
+
+            visualTransform.localScale =
+                localScale;
         }
 
         private void LateUpdate()
@@ -715,6 +967,9 @@ namespace ProjectJ.Networking.Fusion
             {
                 return;
             }
+
+            ApplyColliderPosture();
+            ApplyCrouchPresentation();
 
             Vector3 renderPosition =
                 transform.position;
@@ -854,12 +1109,22 @@ namespace ProjectJ.Networking.Fusion
                     true
                 );
 
+            visualTransform =
+                visualRenderer != null
+                    ? visualRenderer.transform
+                    : null;
+
             authorityCamera =
                 GetComponentInChildren<
                     Camera
                 >(
                     true
                 );
+
+            bodyCollider =
+                GetComponent<
+                    CapsuleCollider
+                >();
 
             networkTransform =
                 GetComponent<

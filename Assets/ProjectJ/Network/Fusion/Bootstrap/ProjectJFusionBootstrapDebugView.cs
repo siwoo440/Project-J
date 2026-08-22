@@ -64,8 +64,8 @@ namespace ProjectJ.Networking.Fusion
 
             const float x = 20f;
             const float y = 20f;
-            const float width = 430f;
-            const float height = 250f;
+            const float width = 470f;
+            const float height = 360f;
 
             GUI.Box(
                 new Rect(
@@ -84,7 +84,7 @@ namespace ProjectJ.Networking.Fusion
                     width - 32f,
                     28f
                 ),
-                "Project J - Fusion 58일차",
+                "Project J - Fusion 59일차",
                 titleStyle
             );
 
@@ -99,18 +99,15 @@ namespace ProjectJ.Networking.Fusion
                 labelStyle
             );
 
-            bool canEditSession =
-                bootstrap.CanStart;
-
             GUI.enabled =
-                canEditSession;
+                bootstrap.CanStart;
 
             bootstrap.SessionName =
                 GUI.TextField(
                     new Rect(
                         x + 115f,
                         y + 48f,
-                        295f,
+                        335f,
                         26f
                     ),
                     bootstrap.SessionName
@@ -123,7 +120,7 @@ namespace ProjectJ.Networking.Fusion
                     x + 16f,
                     y + 82f,
                     width - 32f,
-                    26f
+                    24f
                 ),
                 "상태 : " +
                 GetStateText(
@@ -135,9 +132,9 @@ namespace ProjectJ.Networking.Fusion
             GUI.Label(
                 new Rect(
                     x + 16f,
-                    y + 110f,
+                    y + 108f,
                     width - 32f,
-                    26f
+                    24f
                 ),
                 "역할 : " +
                 GetModeText(
@@ -149,11 +146,72 @@ namespace ProjectJ.Networking.Fusion
             GUI.Label(
                 new Rect(
                     x + 16f,
-                    y + 138f,
+                    y + 134f,
                     width - 32f,
-                    26f
+                    24f
+                ),
+                "연결 세션 : " +
+                bootstrap.ConnectedSessionName,
+                labelStyle
+            );
+
+            GUI.Label(
+                new Rect(
+                    x + 16f,
+                    y + 160f,
+                    width - 32f,
+                    24f
+                ),
+                "참가 인원 : " +
+                bootstrap.ParticipantCount +
+                " / 8",
+                labelStyle
+            );
+
+            GUI.Label(
+                new Rect(
+                    x + 16f,
+                    y + 186f,
+                    width - 32f,
+                    24f
+                ),
+                "공개 여부 : " +
+                GetVisibilityText(),
+                labelStyle
+            );
+
+            GUI.Label(
+                new Rect(
+                    x + 16f,
+                    y + 212f,
+                    width - 32f,
+                    24f
+                ),
+                "Region : " +
+                bootstrap.ConnectedRegion,
+                labelStyle
+            );
+
+            GUI.Label(
+                new Rect(
+                    x + 16f,
+                    y + 238f,
+                    width - 32f,
+                    24f
                 ),
                 bootstrap.StatusMessage,
+                labelStyle
+            );
+
+            GUI.Label(
+                new Rect(
+                    x + 16f,
+                    y + 264f,
+                    width - 32f,
+                    24f
+                ),
+                "마지막 결과 : " +
+                bootstrap.LastConnectionResult,
                 labelStyle
             );
 
@@ -164,34 +222,34 @@ namespace ProjectJ.Networking.Fusion
                 GUI.Button(
                     new Rect(
                         x + 16f,
-                        y + 180f,
-                        120f,
+                        y + 296f,
+                        135f,
                         42f
                     ),
-                    "Host 시작",
+                    "비공개 방 생성",
                     buttonStyle
                 )
             )
             {
                 bootstrap
-                    .RequestStartHost();
+                    .RequestCreatePrivateRoom();
             }
 
             if (
                 GUI.Button(
                     new Rect(
-                        x + 146f,
-                        y + 180f,
-                        120f,
+                        x + 161f,
+                        y + 296f,
+                        135f,
                         42f
                     ),
-                    "Client 접속",
+                    "방 참가",
                     buttonStyle
                 )
             )
             {
                 bootstrap
-                    .RequestStartClient();
+                    .RequestJoinPrivateRoom();
             }
 
             GUI.enabled =
@@ -200,18 +258,18 @@ namespace ProjectJ.Networking.Fusion
             if (
                 GUI.Button(
                     new Rect(
-                        x + 276f,
-                        y + 180f,
-                        134f,
+                        x + 306f,
+                        y + 296f,
+                        144f,
                         42f
                     ),
-                    "Runner 종료",
+                    "방 나가기",
                     buttonStyle
                 )
             )
             {
                 bootstrap
-                    .RequestShutdown();
+                    .RequestLeaveRoom();
             }
 
             GUI.enabled = true;
@@ -219,14 +277,33 @@ namespace ProjectJ.Networking.Fusion
             GUI.Label(
                 new Rect(
                     x + 16f,
-                    y + 226f,
+                    y + 340f,
                     width - 32f,
                     20f
                 ),
-                "F2 : 네트워크 테스트 창 표시/숨김",
+                "F2 : 창 표시/숨김 | ALT : 커서 활성화",
                 labelStyle
             );
 #endif
+        }
+
+        private string GetVisibilityText()
+        {
+            if (
+                !bootstrap.HasValidSessionInfo
+            )
+            {
+                return "-";
+            }
+
+            if (!bootstrap.IsSessionOpen)
+            {
+                return "비공개 / 참가 닫힘";
+            }
+
+            return bootstrap.IsSessionVisible
+                ? "공개"
+                : "비공개";
         }
 
         private static string GetStateText(
@@ -238,12 +315,12 @@ namespace ProjectJ.Networking.Fusion
                 case
                     ProjectJFusionBootstrapState
                         .Starting:
-                    return "시작 중";
+                    return "연결 중";
 
                 case
                     ProjectJFusionBootstrapState
                         .Running:
-                    return "실행 중";
+                    return "연결됨";
 
                 case
                     ProjectJFusionBootstrapState
@@ -314,7 +391,7 @@ namespace ProjectJ.Networking.Fusion
                         GUI.skin.button
                     );
 
-                buttonStyle.fontSize = 15;
+                buttonStyle.fontSize = 14;
                 buttonStyle.fontStyle =
                     FontStyle.Bold;
             }

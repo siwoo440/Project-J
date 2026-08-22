@@ -17,14 +17,14 @@ namespace ProjectJ.Networking.Fusion
     public sealed class ProjectJFusionBootstrap :
         MonoBehaviour
     {
-        private const string DefaultSessionName =
-            "ProjectJ-Day59";
-
         private const int PrivateRoomPlayerCount =
             8;
 
         private NetworkRunner runner;
         private GameObject runnerObject;
+
+        private ProjectJNetworkPlayerSpawner
+            playerSpawner;
 
         public ProjectJFusionBootstrapState State
         {
@@ -36,18 +36,29 @@ namespace ProjectJ.Networking.Fusion
         public NetworkRunner Runner =>
             runner;
 
+        public ProjectJNetworkPlayerSpawner
+            PlayerSpawner =>
+                playerSpawner;
+
         public GameMode? ActiveMode
         {
             get;
             private set;
         }
 
+        public string RoomCode
+        {
+            get;
+            set;
+        } =
+            string.Empty;
+
         public string SessionName
         {
             get;
             set;
         } =
-            DefaultSessionName;
+            string.Empty;
 
         public string StatusMessage
         {
@@ -99,6 +110,41 @@ namespace ProjectJ.Networking.Fusion
             }
         }
 
+        public int SpawnedPlayerCount
+        {
+            get
+            {
+                if (
+                    runner == null ||
+                    !runner.IsRunning
+                )
+                {
+                    return 0;
+                }
+
+                int count = 0;
+
+                foreach (
+                    PlayerRef player
+                    in runner.ActivePlayers
+                )
+                {
+                    if (
+                        runner.TryGetPlayerObject(
+                            player,
+                            out NetworkObject playerObject
+                        ) &&
+                        playerObject != null
+                    )
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
+
         public bool HasValidSessionInfo =>
             runner != null &&
             runner.IsRunning &&
@@ -122,6 +168,30 @@ namespace ProjectJ.Networking.Fusion
             HasValidSessionInfo &&
             runner.SessionInfo.IsOpen;
 
+        public string ConnectedRoomCode
+        {
+            get
+            {
+                if (
+                    HasValidSessionInfo &&
+                    ProjectJFusionRoomCode
+                        .TryExtractFromSessionName(
+                            runner.SessionInfo.Name,
+                            out string connectedCode
+                        )
+                )
+                {
+                    return connectedCode;
+                }
+
+                return string.IsNullOrEmpty(
+                    RoomCode
+                )
+                    ? "-"
+                    : RoomCode;
+            }
+        }
+
         private void Update()
         {
             if (
@@ -135,6 +205,7 @@ namespace ProjectJ.Networking.Fusion
             {
                 runner = null;
                 runnerObject = null;
+                playerSpawner = null;
                 ActiveMode = null;
 
                 State =
@@ -166,18 +237,22 @@ namespace ProjectJ.Networking.Fusion
                 return;
             }
 
-            if (
-                !TryResolveSessionName(
-                    out string sessionName
-                )
-            )
-            {
-                return;
-            }
+            string generatedCode =
+                ProjectJFusionRoomCode
+                    .Generate();
+
+            RoomCode =
+                generatedCode;
+
+            SessionName =
+                ProjectJFusionRoomCode
+                    .ToSessionName(
+                        generatedCode
+                    );
 
             _ = StartRunnerAsync(
                 GameMode.Host,
-                sessionName
+                SessionName
             );
         }
 
@@ -188,18 +263,40 @@ namespace ProjectJ.Networking.Fusion
                 return;
             }
 
-            if (
-                !TryResolveSessionName(
-                    out string sessionName
-                )
-            )
+            bool isValid =
+                ProjectJFusionRoomCode
+                    .TryNormalize(
+                        RoomCode,
+                        out string normalizedCode,
+                        out string errorMessage
+                    );
+
+            if (!isValid)
             {
+                State =
+                    ProjectJFusionBootstrapState.Failed;
+
+                StatusMessage =
+                    errorMessage;
+
+                LastConnectionResult =
+                    "방 코드 입력 오류";
+
                 return;
             }
 
+            RoomCode =
+                normalizedCode;
+
+            SessionName =
+                ProjectJFusionRoomCode
+                    .ToSessionName(
+                        normalizedCode
+                    );
+
             _ = StartRunnerAsync(
                 GameMode.Client,
-                sessionName
+                SessionName
             );
         }
 
@@ -228,38 +325,6 @@ namespace ProjectJ.Networking.Fusion
             RequestLeaveRoom();
         }
 
-        private bool TryResolveSessionName(
-            out string sessionName
-        )
-        {
-            bool isValid =
-                ProjectJFusionSessionNameValidator
-                    .TryNormalize(
-                        SessionName,
-                        out sessionName,
-                        out string errorMessage
-                    );
-
-            if (isValid)
-            {
-                SessionName =
-                    sessionName;
-
-                return true;
-            }
-
-            State =
-                ProjectJFusionBootstrapState.Failed;
-
-            StatusMessage =
-                errorMessage;
-
-            LastConnectionResult =
-                "입력 오류";
-
-            return false;
-        }
-
         private async Task StartRunnerAsync(
             GameMode gameMode,
             string sessionName
@@ -276,7 +341,7 @@ namespace ProjectJ.Networking.Fusion
             StatusMessage =
                 gameMode == GameMode.Host
                     ? "비공개 방 생성 중..."
-                    : "비공개 방 참가 중...";
+                    : "방 코드로 참가 중...";
 
             LastConnectionResult =
                 "연결 시도 중";
@@ -291,7 +356,57 @@ namespace ProjectJ.Networking.Fusion
                     NetworkRunner
                 >();
 
-            runner.ProvideInput = false;
+            runner.ProvideInput =
+                false;
+
+            GameObject playerPrefabObject =
+                Resources.Load<GameObject>(
+                    "ProjectJNetworkPlayer"
+                );
+
+            NetworkObject playerPrefab =
+                playerPrefabObject != null
+                    ? playerPrefabObject
+                        .GetComponent<
+                            NetworkObject
+                        >()
+                    : null;
+
+            if (playerPrefab == null)
+            {
+                State =
+                    ProjectJFusionBootstrapState.Failed;
+
+                StatusMessage =
+                    "Network Player Prefab을 찾을 수 없습니다.";
+
+                LastConnectionResult =
+                    "Player Prefab 없음";
+
+                Destroy(
+                    runnerObject
+                );
+
+                runner = null;
+                runnerObject = null;
+                ActiveMode = null;
+
+                Debug.LogError(
+                    "[Project J/Fusion] " +
+                    StatusMessage
+                );
+
+                return;
+            }
+
+            playerSpawner =
+                runnerObject.AddComponent<
+                    ProjectJNetworkPlayerSpawner
+                >();
+
+            playerSpawner.Configure(
+                playerPrefab
+            );
 
             NetworkSceneManagerDefault
                 sceneManager =
@@ -380,7 +495,7 @@ namespace ProjectJ.Networking.Fusion
             else
             {
                 StatusMessage =
-                    "비공개 방 참가 완료";
+                    "방 코드 참가 완료";
 
                 LastConnectionResult =
                     "Client 연결 성공";
@@ -389,6 +504,8 @@ namespace ProjectJ.Networking.Fusion
             Debug.Log(
                 "[Project J/Fusion] " +
                 StatusMessage +
+                " / 방 코드: " +
+                ConnectedRoomCode +
                 " / 세션: " +
                 sessionName
             );
@@ -402,6 +519,7 @@ namespace ProjectJ.Networking.Fusion
                     ProjectJFusionBootstrapState.Idle;
 
                 ActiveMode = null;
+                playerSpawner = null;
 
                 StatusMessage =
                     "대기 중";
@@ -419,6 +537,7 @@ namespace ProjectJ.Networking.Fusion
                 runner;
 
             runner = null;
+            playerSpawner = null;
 
             if (targetRunner.IsRunning)
             {
@@ -478,6 +597,7 @@ namespace ProjectJ.Networking.Fusion
                 await Task.Yield();
             }
 
+            playerSpawner = null;
             ActiveMode = null;
         }
     }

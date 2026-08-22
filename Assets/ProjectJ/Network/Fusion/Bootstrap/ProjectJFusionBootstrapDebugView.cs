@@ -18,6 +18,8 @@ namespace ProjectJ.Networking.Fusion
         private bool isVisible;
 
         private GUIStyle titleStyle;
+        private GUIStyle sectionStyle;
+        private GUIStyle codeStyle;
         private GUIStyle labelStyle;
         private GUIStyle buttonStyle;
 
@@ -64,8 +66,11 @@ namespace ProjectJ.Networking.Fusion
 
             const float x = 20f;
             const float y = 20f;
-            const float width = 470f;
-            const float height = 360f;
+            const float width = 820f;
+            const float height = 730f;
+            const float left = x + 24f;
+            const float contentWidth =
+                width - 48f;
 
             GUI.Box(
                 new Rect(
@@ -79,140 +84,239 @@ namespace ProjectJ.Networking.Fusion
 
             GUI.Label(
                 new Rect(
-                    x + 16f,
-                    y + 12f,
-                    width - 32f,
-                    28f
+                    left,
+                    y + 14f,
+                    420f,
+                    34f
                 ),
-                "Project J - Fusion 59일차",
+                "Project J - Fusion 60일차",
                 titleStyle
             );
 
             GUI.Label(
                 new Rect(
-                    x + 16f,
-                    y + 48f,
-                    95f,
-                    26f
+                    x + width - 330f,
+                    y + 18f,
+                    305f,
+                    28f
                 ),
-                "세션 이름",
+                "F2 : 표시/숨김   ALT : 커서",
+                labelStyle
+            );
+
+            GUI.Label(
+                new Rect(
+                    left,
+                    y + 62f,
+                    110f,
+                    32f
+                ),
+                "방 코드",
                 labelStyle
             );
 
             GUI.enabled =
                 bootstrap.CanStart;
 
-            bootstrap.SessionName =
+            bootstrap.RoomCode =
                 GUI.TextField(
                     new Rect(
-                        x + 115f,
-                        y + 48f,
-                        335f,
-                        26f
+                        left + 120f,
+                        y + 58f,
+                        250f,
+                        40f
                     ),
-                    bootstrap.SessionName
+                    bootstrap.RoomCode,
+                    codeStyle
                 );
 
             GUI.enabled = true;
 
             GUI.Label(
                 new Rect(
-                    x + 16f,
-                    y + 82f,
-                    width - 32f,
-                    24f
+                    left + 390f,
+                    y + 64f,
+                    300f,
+                    28f
                 ),
-                "상태 : " +
+                "Host 생성 시 6자리 자동 발급",
+                labelStyle
+            );
+
+            GUI.Label(
+                new Rect(
+                    left,
+                    y + 112f,
+                    contentWidth,
+                    28f
+                ),
+                "Session",
+                sectionStyle
+            );
+
+            DrawInfoRow(
+                left,
+                y + 146f,
+                contentWidth,
+                "상태",
                 GetStateText(
                     bootstrap.State
-                ),
-                labelStyle
+                )
             );
 
-            GUI.Label(
-                new Rect(
-                    x + 16f,
-                    y + 108f,
-                    width - 32f,
-                    24f
-                ),
-                "역할 : " +
+            DrawInfoRow(
+                left,
+                y + 176f,
+                contentWidth,
+                "역할",
                 GetModeText(
                     bootstrap.ActiveMode
-                ),
-                labelStyle
+                )
             );
 
-            GUI.Label(
-                new Rect(
-                    x + 16f,
-                    y + 134f,
-                    width - 32f,
-                    24f
-                ),
-                "연결 세션 : " +
-                bootstrap.ConnectedSessionName,
-                labelStyle
+            DrawInfoRow(
+                left,
+                y + 206f,
+                contentWidth,
+                "현재 방 코드",
+                bootstrap.ConnectedRoomCode
             );
 
-            GUI.Label(
-                new Rect(
-                    x + 16f,
-                    y + 160f,
-                    width - 32f,
-                    24f
-                ),
-                "참가 인원 : " +
+            DrawInfoRow(
+                left,
+                y + 236f,
+                contentWidth,
+                "연결 Session",
+                bootstrap.ConnectedSessionName
+            );
+
+            DrawInfoRow(
+                left,
+                y + 266f,
+                contentWidth,
+                "참가 인원",
                 bootstrap.ParticipantCount +
-                " / 8",
+                " / 8"
+            );
+
+            DrawInfoRow(
+                left,
+                y + 296f,
+                contentWidth,
+                "공개 여부",
+                GetVisibilityText()
+            );
+
+            DrawInfoRow(
+                left,
+                y + 326f,
+                contentWidth,
+                "Region",
+                bootstrap.ConnectedRegion
+            );
+
+            DrawInfoRow(
+                left,
+                y + 356f,
+                contentWidth,
+                "상태 메시지",
+                bootstrap.StatusMessage
+            );
+
+            DrawInfoRow(
+                left,
+                y + 386f,
+                contentWidth,
+                "마지막 결과",
+                bootstrap.LastConnectionResult
+            );
+
+            GUI.Label(
+                new Rect(
+                    left,
+                    y + 426f,
+                    contentWidth,
+                    28f
+                ),
+                "Network Player · Authority",
+                sectionStyle
+            );
+
+            DrawInfoRow(
+                left,
+                y + 460f,
+                contentWidth,
+                "Spawn 수",
+                bootstrap.SpawnedPlayerCount
+                    .ToString()
+            );
+
+            DrawInfoRow(
+                left,
+                y + 490f,
+                contentWidth,
+                "Local PlayerRef",
+                GetLocalPlayerText()
+            );
+
+            GUI.Label(
+                new Rect(
+                    left,
+                    y + 525f,
+                    110f,
+                    26f
+                ),
+                "Player",
                 labelStyle
             );
 
             GUI.Label(
                 new Rect(
-                    x + 16f,
-                    y + 186f,
-                    width - 32f,
-                    24f
+                    left + 120f,
+                    y + 525f,
+                    150f,
+                    26f
                 ),
-                "공개 여부 : " +
-                GetVisibilityText(),
+                "State Authority",
                 labelStyle
             );
 
             GUI.Label(
                 new Rect(
-                    x + 16f,
-                    y + 212f,
-                    width - 32f,
-                    24f
+                    left + 285f,
+                    y + 525f,
+                    150f,
+                    26f
                 ),
-                "Region : " +
-                bootstrap.ConnectedRegion,
+                "Input Authority",
                 labelStyle
             );
 
             GUI.Label(
                 new Rect(
-                    x + 16f,
-                    y + 238f,
-                    width - 32f,
-                    24f
+                    left + 450f,
+                    y + 525f,
+                    120f,
+                    26f
                 ),
-                bootstrap.StatusMessage,
+                "Camera",
                 labelStyle
             );
 
             GUI.Label(
                 new Rect(
-                    x + 16f,
-                    y + 264f,
-                    width - 32f,
-                    24f
+                    left + 585f,
+                    y + 525f,
+                    150f,
+                    26f
                 ),
-                "마지막 결과 : " +
-                bootstrap.LastConnectionResult,
+                "Local Input",
                 labelStyle
+            );
+
+            DrawPlayerRows(
+                left,
+                y + 554f
             );
 
             GUI.enabled =
@@ -221,9 +325,9 @@ namespace ProjectJ.Networking.Fusion
             if (
                 GUI.Button(
                     new Rect(
-                        x + 16f,
-                        y + 296f,
-                        135f,
+                        left,
+                        y + 674f,
+                        220f,
                         42f
                     ),
                     "비공개 방 생성",
@@ -238,12 +342,12 @@ namespace ProjectJ.Networking.Fusion
             if (
                 GUI.Button(
                     new Rect(
-                        x + 161f,
-                        y + 296f,
-                        135f,
+                        left + 240f,
+                        y + 674f,
+                        220f,
                         42f
                     ),
-                    "방 참가",
+                    "방 코드로 참가",
                     buttonStyle
                 )
             )
@@ -258,9 +362,9 @@ namespace ProjectJ.Networking.Fusion
             if (
                 GUI.Button(
                     new Rect(
-                        x + 306f,
-                        y + 296f,
-                        144f,
+                        left + 480f,
+                        y + 674f,
+                        220f,
                         42f
                     ),
                     "방 나가기",
@@ -273,18 +377,194 @@ namespace ProjectJ.Networking.Fusion
             }
 
             GUI.enabled = true;
+#endif
+        }
+
+        private void DrawPlayerRows(
+            float x,
+            float startY
+        )
+        {
+            NetworkRunner runner =
+                bootstrap.Runner;
+
+            if (
+                runner == null ||
+                !runner.IsRunning
+            )
+            {
+                GUI.Label(
+                    new Rect(
+                        x,
+                        startY,
+                        700f,
+                        26f
+                    ),
+                    "연결된 Network Player 없음",
+                    labelStyle
+                );
+
+                return;
+            }
+
+            int row = 0;
+
+            foreach (
+                PlayerRef player
+                in runner.ActivePlayers
+            )
+            {
+                if (row >= 4)
+                {
+                    break;
+                }
+
+                float y =
+                    startY +
+                    row * 28f;
+
+                NetworkObject playerObject =
+                    null;
+
+                ProjectJNetworkPlayer
+                    networkPlayer =
+                        null;
+
+                bool hasObject =
+                    runner.TryGetPlayerObject(
+                        player,
+                        out playerObject
+                    ) &&
+                    playerObject != null;
+
+                if (hasObject)
+                {
+                    playerObject.TryGetComponent(
+                        out networkPlayer
+                    );
+                }
+
+                GUI.Label(
+                    new Rect(
+                        x,
+                        y,
+                        110f,
+                        26f
+                    ),
+                    "P" +
+                    player.AsIndex,
+                    labelStyle
+                );
+
+                GUI.Label(
+                    new Rect(
+                        x + 120f,
+                        y,
+                        150f,
+                        26f
+                    ),
+                    hasObject &&
+                    playerObject.HasStateAuthority
+                        ? "TRUE"
+                        : "FALSE",
+                    labelStyle
+                );
+
+                GUI.Label(
+                    new Rect(
+                        x + 285f,
+                        y,
+                        150f,
+                        26f
+                    ),
+                    hasObject &&
+                    playerObject.HasInputAuthority
+                        ? "TRUE"
+                        : "FALSE",
+                    labelStyle
+                );
+
+                GUI.Label(
+                    new Rect(
+                        x + 450f,
+                        y,
+                        120f,
+                        26f
+                    ),
+                    networkPlayer != null &&
+                    networkPlayer
+                        .AuthorityCameraEnabled
+                        ? "ON"
+                        : "OFF",
+                    labelStyle
+                );
+
+                GUI.Label(
+                    new Rect(
+                        x + 585f,
+                        y,
+                        150f,
+                        26f
+                    ),
+                    networkPlayer != null &&
+                    networkPlayer
+                        .LocalInputSeenRecently
+                        ? "DETECTED"
+                        : "-",
+                    labelStyle
+                );
+
+                row++;
+            }
+        }
+
+        private void DrawInfoRow(
+            float x,
+            float y,
+            float width,
+            string label,
+            string value
+        )
+        {
+            GUI.Label(
+                new Rect(
+                    x,
+                    y,
+                    160f,
+                    28f
+                ),
+                label,
+                labelStyle
+            );
 
             GUI.Label(
                 new Rect(
-                    x + 16f,
-                    y + 340f,
-                    width - 32f,
-                    20f
+                    x + 165f,
+                    y,
+                    width - 165f,
+                    28f
                 ),
-                "F2 : 창 표시/숨김 | ALT : 커서 활성화",
+                ": " + value,
                 labelStyle
             );
-#endif
+        }
+
+        private string GetLocalPlayerText()
+        {
+            NetworkRunner runner =
+                bootstrap.Runner;
+
+            if (
+                runner == null ||
+                !runner.IsRunning
+            )
+            {
+                return "-";
+            }
+
+            return
+                "P" +
+                runner.LocalPlayer.AsIndex;
         }
 
         private string GetVisibilityText()
@@ -369,9 +649,35 @@ namespace ProjectJ.Networking.Fusion
                         GUI.skin.label
                     );
 
-                titleStyle.fontSize = 20;
+                titleStyle.fontSize = 25;
                 titleStyle.fontStyle =
                     FontStyle.Bold;
+            }
+
+            if (sectionStyle == null)
+            {
+                sectionStyle =
+                    new GUIStyle(
+                        GUI.skin.label
+                    );
+
+                sectionStyle.fontSize = 19;
+                sectionStyle.fontStyle =
+                    FontStyle.Bold;
+            }
+
+            if (codeStyle == null)
+            {
+                codeStyle =
+                    new GUIStyle(
+                        GUI.skin.textField
+                    );
+
+                codeStyle.fontSize = 22;
+                codeStyle.fontStyle =
+                    FontStyle.Bold;
+                codeStyle.alignment =
+                    TextAnchor.MiddleCenter;
             }
 
             if (labelStyle == null)
@@ -381,7 +687,7 @@ namespace ProjectJ.Networking.Fusion
                         GUI.skin.label
                     );
 
-                labelStyle.fontSize = 15;
+                labelStyle.fontSize = 16;
             }
 
             if (buttonStyle == null)
@@ -391,7 +697,7 @@ namespace ProjectJ.Networking.Fusion
                         GUI.skin.button
                     );
 
-                buttonStyle.fontSize = 14;
+                buttonStyle.fontSize = 16;
                 buttonStyle.fontStyle =
                     FontStyle.Bold;
             }

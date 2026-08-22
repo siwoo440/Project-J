@@ -7968,6 +7968,7 @@ GameObject:
   m_Component:
   - component: {fileID: 729146761}
   - component: {fileID: 729146760}
+  - component: {fileID: 729146762}
   m_Layer: 0
   m_Name: Checkpoint Debug
   m_TagString: Untagged
@@ -7988,6 +7989,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Checkpoint.CheckpointDebugView
   tracker: {fileID: 615563441}
+  showDebug: 1
 --- !u!4 &729146761
 Transform:
   m_ObjectHideFlags: 0
@@ -8003,6 +8005,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &729146762
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 729146759}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a32a6f5c0051460bb6c345a5816b001d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Checkpoint.PlayerCheckpointTracker
+  currentCheckpointId: 0
+  currentCheckpoint: {fileID: 0}
+  respawnPosition: {x: 0, y: 0, z: 0}
+  respawnRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &731481030
 GameObject:
   m_ObjectHideFlags: 0
@@ -13599,7 +13617,7 @@ Transform:
   m_GameObject: {fileID: 1203349386}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.59693056, z: -0, w: 0.80229294}
-  m_LocalPosition: {x: -50, y: 0.05, z: 64}
+  m_LocalPosition: {x: -49, y: 0.05, z: 64.3}
   m_LocalScale: {x: 9, y: 0.12, z: 41.761227}
   m_ConstrainProportionsScale: 0
   m_Children: []

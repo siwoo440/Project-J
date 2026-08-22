@@ -96,6 +96,7 @@ GameObject:
   - component: {fileID: 5043745084545003502}
   - component: {fileID: 6840471923312977405}
   - component: {fileID: 8910137771346665917}
+  - component: {fileID: 1159234304074514054}
   m_Layer: 0
   m_Name: ProjectJNetworkPlayer
   m_TagString: Untagged
@@ -140,6 +141,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 5043745084545003502}
   - {fileID: 6840471923312977405}
+  - {fileID: 1159234304074514054}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &5043745084545003502
 MonoBehaviour:
@@ -216,6 +218,18 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 1, z: 0}
+--- !u!114 &1159234304074514054
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1237611306603437000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c69f7b3a8e7c4d78a70b1fbe713f6069, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ProjectJ.Networking.Fusion.ProjectJNetworkExternalGameplay
 --- !u!1 &9191234116761243835
 GameObject:
   m_ObjectHideFlags: 0

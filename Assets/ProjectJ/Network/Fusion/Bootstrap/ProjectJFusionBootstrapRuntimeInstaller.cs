@@ -17,6 +17,17 @@ namespace ProjectJ.Networking.Fusion
 
             if (existing != null)
             {
+                if (
+                    existing.GetComponent<
+                        ProjectJNetworkLobbyFlow
+                    >() == null
+                )
+                {
+                    existing.gameObject.AddComponent<
+                        ProjectJNetworkLobbyFlow
+                    >(); // 기존 Bootstrap에도 74일차 Flow 보장
+                }
+
                 return;
             }
 
@@ -36,6 +47,10 @@ namespace ProjectJ.Networking.Fusion
             bootstrapObject.AddComponent<
                 ProjectJFusionBootstrapDebugView
             >();
+
+            bootstrapObject.AddComponent<
+                ProjectJNetworkLobbyFlow
+            >(); // Lobby Ready → Game Flow 자동 설치
         }
     }
 }

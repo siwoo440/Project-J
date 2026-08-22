@@ -12,6 +12,9 @@ EditorBuildSettings:
     path: Assets/ProjectJ/Scenes/MainMenu.unity
     guid: 3a7ab95ee820c674ca509b6314c4e2b2
   - enabled: 1
+    path: Assets/ProjectJ/Scenes/Lobby.unity
+    guid: 8f6c7009870b5fa4ca09efc937c34b11
+  - enabled: 1
     path: Assets/ProjectJ/Scenes/Game.unity
     guid: 4e196a2e05bee424f9cddc7dc315c817
   m_configObjects:

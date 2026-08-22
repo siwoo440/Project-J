@@ -4,6 +4,7 @@ using ProjectJ.Checkpoint; // 체크포인트와 낙하 한계 사용
 using ProjectJ.Finish; // FINISH 공통 수신 계약 사용
 using UnityEngine; // Unity 기본 타입 사용
 using UnityEngine.InputSystem; // 개발 테스트 키 사용
+using UnityEngine.SceneManagement; // Lobby / Game Scene 상태 확인
 
 namespace ProjectJ.Networking.Fusion
 {
@@ -24,7 +25,9 @@ namespace ProjectJ.Networking.Fusion
         private const float RespawnProtectionSeconds = 3f; // 부활 보호 시간
         private const float CountdownSeconds = 3f; // 경기 시작 카운트다운
         private const float MatchDurationSeconds = 600f; // 최신 기획 기준 10분 경기
-        private const int AutoStartPlayerCount = 2; // 71일차 Host+Client 자동 시작 기준
+        private const int LobbyMatchMinimumPlayerCount = 2; // 74일차 Ready 경기 시작 최소 인원
+        private const string LobbySceneName = "Lobby"; // Ready를 입력하는 Lobby Scene
+        private const string GameSceneName = "Game"; // 실제 경기 Scene
 
         private static readonly HashSet<ProjectJNetworkExternalGameplay> ActivePlayers =
             new HashSet<ProjectJNetworkExternalGameplay>(); // 현재 프로세스 Player Registry
@@ -195,6 +198,13 @@ namespace ProjectJ.Networking.Fusion
             set;
         }
 
+        [Networked] // 74일차 Lobby Ready 상태 동기화
+        private NetworkBool NetworkLobbyReady
+        {
+            get;
+            set;
+        }
+
         [Networked] // 경기 전체 상태 동기화
         private int NetworkMatchStateValue
         {
@@ -282,6 +292,14 @@ namespace ProjectJ.Networking.Fusion
 
         public float FinishElapsedSeconds =>
             NetworkFinishElapsedSeconds; // 정상 도달 경과 시간 조회
+
+        public bool LobbyReady =>
+            NetworkLobbyReady; // Lobby Ready 상태 조회
+
+        public int LobbyPlayerIndex =>
+            Object != null && Object.IsValid
+                ? Object.InputAuthority.AsIndex
+                : -1; // Lobby Player 번호 조회
 
         public ProjectJNetworkMatchState MatchState
         {
@@ -427,6 +445,7 @@ namespace ProjectJ.Networking.Fusion
             NetworkResultLocked = false; // 결과 잠금 초기화
             NetworkFinalRank = 0; // 최종 순위 초기화
             NetworkFinishElapsedSeconds = -1f; // FINISH 시간 초기화
+            NetworkLobbyReady = false; // Lobby 최초 Ready 해제
             NetworkMatchStateValue = (int)ProjectJNetworkMatchState.Preparing; // 경기 상태 초기화
             NetworkCountdownTimer = TickTimer.None; // 카운트다운 초기화
             NetworkMatchTimer = TickTimer.None; // 경기 타이머 초기화
@@ -458,19 +477,29 @@ namespace ProjectJ.Networking.Fusion
 
             if (
                 keyboard.rKey.wasPressedThisFrame &&
+                IsLobbySceneActive()
+            )
+            {
+                RequestToggleLobbyReady(); // Lobby에서는 R로 Ready 전환
+                return; // 같은 입력을 수동 부활로 사용하지 않음
+            }
+
+            if (
+                keyboard.rKey.wasPressedThisFrame &&
                 GameplayInputAllowed
             )
             {
-                RequestManualRespawn(); // R 직접 부활 테스트
+                RequestManualRespawn(); // Game에서는 R 직접 부활 테스트
             }
 
             if (
                 keyboard.f5Key.wasPressedThisFrame &&
+                IsGameSceneActive() &&
                 Object.HasStateAuthority &&
                 GetMatchCoordinator() == this
             )
             {
-                BeginCountdownAuthority(); // F5 단독 테스트 경기 시작
+                BeginCountdownAuthority(); // F5 단독 Game Scene 테스트 경기 시작
             }
 
             if (
@@ -583,6 +612,152 @@ namespace ProjectJ.Networking.Fusion
             return true;
         }
 
+        public void RequestToggleLobbyReady()
+        {
+            if (
+                Object == null ||
+                !Object.IsValid ||
+                !Object.HasInputAuthority ||
+                !IsLobbySceneActive() ||
+                MatchState != ProjectJNetworkMatchState.Preparing
+            )
+            {
+                return; // Lobby의 Preparing 상태에서만 Ready 변경 허용
+            }
+
+            if (Object.HasStateAuthority)
+            {
+                ToggleLobbyReadyAuthority(); // Host 자신의 Ready 직접 변경
+                return;
+            }
+
+            RPC_RequestToggleLobbyReady(); // Client Ready 변경 요청
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_RequestToggleLobbyReady()
+        {
+            if (
+                !IsLobbySceneActive() ||
+                MatchState != ProjectJNetworkMatchState.Preparing
+            )
+            {
+                return; // State Authority에서 Lobby 상태 재검증
+            }
+
+            ToggleLobbyReadyAuthority(); // Client의 Ready 상태 확정
+        }
+
+        public bool PrepareForGameSceneAuthority(
+            Vector3 spawnPosition,
+            Quaternion spawnRotation
+        )
+        {
+            if (
+                Object == null ||
+                !Object.IsValid ||
+                !Object.HasStateAuthority ||
+                !IsGameSceneActive()
+            )
+            {
+                return false; // Host의 Game Scene 준비에서만 허용
+            }
+
+            ResolveReferences(); // 이동·아이템 참조 보정
+
+            NetworkExternalVelocity = Vector3.zero; // Lobby에서 남은 외력 제거
+            NetworkLastExternalForceSource =
+                (int)ProjectJExternalForceSource.None; // 외력 원인 초기화
+            NetworkPushCooldown = TickTimer.None; // Push 쿨타임 초기화
+            NetworkRespawnProtectionTimer = TickTimer.None; // 보호 상태 초기화
+            NetworkCheckpointId = (int)CheckpointId.Start; // 시작 체크포인트로 복원
+            NetworkRespawnPosition = spawnPosition; // 시작 부활 위치 저장
+            NetworkRespawnEulerAngles = spawnRotation.eulerAngles; // 시작 회전 저장
+            NetworkLobbyReady = false; // Game 진입 후 Lobby Ready 제거
+
+            if (itemInventory != null)
+            {
+                itemInventory.ClearAuthority(); // 경기 시작 전 아이템 상태 초기화
+            }
+
+            if (networkPlayer != null)
+            {
+                networkPlayer.ResetMotionForRespawn(); // 이동 상태 초기화
+            }
+
+            if (networkTransform != null)
+            {
+                networkTransform.Teleport(
+                    spawnPosition,
+                    spawnRotation
+                ); // Network Player를 경기 시작 위치로 이동
+            }
+            else
+            {
+                transform.SetPositionAndRotation(
+                    spawnPosition,
+                    spawnRotation
+                ); // NetworkTransform 누락 대비
+            }
+
+            NetworkRaceHeight = TruncateHeight(spawnPosition.y); // 시작 높이 저장
+            NetworkBestRaceHeight = NetworkRaceHeight; // 최고 높이 초기화
+
+            return true;
+        }
+
+        public bool TryBeginCountdownFromLobbyFlowAuthority()
+        {
+            if (
+                Object == null ||
+                !Object.IsValid ||
+                !Object.HasStateAuthority ||
+                !IsGameSceneActive() ||
+                GetActivePlayerCount() < LobbyMatchMinimumPlayerCount
+            )
+            {
+                return false; // 최소 인원과 Game Scene 조건 확인
+            }
+
+            ProjectJNetworkExternalGameplay coordinator =
+                GetMatchCoordinator(); // 경기 Coordinator 조회
+
+            if (
+                coordinator == null ||
+                !coordinator.Object.HasStateAuthority
+            )
+            {
+                return false; // Host Coordinator 누락
+            }
+
+            coordinator.BeginCountdownAuthority(); // Ready Flow 승인 후 Countdown 시작
+
+            return
+                coordinator.MatchState ==
+                ProjectJNetworkMatchState.Countdown; // 실제 시작 여부 반환
+        }
+
+        private void ToggleLobbyReadyAuthority()
+        {
+            if (
+                !Object.HasStateAuthority ||
+                !IsLobbySceneActive() ||
+                MatchState != ProjectJNetworkMatchState.Preparing
+            )
+            {
+                return; // Host의 유효한 Lobby 상태만 변경
+            }
+
+            NetworkLobbyReady = !NetworkLobbyReady; // Ready 토글
+
+            Debug.Log(
+                "[Project J/Fusion] 74일차 Lobby Ready / P" +
+                Object.InputAuthority.AsIndex +
+                " / " +
+                (NetworkLobbyReady ? "READY" : "NOT READY")
+            );
+        }
+
         public void RequestManualRespawn()
         {
             if (
@@ -669,12 +844,7 @@ namespace ProjectJ.Networking.Fusion
 
             if (state == ProjectJNetworkMatchState.Preparing)
             {
-                if (GetActivePlayerCount() >= AutoStartPlayerCount)
-                {
-                    BeginCountdownAuthority(); // 2인 이상 자동 카운트다운 시작
-                }
-
-                return;
+                return; // 74일차부터 Lobby Ready Flow가 Countdown 시작을 승인
             }
 
             if (
@@ -802,6 +972,7 @@ namespace ProjectJ.Networking.Fusion
                 candidate.NetworkResultLocked = false; // 결과 잠금 초기화
                 candidate.NetworkFinalRank = 0; // 최종 순위 초기화
                 candidate.NetworkFinishElapsedSeconds = -1f; // FINISH 시간 초기화
+                candidate.NetworkLobbyReady = false; // 경기 진입 후 Lobby Ready 초기화
                 candidate.ResolveReferences(); // Player 참조 보정
 
                 if (candidate.networkPlayer != null)
@@ -1389,6 +1560,24 @@ namespace ProjectJ.Networking.Fusion
             }
 
             return coordinator;
+        }
+
+        private static bool IsLobbySceneActive()
+        {
+            Scene activeScene = SceneManager.GetActiveScene();
+
+            return
+                activeScene.IsValid() &&
+                activeScene.name == LobbySceneName; // Lobby Scene 여부
+        }
+
+        private static bool IsGameSceneActive()
+        {
+            Scene activeScene = SceneManager.GetActiveScene();
+
+            return
+                activeScene.IsValid() &&
+                activeScene.name == GameSceneName; // Game Scene 여부
         }
 
         private static float GetRemainingTime(

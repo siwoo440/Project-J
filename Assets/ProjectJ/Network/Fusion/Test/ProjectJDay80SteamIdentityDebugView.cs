@@ -17,7 +17,7 @@ namespace ProjectJ.Networking.Fusion
             day79DebugView;
 
         private bool visible =
-            true;
+            false; // 81일차부터 기본 화면은 F8 Steam Invite 사용
 
         [RuntimeInitializeOnLoadMethod(
             RuntimeInitializeLoadType.AfterSceneLoad

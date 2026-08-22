@@ -90,7 +90,7 @@ namespace ProjectJ.Networking.Fusion
                     560f,
                     34f
                 ),
-                "Project J - Fusion 67일차",
+                "Project J - Fusion 68일차",
                 titleStyle
             );
 
@@ -317,25 +317,41 @@ namespace ProjectJ.Networking.Fusion
                 )
             );
 
+            DrawInfoRow(
+                left,
+                y + 684f,
+                contentWidth,
+                "Local Presentation",
+                GetLocalPresentationPlayerText()
+            );
+
+            DrawInfoRow(
+                left,
+                y + 712f,
+                contentWidth,
+                "Camera / UI / Audio",
+                GetLocalPresentationStateText()
+            );
+
             GUI.Label(
                 new Rect(
                     left,
-                    y + 696f,
+                    y + 742f,
                     contentWidth,
                     28f
                 ),
-                "Crouch · Collider · Sprint / Jump",
+                "Local Owner · Crouch · Sprint / Jump",
                 sectionStyle
             );
 
             DrawInterpolationHeader(
                 left,
-                y + 730f
+                y + 770f
             );
 
             DrawPlayerRows(
                 left,
-                y + 759f
+                y + 794f
             );
 
             GUI.enabled =
@@ -515,6 +531,70 @@ namespace ProjectJ.Networking.Fusion
             return networkPlayer;
         }
 
+        private static string
+            GetLocalPresentationPlayerText()
+        {
+            ProjectJLocalPlayerPresentationController
+                controller =
+                    ProjectJLocalPlayerPresentationController
+                        .Instance;
+
+            if (
+                controller == null ||
+                !controller.IsBound ||
+                controller.BoundPlayer == null
+            )
+            {
+                return "-";
+            }
+
+            return
+                "P" +
+                controller
+                    .BoundPlayer
+                    .Owner
+                    .AsIndex;
+        }
+
+        private static string
+            GetLocalPresentationStateText()
+        {
+            ProjectJLocalPlayerPresentationController
+                controller =
+                    ProjectJLocalPlayerPresentationController
+                        .Instance;
+
+            if (controller == null)
+            {
+                return "Controller 없음";
+            }
+
+            return
+                "Camera " +
+                BoolText(
+                    controller.CameraBound
+                ) +
+                "   UI " +
+                BoolText(
+                    controller.LocalUiBound
+                ) +
+                "   Audio " +
+                BoolText(
+                    controller.AudioListenerBound
+                ) +
+                "   Suspended Cameras " +
+                controller.SuspendedCameraCount;
+        }
+
+        private static string BoolText(
+            bool value
+        )
+        {
+            return value
+                ? "TRUE"
+                : "-";
+        }
+
         private string GetResimulationCountText(
             ProjectJNetworkPlayer player
         )
@@ -640,7 +720,7 @@ namespace ProjectJ.Networking.Fusion
 
                 float y =
                     startY +
-                    row * 24f;
+                    row * 20f;
 
                 NetworkObject playerObject =
                     null;
@@ -843,7 +923,7 @@ namespace ProjectJ.Networking.Fusion
                     x,
                     y,
                     width,
-                    24f
+                    20f
                 ),
                 value,
                 smallStyle

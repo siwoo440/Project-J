@@ -79,7 +79,6 @@ namespace ProjectJ.Networking.Fusion
             new Collider[16];
 
         private Material runtimeMaterial;
-        private RenderTexture authorityCameraTexture;
 
         private float inputPulseUntil;
 
@@ -399,6 +398,14 @@ namespace ProjectJ.Networking.Fusion
             ApplyColliderPosture();
             ApplyCrouchPresentation();
 
+            if (Object.HasInputAuthority)
+            {
+                ProjectJLocalPlayerPresentationController
+                    .BindLocalPlayer(
+                        this
+                    );
+            }
+
             Debug.Log(
                 "[Project J/Fusion] " +
                 "Network Player 연결 / " +
@@ -411,6 +418,17 @@ namespace ProjectJ.Networking.Fusion
                 " / NetworkTransform: " +
                 HasNetworkTransform
             );
+        }
+
+        public override void Despawned(
+            NetworkRunner runner,
+            bool hasState
+        )
+        {
+            ProjectJLocalPlayerPresentationController
+                .UnbindLocalPlayer(
+                    this
+                );
         }
 
         public override void FixedUpdateNetwork()
@@ -1163,61 +1181,26 @@ namespace ProjectJ.Networking.Fusion
                 return;
             }
 
-            if (!isLocalOwner)
-            {
-                authorityCamera.enabled =
-                    false;
-
-                authorityCamera.targetTexture =
-                    null;
-
-                return;
-            }
-
-            authorityCameraTexture =
-                new RenderTexture(
-                    16,
-                    16,
-                    24,
-                    RenderTextureFormat.ARGB32
-                );
-
-            authorityCameraTexture.name =
-                "ProjectJ_AuthorityCamera_" +
-                Object.InputAuthority.AsIndex;
-
-            authorityCameraTexture.Create();
-
-            authorityCamera.cullingMask =
-                0;
+            authorityCamera.enabled =
+                false;
 
             authorityCamera.targetTexture =
-                authorityCameraTexture;
-
-            authorityCamera.enabled =
-                true;
+                null;
         }
 
         private void OnDestroy()
         {
+            ProjectJLocalPlayerPresentationController
+                .UnbindLocalPlayer(
+                    this
+                );
+
             if (authorityCamera != null)
             {
                 authorityCamera.enabled =
                     false;
 
                 authorityCamera.targetTexture =
-                    null;
-            }
-
-            if (authorityCameraTexture != null)
-            {
-                authorityCameraTexture.Release();
-
-                Destroy(
-                    authorityCameraTexture
-                );
-
-                authorityCameraTexture =
                     null;
             }
 

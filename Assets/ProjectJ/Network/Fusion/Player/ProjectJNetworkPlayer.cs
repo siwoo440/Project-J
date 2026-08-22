@@ -15,6 +15,18 @@ namespace ProjectJ.Networking.Fusion
         private const float BaseMoveSpeed =
             5f;
 
+        private const float JumpVelocity =
+            7f;
+
+        private const float Gravity =
+            -20f;
+
+        private const float GroundProbeStartHeight =
+            0.15f;
+
+        private const float GroundProbeDistance =
+            0.25f;
+
         private Renderer visualRenderer;
         private Camera authorityCamera;
         private NetworkTransform networkTransform;
@@ -30,6 +42,20 @@ namespace ProjectJ.Networking.Fusion
 
         private bool hasRenderPosition;
         private Vector3 previousRenderPosition;
+
+        [Networked]
+        private float NetworkVerticalVelocity
+        {
+            get;
+            set;
+        }
+
+        [Networked]
+        private NetworkBool NetworkGrounded
+        {
+            get;
+            set;
+        }
 
         public PlayerRef Owner =>
             Object != null &&
@@ -141,6 +167,18 @@ namespace ProjectJ.Networking.Fusion
 
         public float MovementSpeed =>
             BaseMoveSpeed;
+
+        public float VerticalVelocity =>
+            NetworkVerticalVelocity;
+
+        public bool IsGrounded =>
+            NetworkGrounded;
+
+        public float JumpSpeed =>
+            JumpVelocity;
+
+        public float GravityAcceleration =>
+            Gravity;
 
         public bool InputSeenRecently =>
             Time.unscaledTime <
@@ -292,17 +330,104 @@ namespace ProjectJ.Networking.Fusion
             LastReceivedTick =
                 Runner.Tick.ToString();
 
-            Vector3 moveDirection =
-                new Vector3(
-                    moveInput.x,
-                    0f,
-                    moveInput.y
+            float deltaTime =
+                Runner.DeltaTime;
+
+            bool groundedBeforeMove =
+                TryGetGroundHeight(
+                    transform.position,
+                    GroundProbeDistance,
+                    out float groundHeight
                 );
 
-            transform.position +=
-                moveDirection *
+            if (
+                groundedBeforeMove &&
+                NetworkVerticalVelocity <=
+                    0f
+            )
+            {
+                Vector3 groundedPosition =
+                    transform.position;
+
+                groundedPosition.y =
+                    groundHeight;
+
+                transform.position =
+                    groundedPosition;
+
+                NetworkVerticalVelocity =
+                    0f;
+
+                NetworkGrounded =
+                    true;
+            }
+            else
+            {
+                NetworkGrounded =
+                    false;
+            }
+
+            if (
+                LastReceivedJump &&
+                NetworkGrounded
+            )
+            {
+                NetworkVerticalVelocity =
+                    JumpVelocity;
+
+                NetworkGrounded =
+                    false;
+            }
+
+            if (!NetworkGrounded)
+            {
+                NetworkVerticalVelocity +=
+                    Gravity *
+                    deltaTime;
+            }
+
+            Vector3 currentPosition =
+                transform.position;
+
+            Vector3 nextPosition =
+                currentPosition;
+
+            nextPosition.x +=
+                moveInput.x *
                 BaseMoveSpeed *
-                Runner.DeltaTime;
+                deltaTime;
+
+            nextPosition.z +=
+                moveInput.y *
+                BaseMoveSpeed *
+                deltaTime;
+
+            nextPosition.y +=
+                NetworkVerticalVelocity *
+                deltaTime;
+
+            if (
+                NetworkVerticalVelocity <=
+                    0f &&
+                TryGetLandingGroundHeight(
+                    currentPosition,
+                    nextPosition,
+                    out float landingHeight
+                )
+            )
+            {
+                nextPosition.y =
+                    landingHeight;
+
+                NetworkVerticalVelocity =
+                    0f;
+
+                NetworkGrounded =
+                    true;
+            }
+
+            transform.position =
+                nextPosition;
 
             LastSimulationPosition =
                 transform.position;
@@ -320,6 +445,94 @@ namespace ProjectJ.Networking.Fusion
                     Time.unscaledTime +
                     InputPulseDuration;
             }
+        }
+
+        private static bool TryGetGroundHeight(
+            Vector3 position,
+            float probeDistance,
+            out float groundHeight
+        )
+        {
+            Vector3 origin =
+                position +
+                Vector3.up *
+                GroundProbeStartHeight;
+
+            float castDistance =
+                GroundProbeStartHeight +
+                probeDistance;
+
+            if (
+                Physics.Raycast(
+                    origin,
+                    Vector3.down,
+                    out RaycastHit hit,
+                    castDistance,
+                    Physics.AllLayers,
+                    QueryTriggerInteraction.Ignore
+                )
+            )
+            {
+                groundHeight =
+                    hit.point.y;
+
+                return true;
+            }
+
+            groundHeight =
+                0f;
+
+            return false;
+        }
+
+        private static bool
+            TryGetLandingGroundHeight(
+                Vector3 currentPosition,
+                Vector3 nextPosition,
+                out float groundHeight
+            )
+        {
+            float downwardTravel =
+                Mathf.Max(
+                    0f,
+                    currentPosition.y -
+                    nextPosition.y
+                );
+
+            Vector3 origin =
+                new Vector3(
+                    nextPosition.x,
+                    currentPosition.y +
+                        GroundProbeStartHeight,
+                    nextPosition.z
+                );
+
+            float castDistance =
+                GroundProbeStartHeight +
+                downwardTravel +
+                GroundProbeDistance;
+
+            if (
+                Physics.Raycast(
+                    origin,
+                    Vector3.down,
+                    out RaycastHit hit,
+                    castDistance,
+                    Physics.AllLayers,
+                    QueryTriggerInteraction.Ignore
+                )
+            )
+            {
+                groundHeight =
+                    hit.point.y;
+
+                return true;
+            }
+
+            groundHeight =
+                0f;
+
+            return false;
         }
 
         private void LateUpdate()

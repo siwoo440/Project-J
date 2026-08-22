@@ -90,7 +90,7 @@ namespace ProjectJ.Networking.Fusion
                     560f,
                     34f
                 ),
-                "Project J - Fusion 64일차",
+                "Project J - Fusion 65일차",
                 titleStyle
             );
 
@@ -324,7 +324,7 @@ namespace ProjectJ.Networking.Fusion
                     contentWidth,
                     28f
                 ),
-                "Remote NetworkTransform Interpolation",
+                "Jump · Gravity · Remote Interpolation",
                 sectionStyle
             );
 
@@ -414,40 +414,54 @@ namespace ProjectJ.Networking.Fusion
             DrawSmall(
                 x + 60f,
                 y,
-                150f,
+                130f,
                 "Role"
             );
 
             DrawSmall(
-                x + 210f,
+                x + 190f,
                 y,
-                240f,
-                "Simulation Position"
+                90f,
+                "Ground"
             );
 
             DrawSmall(
-                x + 450f,
+                x + 280f,
                 y,
-                240f,
-                "Render Position"
+                110f,
+                "Vertical V"
             );
 
             DrawSmall(
-                x + 690f,
+                x + 390f,
                 y,
                 120f,
+                "Sim Y"
+            );
+
+            DrawSmall(
+                x + 510f,
+                y,
+                120f,
+                "Render Y"
+            );
+
+            DrawSmall(
+                x + 630f,
+                y,
+                110f,
                 "Offset"
             );
 
             DrawSmall(
-                x + 810f,
+                x + 740f,
                 y,
                 120f,
                 "Render Δ"
             );
 
             DrawSmall(
-                x + 930f,
+                x + 860f,
                 y,
                 160f,
                 "Interpolation"
@@ -645,40 +659,61 @@ namespace ProjectJ.Networking.Fusion
                 DrawSmall(
                     x + 60f,
                     y,
-                    150f,
+                    130f,
                     GetInterpolationRoleText(
                         networkPlayer
                     )
                 );
 
                 DrawSmall(
-                    x + 210f,
+                    x + 190f,
                     y,
-                    240f,
-                    networkPlayer != null
-                        ? FormatPosition(
-                            networkPlayer
-                                .LastSimulationPosition
-                        )
+                    90f,
+                    networkPlayer != null &&
+                    networkPlayer.IsGrounded
+                        ? "TRUE"
                         : "-"
                 );
 
                 DrawSmall(
-                    x + 450f,
+                    x + 280f,
                     y,
-                    240f,
+                    110f,
                     networkPlayer != null
-                        ? FormatPosition(
-                            networkPlayer
-                                .LastRenderPosition
-                        )
+                        ? networkPlayer
+                            .VerticalVelocity
+                            .ToString("0.00")
                         : "-"
                 );
 
                 DrawSmall(
-                    x + 690f,
+                    x + 390f,
                     y,
                     120f,
+                    networkPlayer != null
+                        ? networkPlayer
+                            .LastSimulationPosition
+                            .y
+                            .ToString("0.00")
+                        : "-"
+                );
+
+                DrawSmall(
+                    x + 510f,
+                    y,
+                    120f,
+                    networkPlayer != null
+                        ? networkPlayer
+                            .LastRenderPosition
+                            .y
+                            .ToString("0.00")
+                        : "-"
+                );
+
+                DrawSmall(
+                    x + 630f,
+                    y,
+                    110f,
                     networkPlayer != null
                         ? networkPlayer
                             .RenderSimulationOffset
@@ -687,7 +722,7 @@ namespace ProjectJ.Networking.Fusion
                 );
 
                 DrawSmall(
-                    x + 810f,
+                    x + 740f,
                     y,
                     120f,
                     networkPlayer != null
@@ -698,7 +733,7 @@ namespace ProjectJ.Networking.Fusion
                 );
 
                 DrawSmall(
-                    x + 930f,
+                    x + 860f,
                     y,
                     160f,
                     GetInterpolationStateText(

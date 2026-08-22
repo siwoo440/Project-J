@@ -1,4 +1,4 @@
-using System.Collections.Generic; // 보존한 Player Instance ID 저장
+using System.Collections.Generic; // 보존 Player Instance ID 저장
 using Fusion; // NetworkRunner와 SceneRef 사용
 using UnityEngine; // MonoBehaviour와 GUI 사용
 using UnityEngine.SceneManagement; // Scene 로드와 Build Index 확인
@@ -7,14 +7,15 @@ namespace ProjectJ.Networking.Fusion
 {
     public enum ProjectJNetworkLobbyFlowPhase
     {
-        Disconnected = 0, // Session 연결 전
-        EnteringLobby = 1, // Host가 Lobby Scene으로 이동 중
-        Lobby = 2, // Ready 대기
-        MatchLoading = 3, // 전원 Ready 후 Game Scene 로딩
-        GamePreparing = 4, // Game Player 시작 위치 준비
-        Countdown = 5, // 기존 3초 Countdown
-        Playing = 6, // 경기 진행
-        Finished = 7 // 경기 종료
+        Disconnected = 0,
+        EnteringLobby = 1,
+        Lobby = 2,
+        MatchLoading = 3,
+        GamePreparing = 4,
+        Countdown = 5,
+        Playing = 6,
+        Finished = 7,
+        ReturningToLobby = 8
     }
 
     [DisallowMultipleComponent]
@@ -28,28 +29,43 @@ namespace ProjectJ.Networking.Fusion
         private const string GameScenePath =
             "Assets/ProjectJ/Scenes/Game.unity";
 
-        private const string LobbySceneName = "Lobby";
-        private const string GameSceneName = "Game";
-        private const string DirectTestSceneName =
-            "Day49_AllSystemsTest"; // 75일차 멀티플레이 통합 테스트 Scene
+        private const string LobbySceneName =
+            "Lobby";
 
-        private const bool DirectGameTestMode = true; // 방 생성·참가 후 Lobby를 건너뛰고 Day49 테스트 Scene으로 바로 이동
-        private const int MinimumReadyPlayers = 2;
-        private const float SpawnSpacing = 3f;
-        private const float SpawnY = 2f;
-        private const float SpawnZ = 4f;
+        private const string GameSceneName =
+            "Game";
 
-        private readonly HashSet<int> persistedPlayerInstanceIds =
-            new HashSet<int>(); // Scene 전환 전에 Player DDOL 처리 기록
+        private const int MinimumReadyPlayers =
+            2;
+
+        private const float SpawnSpacing =
+            3f;
+
+        private const float SpawnY =
+            2f;
+
+        private const float SpawnZ =
+            4f;
+
+        private readonly HashSet<int>
+            persistedPlayerInstanceIds =
+                new HashSet<int>();
 
         private ProjectJFusionBootstrap bootstrap;
+
         private NetworkRunner trackedRunner;
 
         private bool lobbyLoadRequested;
+
         private bool enteredLobby;
+
         private bool gameLoadRequested;
+
         private bool gamePlayersPrepared;
+
         private bool countdownRequested;
+
+        private bool returnToLobbyRequested;
 
         public ProjectJNetworkLobbyFlowPhase Phase
         {
@@ -74,7 +90,21 @@ namespace ProjectJ.Networking.Fusion
         {
             get;
             private set;
-        } = "Session 연결 대기";
+        } =
+            "Session 연결 대기";
+
+        public bool CanReturnToLobby
+        {
+            get
+            {
+                return
+                    trackedRunner != null &&
+                    trackedRunner.IsRunning &&
+                    trackedRunner.IsSceneAuthority &&
+                    Phase ==
+                        ProjectJNetworkLobbyFlowPhase.Finished;
+            }
+        }
 
         private void Awake()
         {
@@ -104,153 +134,67 @@ namespace ProjectJ.Networking.Fusion
 
             if (trackedRunner != runner)
             {
-                ResetForNewRunner(runner);
+                ResetForNewRunner(
+                    runner
+                );
             }
 
-            PersistRunnerAndPlayers(runner);
+            PersistRunnerAndPlayers(
+                runner
+            );
 
             Scene activeScene =
                 SceneManager.GetActiveScene();
 
-            if (DirectGameTestMode)
-            {
-                UpdateDirectGameTest(
-                    runner,
-                    activeScene
-                ); // 멀티 테스트 중에는 Lobby 없이 Game으로 바로 이동
-                return;
-            }
-
             if (
                 activeScene.IsValid() &&
-                activeScene.name == LobbySceneName
+                activeScene.name ==
+                    LobbySceneName
             )
             {
-                enteredLobby = true;
-                lobbyLoadRequested = false;
+                enteredLobby =
+                    true;
 
-                UpdateLobby(runner);
-                return;
-            }
+                lobbyLoadRequested =
+                    false;
 
-            if (
-                activeScene.IsValid() &&
-                activeScene.name == GameSceneName &&
-                enteredLobby
-            )
-            {
-                UpdateGame(runner);
-                return;
-            }
+                returnToLobbyRequested =
+                    false;
 
-            UpdateEnteringLobby(runner);
-        }
-
-        private void UpdateDirectGameTest(
-            NetworkRunner runner,
-            Scene activeScene
-        )
-        {
-            if (
-                activeScene.IsValid() &&
-                activeScene.name == DirectTestSceneName
-            )
-            {
-                UpdateGame(runner); // Day49 테스트 Scene에서도 기존 Player 준비·Countdown 흐름 재사용
-                return;
-            }
-
-            Phase =
-                ProjectJNetworkLobbyFlowPhase.MatchLoading;
-
-            StatusText =
-                "Day49_AllSystemsTest 진입";
-
-            if (
-                !runner.IsSceneAuthority ||
-                gameLoadRequested
-            )
-            {
-                return; // Host Scene Authority만 Game 로드 요청
-            }
-
-            int testSceneBuildIndex =
-                FindBuildSceneIndexByName(
-                    DirectTestSceneName
-                ); // Build Settings에서 Day49 테스트 Scene 탐색
-
-            if (testSceneBuildIndex < 0)
-            {
-                StatusText =
-                    "Day49_AllSystemsTest가 Build Settings에 없습니다.";
-
-                Debug.LogError(
-                    "[Project J/Fusion] 75일차 Direct Test / Day49_AllSystemsTest Build Index 없음"
+                UpdateLobby(
+                    runner
                 );
 
                 return;
             }
 
-            gameLoadRequested = true;
+            if (
+                activeScene.IsValid() &&
+                activeScene.name ==
+                    GameSceneName &&
+                enteredLobby
+            )
+            {
+                UpdateGame(
+                    runner
+                );
 
-            runner.LoadScene(
-                SceneRef.FromIndex(testSceneBuildIndex),
-                LoadSceneMode.Single
-            ); // Host가 Day49 테스트 Scene을 로드하고 Client는 Fusion Scene 동기화로 따라감
+                return;
+            }
 
-            Debug.Log(
-                "[Project J/Fusion] 75일차 Direct Test / Day49_AllSystemsTest Scene 로드 요청"
+            UpdateEnteringLobby(
+                runner
             );
         }
 
-        private static int FindBuildSceneIndexByName(
-            string sceneName
-        )
+        public bool RequestReturnToLobby()
         {
-            int sceneCount =
-                SceneManager.sceneCountInBuildSettings;
-
-            for (
-                int index = 0;
-                index < sceneCount;
-                index++
-            )
+            if (!CanReturnToLobby)
             {
-                string scenePath =
-                    SceneUtility.GetScenePathByBuildIndex(
-                        index
-                    );
+                StatusText =
+                    "Host가 경기 종료 후에만 Lobby로 돌아갈 수 있습니다.";
 
-                if (
-                    scenePath.EndsWith(
-                        "/" + sceneName + ".unity",
-                        System.StringComparison.OrdinalIgnoreCase
-                    )
-                )
-                {
-                    return index; // 정확한 Scene 이름의 Build Index 반환
-                }
-            }
-
-            return -1; // Build Settings에 대상 Scene 없음
-        }
-
-        private void UpdateEnteringLobby(
-            NetworkRunner runner
-        )
-        {
-            Phase =
-                ProjectJNetworkLobbyFlowPhase.EnteringLobby;
-
-            StatusText =
-                "Lobby Scene 진입 대기";
-
-            if (
-                !runner.IsSceneAuthority ||
-                lobbyLoadRequested
-            )
-            {
-                return; // Scene Authority Host만 최초 Lobby 로드
+                return false;
             }
 
             int lobbyBuildIndex =
@@ -264,21 +208,110 @@ namespace ProjectJ.Networking.Fusion
                     "Lobby Scene이 Build Settings에 없습니다.";
 
                 Debug.LogError(
-                    "[Project J/Fusion] 74일차 Lobby Build Index 없음"
+                    "[Project J/Fusion] 82일차 / Lobby 복귀 Build Index 없음"
+                );
+
+                return false;
+            }
+
+            if (
+                trackedRunner.SessionInfo.IsValid
+            )
+            {
+                trackedRunner.SessionInfo.IsOpen =
+                    true;
+            }
+
+            returnToLobbyRequested =
+                true;
+
+            lobbyLoadRequested =
+                true;
+
+            enteredLobby =
+                false;
+
+            gameLoadRequested =
+                false;
+
+            gamePlayersPrepared =
+                false;
+
+            countdownRequested =
+                false;
+
+            ReadyPlayerCount =
+                0;
+
+            Phase =
+                ProjectJNetworkLobbyFlowPhase
+                    .ReturningToLobby;
+
+            StatusText =
+                "경기 종료 / Lobby 복귀 중";
+
+            trackedRunner.LoadScene(
+                SceneRef.FromIndex(
+                    lobbyBuildIndex
+                ),
+                LoadSceneMode.Single
+            );
+
+            Debug.Log(
+                "[Project J/Fusion] 82일차 / Game → Lobby 복귀 요청"
+            );
+
+            return true;
+        }
+
+        private void UpdateEnteringLobby(
+            NetworkRunner runner
+        )
+        {
+            Phase =
+                ProjectJNetworkLobbyFlowPhase
+                    .EnteringLobby;
+
+            StatusText =
+                "Lobby Scene 진입 대기";
+
+            if (
+                !runner.IsSceneAuthority ||
+                lobbyLoadRequested
+            )
+            {
+                return;
+            }
+
+            int lobbyBuildIndex =
+                SceneUtility.GetBuildIndexByScenePath(
+                    LobbyScenePath
+                );
+
+            if (lobbyBuildIndex < 0)
+            {
+                StatusText =
+                    "Lobby Scene이 Build Settings에 없습니다.";
+
+                Debug.LogError(
+                    "[Project J/Fusion] 82일차 / Lobby Build Index 없음"
                 );
 
                 return;
             }
 
-            lobbyLoadRequested = true;
+            lobbyLoadRequested =
+                true;
 
             runner.LoadScene(
-                SceneRef.FromIndex(lobbyBuildIndex),
+                SceneRef.FromIndex(
+                    lobbyBuildIndex
+                ),
                 LoadSceneMode.Single
-            ); // Host가 Lobby 로드, Client는 Fusion SceneInfo 추종
+            );
 
             Debug.Log(
-                "[Project J/Fusion] 74일차 Lobby Scene 로드 요청"
+                "[Project J/Fusion] 82일차 / Session 연결 후 Lobby Scene 로드 요청"
             );
         }
 
@@ -293,18 +326,24 @@ namespace ProjectJ.Networking.Fusion
                 out bool allPlayerObjectsReady
             );
 
-            ParticipantCount = participantCount;
-            ReadyPlayerCount = readyCount;
+            ParticipantCount =
+                participantCount;
+
+            ReadyPlayerCount =
+                readyCount;
 
             bool allReady =
-                participantCount >= MinimumReadyPlayers &&
+                participantCount >=
+                    MinimumReadyPlayers &&
                 allPlayerObjectsReady &&
-                readyCount == participantCount;
+                readyCount ==
+                    participantCount;
 
             if (allReady)
             {
                 Phase =
-                    ProjectJNetworkLobbyFlowPhase.MatchLoading;
+                    ProjectJNetworkLobbyFlowPhase
+                        .MatchLoading;
 
                 StatusText =
                     "전원 Ready / Game Scene 로딩 준비";
@@ -312,7 +351,8 @@ namespace ProjectJ.Networking.Fusion
             else
             {
                 Phase =
-                    ProjectJNetworkLobbyFlowPhase.Lobby;
+                    ProjectJNetworkLobbyFlowPhase
+                        .Lobby;
 
                 StatusText =
                     "R 키로 Ready 전환";
@@ -324,7 +364,7 @@ namespace ProjectJ.Networking.Fusion
                 !allReady
             )
             {
-                return; // Host만 전원 Ready 후 Game 로드
+                return;
             }
 
             int gameBuildIndex =
@@ -338,7 +378,7 @@ namespace ProjectJ.Networking.Fusion
                     "Game Scene이 Build Settings에 없습니다.";
 
                 Debug.LogError(
-                    "[Project J/Fusion] 74일차 Game Build Index 없음"
+                    "[Project J/Fusion] 82일차 / Game Build Index 없음"
                 );
 
                 return;
@@ -349,18 +389,28 @@ namespace ProjectJ.Networking.Fusion
                 runner.SessionInfo.IsOpen
             )
             {
-                runner.SessionInfo.IsOpen = false; // 경기 시작 후 신규 참가 차단
+                runner.SessionInfo.IsOpen =
+                    false;
             }
 
-            gameLoadRequested = true;
+            gameLoadRequested =
+                true;
+
+            gamePlayersPrepared =
+                false;
+
+            countdownRequested =
+                false;
 
             runner.LoadScene(
-                SceneRef.FromIndex(gameBuildIndex),
+                SceneRef.FromIndex(
+                    gameBuildIndex
+                ),
                 LoadSceneMode.Single
-            ); // Host가 Game 로드, Client 자동 추종
+            );
 
             Debug.Log(
-                "[Project J/Fusion] 74일차 MatchLoading / " +
+                "[Project J/Fusion] 82일차 / Lobby → Game / " +
                 participantCount +
                 "명 전원 Ready"
             );
@@ -371,47 +421,64 @@ namespace ProjectJ.Networking.Fusion
         )
         {
             ParticipantCount =
-                CountParticipants(runner);
+                CountParticipants(
+                    runner
+                );
 
-            ReadyPlayerCount = 0;
+            ReadyPlayerCount =
+                0;
 
             if (!gamePlayersPrepared)
             {
                 Phase =
-                    ProjectJNetworkLobbyFlowPhase.GamePreparing;
+                    ProjectJNetworkLobbyFlowPhase
+                        .GamePreparing;
 
                 StatusText =
                     "Game Player 시작 위치 준비";
 
                 if (!runner.IsSceneAuthority)
                 {
-                    ProjectJNetworkExternalGameplay observedMatch =
-                        GetAnyPlayerGameplay(runner); // Host 경기 상태 수신 확인
+                    ProjectJNetworkExternalGameplay
+                        observedMatch =
+                            GetAnyPlayerGameplay(
+                                runner
+                            );
 
                     if (
                         observedMatch == null ||
                         observedMatch.MatchState ==
-                            ProjectJNetworkMatchState.Preparing
+                            ProjectJNetworkMatchState
+                                .Preparing
                     )
                     {
-                        return; // Host가 Game 준비와 Countdown을 시작할 때까지 대기
+                        return;
                     }
 
-                    gamePlayersPrepared = true; // Client도 Host 준비 완료를 확인
+                    gamePlayersPrepared =
+                        true;
                 }
                 else
                 {
-                    if (!TryPrepareAllPlayers(runner))
+                    if (
+                        !TryPrepareAllPlayers(
+                            runner
+                        )
+                    )
                     {
-                        return; // 모든 PlayerObject가 준비될 때까지 재시도
+                        return;
                     }
 
-                    gamePlayersPrepared = true; // Host Game 준비 완료
+                    gamePlayersPrepared =
+                        true;
                 }
             }
 
-            ProjectJNetworkExternalGameplay localMatch =
-                GetAnyPlayerGameplay(runner);
+            ProjectJNetworkExternalGameplay
+                localMatch =
+                    GetAnyPlayerGameplay(
+                        runner
+                    );
 
             if (
                 runner.IsSceneAuthority &&
@@ -426,7 +493,7 @@ namespace ProjectJ.Networking.Fusion
                 if (countdownRequested)
                 {
                     Debug.Log(
-                        "[Project J/Fusion] 74일차 Game 준비 완료 / Countdown 요청"
+                        "[Project J/Fusion] 82일차 / Game 준비 완료 / Countdown 요청"
                     );
                 }
             }
@@ -434,13 +501,15 @@ namespace ProjectJ.Networking.Fusion
             ProjectJNetworkMatchState matchState =
                 localMatch != null
                     ? localMatch.MatchState
-                    : ProjectJNetworkMatchState.Preparing;
+                    : ProjectJNetworkMatchState
+                        .Preparing;
 
             switch (matchState)
             {
                 case ProjectJNetworkMatchState.Countdown:
                     Phase =
-                        ProjectJNetworkLobbyFlowPhase.Countdown;
+                        ProjectJNetworkLobbyFlowPhase
+                            .Countdown;
 
                     StatusText =
                         "3초 Countdown";
@@ -448,7 +517,8 @@ namespace ProjectJ.Networking.Fusion
 
                 case ProjectJNetworkMatchState.Playing:
                     Phase =
-                        ProjectJNetworkLobbyFlowPhase.Playing;
+                        ProjectJNetworkLobbyFlowPhase
+                            .Playing;
 
                     StatusText =
                         "경기 진행 중";
@@ -456,15 +526,19 @@ namespace ProjectJ.Networking.Fusion
 
                 case ProjectJNetworkMatchState.Finished:
                     Phase =
-                        ProjectJNetworkLobbyFlowPhase.Finished;
+                        ProjectJNetworkLobbyFlowPhase
+                            .Finished;
 
                     StatusText =
-                        "경기 종료";
+                        runner.IsSceneAuthority
+                            ? "경기 종료 / Host가 Lobby 복귀 가능"
+                            : "경기 종료 / Host의 Lobby 복귀 대기";
                     break;
 
                 default:
                     Phase =
-                        ProjectJNetworkLobbyFlowPhase.GamePreparing;
+                        ProjectJNetworkLobbyFlowPhase
+                            .GamePreparing;
 
                     StatusText =
                         "Countdown 시작 대기";
@@ -476,9 +550,14 @@ namespace ProjectJ.Networking.Fusion
             NetworkRunner runner
         )
         {
-            int participantCount = 0;
-            int preparedCount = 0;
-            int slot = 0;
+            int participantCount =
+                0;
+
+            int preparedCount =
+                0;
+
+            int slot =
+                0;
 
             foreach (
                 PlayerRef player
@@ -496,7 +575,7 @@ namespace ProjectJ.Networking.Fusion
                 )
                 {
                     slot++;
-                    continue; // PlayerObject 복제 완료 대기
+                    continue;
                 }
 
                 ProjectJNetworkExternalGameplay gameplay =
@@ -507,21 +586,23 @@ namespace ProjectJ.Networking.Fusion
                 if (gameplay == null)
                 {
                     slot++;
-                    continue; // 필수 Gameplay 누락
+                    continue;
                 }
 
                 Vector3 spawnPosition =
                     new Vector3(
-                        slot * SpawnSpacing,
+                        slot *
+                            SpawnSpacing,
                         SpawnY,
                         SpawnZ
                     );
 
                 if (
-                    gameplay.PrepareForGameSceneAuthority(
-                        spawnPosition,
-                        Quaternion.identity
-                    )
+                    gameplay
+                        .PrepareForGameSceneAuthority(
+                            spawnPosition,
+                            Quaternion.identity
+                        )
                 )
                 {
                     preparedCount++;
@@ -531,19 +612,23 @@ namespace ProjectJ.Networking.Fusion
             }
 
             return
-                participantCount >= MinimumReadyPlayers &&
-                preparedCount == participantCount;
+                participantCount >=
+                    MinimumReadyPlayers &&
+                preparedCount ==
+                    participantCount;
         }
 
         private void PersistRunnerAndPlayers(
             NetworkRunner runner
         )
         {
-            if (runner.gameObject.scene.IsValid())
+            if (
+                runner.gameObject.scene.IsValid()
+            )
             {
                 DontDestroyOnLoad(
                     runner.gameObject
-                ); // 동적 NetworkRunner를 Scene 전환에서 유지
+                );
             }
 
             foreach (
@@ -567,17 +652,18 @@ namespace ProjectJ.Networking.Fusion
                         .GetInstanceID();
 
                 if (
-                    !persistedPlayerInstanceIds.Add(
-                        instanceId
-                    )
+                    !persistedPlayerInstanceIds
+                        .Add(
+                            instanceId
+                        )
                 )
                 {
-                    continue; // 이미 보존한 Player
+                    continue;
                 }
 
                 runner.MakeDontDestroyOnLoad(
                     playerObject.gameObject
-                ); // Runtime Spawn Player를 Lobby→Game에서 유지
+                );
             }
         }
 
@@ -588,9 +674,14 @@ namespace ProjectJ.Networking.Fusion
             out bool allPlayerObjectsReady
         )
         {
-            participantCount = 0;
-            readyCount = 0;
-            allPlayerObjectsReady = true;
+            participantCount =
+                0;
+
+            readyCount =
+                0;
+
+            allPlayerObjectsReady =
+                true;
 
             foreach (
                 PlayerRef player
@@ -607,7 +698,9 @@ namespace ProjectJ.Networking.Fusion
                     playerObject == null
                 )
                 {
-                    allPlayerObjectsReady = false;
+                    allPlayerObjectsReady =
+                        false;
+
                     continue;
                 }
 
@@ -618,7 +711,9 @@ namespace ProjectJ.Networking.Fusion
 
                 if (gameplay == null)
                 {
-                    allPlayerObjectsReady = false;
+                    allPlayerObjectsReady =
+                        false;
+
                     continue;
                 }
 
@@ -633,7 +728,8 @@ namespace ProjectJ.Networking.Fusion
             NetworkRunner runner
         )
         {
-            int count = 0;
+            int count =
+                0;
 
             foreach (
                 PlayerRef player
@@ -664,10 +760,11 @@ namespace ProjectJ.Networking.Fusion
                     playerObject != null
                 )
                 {
-                    ProjectJNetworkExternalGameplay gameplay =
-                        playerObject.GetComponent<
-                            ProjectJNetworkExternalGameplay
-                        >();
+                    ProjectJNetworkExternalGameplay
+                        gameplay =
+                            playerObject.GetComponent<
+                                ProjectJNetworkExternalGameplay
+                            >();
 
                     if (gameplay != null)
                     {
@@ -684,7 +781,9 @@ namespace ProjectJ.Networking.Fusion
             if (bootstrap == null)
             {
                 bootstrap =
-                    GetComponent<ProjectJFusionBootstrap>();
+                    GetComponent<
+                        ProjectJFusionBootstrap
+                    >();
             }
         }
 
@@ -692,20 +791,39 @@ namespace ProjectJ.Networking.Fusion
             NetworkRunner runner
         )
         {
-            trackedRunner = runner;
-            persistedPlayerInstanceIds.Clear();
+            trackedRunner =
+                runner;
 
-            lobbyLoadRequested = false;
-            enteredLobby = false;
-            gameLoadRequested = false;
-            gamePlayersPrepared = false;
-            countdownRequested = false;
+            persistedPlayerInstanceIds
+                .Clear();
 
-            ReadyPlayerCount = 0;
-            ParticipantCount = 0;
+            lobbyLoadRequested =
+                false;
+
+            enteredLobby =
+                false;
+
+            gameLoadRequested =
+                false;
+
+            gamePlayersPrepared =
+                false;
+
+            countdownRequested =
+                false;
+
+            returnToLobbyRequested =
+                false;
+
+            ReadyPlayerCount =
+                0;
+
+            ParticipantCount =
+                0;
 
             Phase =
-                ProjectJNetworkLobbyFlowPhase.EnteringLobby;
+                ProjectJNetworkLobbyFlowPhase
+                    .EnteringLobby;
 
             StatusText =
                 "새 Session / Lobby 진입 준비";
@@ -718,20 +836,39 @@ namespace ProjectJ.Networking.Fusion
                 return;
             }
 
-            trackedRunner = null;
-            persistedPlayerInstanceIds.Clear();
+            trackedRunner =
+                null;
 
-            lobbyLoadRequested = false;
-            enteredLobby = false;
-            gameLoadRequested = false;
-            gamePlayersPrepared = false;
-            countdownRequested = false;
+            persistedPlayerInstanceIds
+                .Clear();
 
-            ReadyPlayerCount = 0;
-            ParticipantCount = 0;
+            lobbyLoadRequested =
+                false;
+
+            enteredLobby =
+                false;
+
+            gameLoadRequested =
+                false;
+
+            gamePlayersPrepared =
+                false;
+
+            countdownRequested =
+                false;
+
+            returnToLobbyRequested =
+                false;
+
+            ReadyPlayerCount =
+                0;
+
+            ParticipantCount =
+                0;
 
             Phase =
-                ProjectJNetworkLobbyFlowPhase.Disconnected;
+                ProjectJNetworkLobbyFlowPhase
+                    .Disconnected;
 
             StatusText =
                 "Session 연결 대기";
@@ -768,7 +905,7 @@ namespace ProjectJ.Networking.Fusion
                     350f,
                     24f
                 ),
-                "DAY 74 LOBBY / MATCH FLOW"
+                "DAY 82 LOBBY / MATCH FLOW"
             );
 
             GUI.Label(
@@ -778,7 +915,8 @@ namespace ProjectJ.Networking.Fusion
                     350f,
                     22f
                 ),
-                "Phase : " + Phase
+                "Phase : " +
+                Phase
             );
 
             GUI.Label(
@@ -804,7 +942,11 @@ namespace ProjectJ.Networking.Fusion
                 StatusText
             );
 
-            if (Phase == ProjectJNetworkLobbyFlowPhase.Lobby)
+            if (
+                Phase ==
+                    ProjectJNetworkLobbyFlowPhase
+                        .Lobby
+            )
             {
                 GUI.Label(
                     new Rect(
@@ -814,6 +956,24 @@ namespace ProjectJ.Networking.Fusion
                         28f
                     ),
                     "R : READY / NOT READY"
+                );
+            }
+            else if (
+                Phase ==
+                    ProjectJNetworkLobbyFlowPhase
+                        .Finished
+            )
+            {
+                GUI.Label(
+                    new Rect(
+                        24f,
+                        124f,
+                        350f,
+                        28f
+                    ),
+                    trackedRunner.IsSceneAuthority
+                        ? "F9 : RETURN TO LOBBY"
+                        : "Host Lobby 복귀 대기"
                 );
             }
 #endif

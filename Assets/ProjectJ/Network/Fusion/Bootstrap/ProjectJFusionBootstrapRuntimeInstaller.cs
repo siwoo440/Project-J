@@ -1,4 +1,4 @@
-using UnityEngine;
+using UnityEngine; // Runtime 구성요소 자동 설치
 
 namespace ProjectJ.Networking.Fusion
 {
@@ -17,27 +17,9 @@ namespace ProjectJ.Networking.Fusion
 
             if (existing != null)
             {
-                if (
-                    existing.GetComponent<
-                        ProjectJNetworkLobbyFlow
-                    >() == null
-                )
-                {
-                    existing.gameObject.AddComponent<
-                        ProjectJNetworkLobbyFlow
-                    >(); // 기존 Bootstrap에도 74일차 Flow 보장
-                }
-
-                if (
-                    existing.GetComponent<
-                        ProjectJPhase6GateDebugView
-                    >() == null
-                )
-                {
-                    existing.gameObject.AddComponent<
-                        ProjectJPhase6GateDebugView
-                    >(); // F3 Phase 6 통합 Gate 자동 설치
-                }
+                EnsureRequiredComponents(
+                    existing.gameObject
+                );
 
                 return;
             }
@@ -61,11 +43,69 @@ namespace ProjectJ.Networking.Fusion
 
             bootstrapObject.AddComponent<
                 ProjectJNetworkLobbyFlow
-            >(); // Lobby Ready → Game Flow 자동 설치
+            >();
 
             bootstrapObject.AddComponent<
                 ProjectJPhase6GateDebugView
-            >(); // F3 Phase 6 통합 Gate 자동 설치
+            >();
+
+            bootstrapObject.AddComponent<
+                ProjectJDay82SceneFlowCoordinator
+            >();
+
+            bootstrapObject.AddComponent<
+                ProjectJDay82SceneFlowDebugView
+            >();
+        }
+
+        private static void
+            EnsureRequiredComponents(
+                GameObject bootstrapObject
+            )
+        {
+            if (
+                bootstrapObject.GetComponent<
+                    ProjectJNetworkLobbyFlow
+                >() == null
+            )
+            {
+                bootstrapObject.AddComponent<
+                    ProjectJNetworkLobbyFlow
+                >();
+            }
+
+            if (
+                bootstrapObject.GetComponent<
+                    ProjectJPhase6GateDebugView
+                >() == null
+            )
+            {
+                bootstrapObject.AddComponent<
+                    ProjectJPhase6GateDebugView
+                >();
+            }
+
+            if (
+                bootstrapObject.GetComponent<
+                    ProjectJDay82SceneFlowCoordinator
+                >() == null
+            )
+            {
+                bootstrapObject.AddComponent<
+                    ProjectJDay82SceneFlowCoordinator
+                >();
+            }
+
+            if (
+                bootstrapObject.GetComponent<
+                    ProjectJDay82SceneFlowDebugView
+                >() == null
+            )
+            {
+                bootstrapObject.AddComponent<
+                    ProjectJDay82SceneFlowDebugView
+                >();
+            }
         }
     }
 }

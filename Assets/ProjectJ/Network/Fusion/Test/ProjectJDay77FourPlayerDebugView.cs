@@ -16,7 +16,7 @@ namespace ProjectJ.Networking.Fusion
         private ProjectJFusionBootstrap bootstrap;
 
         private bool visible =
-            true;
+            false; // 78일차부터 기본 화면은 F5 8인 Gate 사용
 
         [RuntimeInitializeOnLoadMethod(
             RuntimeInitializeLoadType.AfterSceneLoad

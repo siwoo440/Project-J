@@ -1,8 +1,9 @@
-using System.Collections.Generic; // 활성 플레이어 Registry 사용
-using Fusion; // NetworkBehaviour와 Networked 상태 사용
+using System.Collections.Generic; // 활성 Player Registry 사용
+using Fusion; // NetworkBehaviour와 TickTimer 사용
 using ProjectJ.Checkpoint; // 체크포인트와 낙하 한계 사용
+using ProjectJ.Finish; // FINISH 공통 수신 계약 사용
 using UnityEngine; // Unity 기본 타입 사용
-using UnityEngine.InputSystem; // 70일차 직접 부활 테스트 입력 사용
+using UnityEngine.InputSystem; // 개발 테스트 키 사용
 
 namespace ProjectJ.Networking.Fusion
 {
@@ -11,7 +12,8 @@ namespace ProjectJ.Networking.Fusion
     [RequireComponent(typeof(NetworkTransform))] // 네트워크 순간이동 보장
     public sealed class ProjectJNetworkExternalGameplay :
         NetworkBehaviour,
-        ICheckpointReceiver
+        ICheckpointReceiver,
+        IFinishReceiver
     {
         private const float ExternalVelocityDecayPerSecond = 12f; // 외력 초당 감속량
         private const float ExternalVelocityStopThreshold = 0.05f; // 외력 정지 임계값
@@ -20,13 +22,16 @@ namespace ProjectJ.Networking.Fusion
         private const float PushForce = 12f; // 기본 밀치기 힘
         private const float PushCooldownSeconds = 1.5f; // 밀치기 재사용 대기시간
         private const float RespawnProtectionSeconds = 3f; // 부활 보호 시간
+        private const float CountdownSeconds = 3f; // 경기 시작 카운트다운
+        private const float MatchDurationSeconds = 600f; // 최신 기획 기준 10분 경기
+        private const int AutoStartPlayerCount = 2; // 71일차 Host+Client 자동 시작 기준
 
         private static readonly HashSet<ProjectJNetworkExternalGameplay> ActivePlayers =
-            new HashSet<ProjectJNetworkExternalGameplay>(); // 현재 세션 Player Registry
+            new HashSet<ProjectJNetworkExternalGameplay>(); // 현재 프로세스 Player Registry
 
         private ProjectJNetworkPlayer networkPlayer; // 이동 상태 초기화 대상
         private NetworkTransform networkTransform; // 순간이동 동기화 대상
-        private CheckpointFallLimitSet fallLimitSet; // 현재 체크포인트별 낙하 한계
+        private CheckpointFallLimitSet fallLimitSet; // 체크포인트별 낙하 한계
 
         [Networked] // 외부 속도 동기화
         private Vector3 NetworkExternalVelocity
@@ -105,7 +110,7 @@ namespace ProjectJ.Networking.Fusion
             set;
         }
 
-        [Networked] // 부활 회전 Euler 동기화
+        [Networked] // 부활 회전 동기화
         private Vector3 NetworkRespawnEulerAngles
         {
             get;
@@ -140,15 +145,78 @@ namespace ProjectJ.Networking.Fusion
             set;
         }
 
-        [Networked] // 소수점 둘째 자리까지 버린 발 높이 동기화
+        [Networked] // 현재 발 높이 동기화
         private float NetworkRaceHeight
         {
             get;
             set;
         }
 
-        [Networked] // 실시간 경쟁 순위 동기화
+        [Networked] // 경기 중 최고 높이 동기화
+        private float NetworkBestRaceHeight
+        {
+            get;
+            set;
+        }
+
+        [Networked] // 현재 경쟁 순위 동기화
         private int NetworkRaceRank
+        {
+            get;
+            set;
+        }
+
+        [Networked] // 개인 FINISH 여부 동기화
+        private NetworkBool NetworkIsFinished
+        {
+            get;
+            set;
+        }
+
+        [Networked] // 개인 최종 결과 고정 여부 동기화
+        private NetworkBool NetworkResultLocked
+        {
+            get;
+            set;
+        }
+
+        [Networked] // 개인 최종 순위 동기화
+        private int NetworkFinalRank
+        {
+            get;
+            set;
+        }
+
+        [Networked] // 정상 도달 경과 시간 동기화
+        private float NetworkFinishElapsedSeconds
+        {
+            get;
+            set;
+        }
+
+        [Networked] // 경기 전체 상태 동기화
+        private int NetworkMatchStateValue
+        {
+            get;
+            set;
+        }
+
+        [Networked] // 시작 카운트다운 동기화
+        private TickTimer NetworkCountdownTimer
+        {
+            get;
+            set;
+        }
+
+        [Networked] // 경기 제한 시간 동기화
+        private TickTimer NetworkMatchTimer
+        {
+            get;
+            set;
+        }
+
+        [Networked] // 경기 종료 원인 동기화
+        private int NetworkMatchEndReasonValue
         {
             get;
             set;
@@ -194,61 +262,134 @@ namespace ProjectJ.Networking.Fusion
             (ProjectJNetworkRespawnReason)NetworkLastRespawnReason; // 마지막 부활 원인 조회
 
         public float RaceHeight =>
-            NetworkRaceHeight; // 현재 경쟁 높이 조회
+            NetworkRaceHeight; // 현재 발 높이 조회
+
+        public float BestRaceHeight =>
+            NetworkBestRaceHeight; // 경기 중 최고 높이 조회
 
         public int RaceRank =>
-            NetworkRaceRank; // 현재 실시간 순위 조회
+            NetworkRaceRank; // 현재 또는 고정 순위 조회
+
+        public bool IsFinished =>
+            NetworkIsFinished; // 정상 도달 여부 조회
+
+        public bool IsResultLocked =>
+            NetworkResultLocked; // 개인 결과 확정 여부 조회
+
+        public int FinalRank =>
+            NetworkFinalRank; // 개인 최종 순위 조회
+
+        public float FinishElapsedSeconds =>
+            NetworkFinishElapsedSeconds; // 정상 도달 경과 시간 조회
+
+        public ProjectJNetworkMatchState MatchState
+        {
+            get
+            {
+                ProjectJNetworkExternalGameplay coordinator =
+                    GetMatchCoordinator(); // 경기 기준 Player 조회
+
+                if (coordinator == null)
+                {
+                    return ProjectJNetworkMatchState.Preparing; // 기준 Player 없음 처리
+                }
+
+                return (ProjectJNetworkMatchState)coordinator.NetworkMatchStateValue; // 기준 Player 경기 상태 반환
+            }
+        }
+
+        public ProjectJNetworkMatchEndReason MatchEndReason
+        {
+            get
+            {
+                ProjectJNetworkExternalGameplay coordinator =
+                    GetMatchCoordinator(); // 경기 기준 Player 조회
+
+                if (coordinator == null)
+                {
+                    return ProjectJNetworkMatchEndReason.None; // 기준 Player 없음 처리
+                }
+
+                return (ProjectJNetworkMatchEndReason)coordinator.NetworkMatchEndReasonValue; // 경기 종료 원인 반환
+            }
+        }
+
+        public bool GameplayInputAllowed
+        {
+            get
+            {
+                if (NetworkResultLocked) // 개인 결과 확정 확인
+                {
+                    return false; // 완주·종료 Player 입력 차단
+                }
+
+                ProjectJNetworkExternalGameplay coordinator =
+                    GetMatchCoordinator(); // 경기 기준 Player 조회
+
+                if (
+                    coordinator == null ||
+                    coordinator.Runner == null
+                )
+                {
+                    return false; // 경기 기준 없음 처리
+                }
+
+                ProjectJNetworkMatchState state =
+                    (ProjectJNetworkMatchState)coordinator.NetworkMatchStateValue; // 기준 경기 상태 조회
+
+                if (state == ProjectJNetworkMatchState.Playing)
+                {
+                    return true; // Playing 입력 허용
+                }
+
+                return
+                    state == ProjectJNetworkMatchState.Countdown &&
+                    coordinator.NetworkCountdownTimer.ExpiredOrNotRunning(coordinator.Runner); // 카운트다운 종료 Tick부터 동시 허용
+            }
+        }
 
         public bool IsRespawnProtected
         {
             get
             {
-                if (Runner == null) // Runner 존재 확인
+                if (Runner == null)
                 {
-                    return false; // Runner 없음 처리
+                    return false;
                 }
 
                 return !NetworkRespawnProtectionTimer.ExpiredOrNotRunning(Runner); // 보호 Timer 실행 여부 반환
             }
         }
 
-        public float RespawnProtectionRemaining
+        public float RespawnProtectionRemaining =>
+            GetRemainingTime(NetworkRespawnProtectionTimer, Runner); // 남은 부활 보호 시간 조회
+
+        public float PushCooldownRemaining =>
+            GetRemainingTime(NetworkPushCooldown, Runner); // 남은 밀치기 쿨타임 조회
+
+        public float CountdownRemaining
         {
             get
             {
-                if (Runner == null) // Runner 존재 확인
-                {
-                    return 0f; // Runner 없음 처리
-                }
+                ProjectJNetworkExternalGameplay coordinator =
+                    GetMatchCoordinator(); // 경기 기준 Player 조회
 
-                float? remaining = NetworkRespawnProtectionTimer.RemainingTime(Runner); // 남은 보호 시간 조회
-
-                if (!remaining.HasValue) // Timer 없음 확인
-                {
-                    return 0f; // 보호 시간 없음 처리
-                }
-
-                return Mathf.Max(0f, remaining.Value); // 음수 방지 후 반환
+                return coordinator == null
+                    ? 0f
+                    : GetRemainingTime(coordinator.NetworkCountdownTimer, coordinator.Runner); // 남은 시작 시간 조회
             }
         }
 
-        public float PushCooldownRemaining
+        public float MatchTimeRemaining
         {
             get
             {
-                if (Runner == null) // Runner 존재 확인
-                {
-                    return 0f; // Runner 없음 처리
-                }
+                ProjectJNetworkExternalGameplay coordinator =
+                    GetMatchCoordinator(); // 경기 기준 Player 조회
 
-                float? remaining = NetworkPushCooldown.RemainingTime(Runner); // 남은 쿨타임 조회
-
-                if (!remaining.HasValue) // Timer 없음 확인
-                {
-                    return 0f; // 쿨타임 없음 처리
-                }
-
-                return Mathf.Max(0f, remaining.Value); // 음수 방지 후 반환
+                return coordinator == null
+                    ? 0f
+                    : GetRemainingTime(coordinator.NetworkMatchTimer, coordinator.Runner); // 남은 경기 시간 조회
             }
         }
 
@@ -257,9 +398,9 @@ namespace ProjectJ.Networking.Fusion
             ActivePlayers.Add(this); // Player Registry 등록
             ResolveReferences(); // 필수 참조 조회
 
-            if (!Object.HasStateAuthority) // State Authority 확인
+            if (!Object.HasStateAuthority)
             {
-                return; // 초기 네트워크 상태 쓰기 차단
+                return;
             }
 
             NetworkExternalVelocity = Vector3.zero; // 외부 속도 초기화
@@ -272,14 +413,23 @@ namespace ProjectJ.Networking.Fusion
             NetworkPushAttemptCount = 0; // 밀치기 시도 횟수 초기화
             NetworkPushSuccessCount = 0; // 밀치기 성공 횟수 초기화
             NetworkCheckpointId = (int)CheckpointId.Start; // 체크포인트 초기화
-            NetworkRespawnPosition = transform.position; // Spawn 위치를 최초 부활 위치로 저장
-            NetworkRespawnEulerAngles = transform.rotation.eulerAngles; // Spawn 회전을 최초 부활 회전으로 저장
+            NetworkRespawnPosition = transform.position; // 최초 부활 위치 저장
+            NetworkRespawnEulerAngles = transform.rotation.eulerAngles; // 최초 부활 회전 저장
             NetworkCheckpointActivationCount = 0; // 체크포인트 횟수 초기화
             NetworkRespawnProtectionTimer = TickTimer.None; // 최초 Spawn 보호 없음
             NetworkRespawnCount = 0; // 부활 횟수 초기화
             NetworkLastRespawnReason = (int)ProjectJNetworkRespawnReason.None; // 부활 원인 초기화
-            NetworkRaceHeight = TruncateHeight(transform.position.y); // 최초 발 높이 저장
+            NetworkRaceHeight = TruncateHeight(transform.position.y); // 최초 높이 저장
+            NetworkBestRaceHeight = NetworkRaceHeight; // 최초 최고 높이 저장
             NetworkRaceRank = 1; // 최초 순위 초기화
+            NetworkIsFinished = false; // FINISH 상태 초기화
+            NetworkResultLocked = false; // 결과 잠금 초기화
+            NetworkFinalRank = 0; // 최종 순위 초기화
+            NetworkFinishElapsedSeconds = -1f; // FINISH 시간 초기화
+            NetworkMatchStateValue = (int)ProjectJNetworkMatchState.Preparing; // 경기 상태 초기화
+            NetworkCountdownTimer = TickTimer.None; // 카운트다운 초기화
+            NetworkMatchTimer = TickTimer.None; // 경기 타이머 초기화
+            NetworkMatchEndReasonValue = (int)ProjectJNetworkMatchEndReason.None; // 종료 원인 초기화
         }
 
         public override void Despawned(NetworkRunner runner, bool hasState)
@@ -290,41 +440,83 @@ namespace ProjectJ.Networking.Fusion
         private void Update()
         {
             if (
-                Object == null || // NetworkObject 존재 확인
-                !Object.IsValid || // NetworkObject 유효 확인
-                !Object.HasInputAuthority // 로컬 소유 Player 확인
+                Object == null ||
+                !Object.IsValid ||
+                !Object.HasInputAuthority
             )
             {
-                return; // 원격 Player 입력 차단
+                return;
             }
 
             Keyboard keyboard = Keyboard.current; // 현재 키보드 조회
 
-            if (keyboard == null) // 키보드 연결 확인
+            if (keyboard == null)
             {
-                return; // 키보드 없음 처리
+                return;
             }
 
-            if (keyboard.rKey.wasPressedThisFrame) // 70일차 직접 부활 테스트 키 확인
+            if (
+                keyboard.rKey.wasPressedThisFrame &&
+                GameplayInputAllowed
+            )
             {
-                RequestManualRespawn(); // State Authority 부활 요청
+                RequestManualRespawn(); // R 직접 부활 테스트
+            }
+
+            if (
+                keyboard.f5Key.wasPressedThisFrame &&
+                Object.HasStateAuthority &&
+                GetMatchCoordinator() == this
+            )
+            {
+                BeginCountdownAuthority(); // F5 단독 테스트 경기 시작
+            }
+
+            if (
+                keyboard.f6Key.wasPressedThisFrame &&
+                Object.HasStateAuthority &&
+                GetMatchCoordinator() == this
+            )
+            {
+                FinishMatchAuthority(ProjectJNetworkMatchEndReason.TimeExpired); // F6 제한 시간 종료 테스트
             }
         }
 
         public override void FixedUpdateNetwork()
         {
-            if (!Object.HasStateAuthority) // Host State Authority 확인
+            if (!Object.HasStateAuthority)
             {
-                return; // Client 직접 판정 차단
+                return;
             }
 
             ResolveReferences(); // 런타임 참조 보정
 
-            if (GetInput<ProjectJNetworkInput>(out ProjectJNetworkInput input)) // Player 입력 수신 확인
+            ProjectJNetworkExternalGameplay coordinator =
+                GetMatchCoordinator(); // 경기 기준 Player 조회
+
+            if (coordinator == this)
+            {
+                UpdateMatchStateAuthority(); // 경기 전체 상태는 기준 Player만 확정
+            }
+
+            if (!GameplayInputAllowed)
+            {
+                NetworkExternalVelocity = Vector3.zero; // 경기 잠금 중 외력 이동 정지
+                UpdateRaceHeightAndBest(); // 현재 결과용 높이 유지
+
+                if (NetworkResultLocked)
+                {
+                    NetworkRaceRank = NetworkFinalRank; // 확정 순위 유지
+                }
+
+                return;
+            }
+
+            if (GetInput<ProjectJNetworkInput>(out ProjectJNetworkInput input))
             {
                 UpdatePushForward(input.Move); // 마지막 이동 방향 갱신
 
-                if (input.Buttons.IsSet(ProjectJNetworkButton.Push)) // 밀치기 단발 입력 확인
+                if (input.Buttons.IsSet(ProjectJNetworkButton.Push))
                 {
                     ProcessPush(); // State Authority 밀치기 판정
                 }
@@ -332,15 +524,15 @@ namespace ProjectJ.Networking.Fusion
 
             SimulateExternalVelocity(); // 외부 속도 이동과 감속 처리
 
-            if (EvaluateFallRespawn()) // 낙하 부활 발생 확인
+            if (EvaluateFallRespawn())
             {
-                UpdateRaceHeight(); // 부활 위치 높이 즉시 갱신
-                UpdateRaceRank(); // 부활 직후 순위 즉시 갱신
-                return; // 현재 Tick 추가 처리 종료
+                UpdateRaceHeightAndBest(); // 부활 위치 높이 즉시 갱신
+                UpdateRaceRank(); // 부활 직후 순위 갱신
+                return;
             }
 
-            UpdateRaceHeight(); // 현재 발 높이 저장
-            UpdateRaceRank(); // 경쟁 순위 저장
+            UpdateRaceHeightAndBest(); // 현재 높이와 최고 높이 갱신
+            UpdateRaceRank(); // 실시간 순위 갱신
         }
 
         public bool TryApplyExternalVelocityChange(
@@ -348,261 +540,577 @@ namespace ProjectJ.Networking.Fusion
             Vector3 velocityChange
         )
         {
-            if (!Object.HasStateAuthority) // State Authority 확인
+            if (!Object.HasStateAuthority)
             {
-                return false; // Client 외력 쓰기 차단
+                return false;
+            }
+
+            if (!GameplayInputAllowed)
+            {
+                return false; // 경기 전·완주 후·경기 종료 외력 차단
             }
 
             if (
-                IsRespawnProtected && // 부활 보호 상태 확인
-                IsHostileExternalForce(source) // 적대적 외력 확인
+                IsRespawnProtected &&
+                IsHostileExternalForce(source)
             )
             {
-                return false; // Push와 Item 외력 차단
+                return false; // 보호 중 적대 외력 차단
             }
 
-            velocityChange.y = 0f; // 70일차 수평 외력 유지
+            velocityChange.y = 0f; // 현재 수평 외력 유지
 
-            if (velocityChange.sqrMagnitude <= 0.0001f) // 유효 외력 확인
+            if (velocityChange.sqrMagnitude <= 0.0001f)
             {
-                return false; // 너무 작은 외력 거부
+                return false;
             }
 
             NetworkExternalVelocity += velocityChange; // 외부 속도 합산
             NetworkLastExternalForceSource = (int)source; // 외력 원인 저장
-            NetworkExternalForceApplyCount++; // 외력 적용 횟수 증가
+            NetworkExternalForceApplyCount++; // 외력 횟수 증가
 
-            return true; // 외력 적용 성공
+            return true;
         }
 
         public void RequestManualRespawn()
         {
             if (
-                Object == null || // NetworkObject 존재 확인
-                !Object.IsValid || // NetworkObject 유효 확인
-                !Object.HasInputAuthority // 요청 권한 확인
+                Object == null ||
+                !Object.IsValid ||
+                !Object.HasInputAuthority ||
+                !GameplayInputAllowed
             )
             {
-                return; // 원격 Player 요청 차단
+                return;
             }
 
-            if (Object.HasStateAuthority) // Host 자신의 Player 확인
+            if (Object.HasStateAuthority)
             {
-                PerformRespawn(ProjectJNetworkRespawnReason.Manual); // Host 직접 부활 실행
-                return; // RPC 중복 호출 방지
+                PerformRespawn(ProjectJNetworkRespawnReason.Manual); // Host 직접 부활
+                return;
             }
 
-            RPC_RequestManualRespawn(); // Client에서 State Authority로 요청
+            RPC_RequestManualRespawn(); // Client 부활 요청
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         private void RPC_RequestManualRespawn()
         {
-            PerformRespawn(ProjectJNetworkRespawnReason.Manual); // State Authority 직접 부활 실행
+            if (!GameplayInputAllowed)
+            {
+                return; // State Authority에서 경기 상태 재검증
+            }
+
+            PerformRespawn(ProjectJNetworkRespawnReason.Manual); // State Authority 부활 실행
         }
 
-        public void ReceiveCheckpoint(global::ProjectJ.Checkpoint.Checkpoint checkpoint)
+        public void ReceiveCheckpoint(
+            global::ProjectJ.Checkpoint.Checkpoint checkpoint
+        )
         {
-            if (!Object.HasStateAuthority) // State Authority 확인
+            if (
+                !Object.HasStateAuthority ||
+                !GameplayInputAllowed ||
+                checkpoint == null
+            )
             {
-                return; // Client 체크포인트 쓰기 차단
+                return;
             }
 
-            if (checkpoint == null) // 체크포인트 참조 확인
+            int nextCheckpointId = (int)checkpoint.Id; // 접촉 Checkpoint 값 변환
+
+            if (nextCheckpointId <= NetworkCheckpointId)
             {
-                return; // 잘못된 참조 차단
+                return;
             }
 
-            int nextCheckpointId = (int)checkpoint.Id; // 접촉 체크포인트 값 변환
-
-            if (nextCheckpointId <= NetworkCheckpointId) // 최고값 갱신 여부 확인
-            {
-                return; // 같은 값 또는 낮은 값 무시
-            }
-
-            NetworkCheckpointId = nextCheckpointId; // 최고 체크포인트 저장
+            NetworkCheckpointId = nextCheckpointId; // 최고 Checkpoint 저장
             NetworkRespawnPosition = checkpoint.RespawnPosition; // 부활 위치 저장
             NetworkRespawnEulerAngles = checkpoint.RespawnRotation.eulerAngles; // 부활 회전 저장
-            NetworkCheckpointActivationCount++; // 체크포인트 횟수 증가
+            NetworkCheckpointActivationCount++; // 활성화 횟수 증가
 
             Debug.Log(
-                "[Project J/Fusion] 70일차 Checkpoint 저장 / P" +
+                "[Project J/Fusion] 71일차 Checkpoint 저장 / P" +
                 Object.InputAuthority.AsIndex +
                 " / " +
-                checkpoint.Id +
-                " / Respawn " +
-                NetworkRespawnPosition
-            ); // 체크포인트 확인 로그
+                checkpoint.Id
+            );
+        }
+
+        public void ReceiveFinish()
+        {
+            if (
+                !Object.HasStateAuthority ||
+                !GameplayInputAllowed ||
+                NetworkResultLocked
+            )
+            {
+                return;
+            }
+
+            ConfirmFinishAuthority(); // State Authority FINISH 확정
+        }
+
+        private void UpdateMatchStateAuthority()
+        {
+            ProjectJNetworkMatchState state =
+                (ProjectJNetworkMatchState)NetworkMatchStateValue; // 현재 경기 상태 조회
+
+            if (state == ProjectJNetworkMatchState.Preparing)
+            {
+                if (GetActivePlayerCount() >= AutoStartPlayerCount)
+                {
+                    BeginCountdownAuthority(); // 2인 이상 자동 카운트다운 시작
+                }
+
+                return;
+            }
+
+            if (
+                state == ProjectJNetworkMatchState.Countdown &&
+                NetworkCountdownTimer.ExpiredOrNotRunning(Runner)
+            )
+            {
+                BeginPlayingAuthority(); // 카운트다운 종료 후 경기 시작
+                return;
+            }
+
+            if (
+                state == ProjectJNetworkMatchState.Playing &&
+                NetworkMatchTimer.ExpiredOrNotRunning(Runner)
+            )
+            {
+                FinishMatchAuthority(ProjectJNetworkMatchEndReason.TimeExpired); // 10분 종료 처리
+            }
+        }
+
+        private void BeginCountdownAuthority()
+        {
+            if (
+                !Object.HasStateAuthority ||
+                GetMatchCoordinator() != this ||
+                (ProjectJNetworkMatchState)NetworkMatchStateValue != ProjectJNetworkMatchState.Preparing
+            )
+            {
+                return;
+            }
+
+            ResetAllPlayersForMatchAuthority(); // 참가 Player 경기 상태 초기화
+            NetworkMatchStateValue = (int)ProjectJNetworkMatchState.Countdown; // 카운트다운 상태 확정
+            NetworkCountdownTimer = TickTimer.CreateFromSeconds(Runner, CountdownSeconds); // 3초 카운트다운 시작
+            NetworkMatchTimer = TickTimer.None; // 경기 타이머 대기
+            NetworkMatchEndReasonValue = (int)ProjectJNetworkMatchEndReason.None; // 종료 원인 초기화
+
+            Debug.Log("[Project J/Fusion] 71일차 Countdown 시작 / 3초");
+        }
+
+        private void BeginPlayingAuthority()
+        {
+            NetworkMatchStateValue = (int)ProjectJNetworkMatchState.Playing; // 경기 진행 상태 확정
+            NetworkCountdownTimer = TickTimer.None; // 카운트다운 종료
+            NetworkMatchTimer = TickTimer.CreateFromSeconds(Runner, MatchDurationSeconds); // 10분 경기 타이머 시작
+
+            foreach (ProjectJNetworkExternalGameplay candidate in ActivePlayers)
+            {
+                if (!IsValidPlayer(candidate))
+                {
+                    continue;
+                }
+
+                candidate.UpdateRaceHeightAndBest(); // 시작 높이 갱신
+                candidate.UpdateRaceRank(); // 시작 순위 갱신
+            }
+
+            Debug.Log("[Project J/Fusion] 71일차 Match 시작 / 10분");
+        }
+
+        private void FinishMatchAuthority(
+            ProjectJNetworkMatchEndReason reason
+        )
+        {
+            if (
+                !Object.HasStateAuthority ||
+                GetMatchCoordinator() != this
+            )
+            {
+                return;
+            }
+
+            ProjectJNetworkMatchState state =
+                (ProjectJNetworkMatchState)NetworkMatchStateValue; // 현재 경기 상태 조회
+
+            if (state == ProjectJNetworkMatchState.Finished)
+            {
+                return;
+            }
+
+            foreach (ProjectJNetworkExternalGameplay candidate in ActivePlayers)
+            {
+                if (!IsValidPlayer(candidate))
+                {
+                    continue;
+                }
+
+                candidate.UpdateRaceHeightAndBest(); // 종료 Tick 높이 확정 준비
+            }
+
+            LockUnfinishedResultsByHeightAuthority(); // 미완주 Player 최종 순위 확정
+            NetworkMatchStateValue = (int)ProjectJNetworkMatchState.Finished; // 경기 종료 상태 확정
+            NetworkMatchEndReasonValue = (int)reason; // 종료 원인 저장
+            NetworkCountdownTimer = TickTimer.None; // 카운트다운 제거
+            NetworkMatchTimer = TickTimer.None; // 경기 타이머 제거
+
+            Debug.Log(
+                "[Project J/Fusion] 71일차 Match 종료 / " +
+                reason
+            );
+        }
+
+        private void ResetAllPlayersForMatchAuthority()
+        {
+            foreach (ProjectJNetworkExternalGameplay candidate in ActivePlayers)
+            {
+                if (
+                    !IsValidPlayer(candidate) ||
+                    !candidate.Object.HasStateAuthority
+                )
+                {
+                    continue;
+                }
+
+                candidate.NetworkExternalVelocity = Vector3.zero; // 시작 전 외력 제거
+                candidate.NetworkLastExternalForceSource = (int)ProjectJExternalForceSource.None; // 외력 원인 초기화
+                candidate.NetworkPushCooldown = TickTimer.None; // 밀치기 쿨타임 초기화
+                candidate.NetworkLastPushResult = (int)ProjectJNetworkPushResult.None; // 밀치기 결과 초기화
+                candidate.NetworkLastPushTargetIndex = -1; // 밀치기 대상 초기화
+                candidate.NetworkRespawnProtectionTimer = TickTimer.None; // 보호 상태 초기화
+                candidate.NetworkRaceHeight = TruncateHeight(candidate.transform.position.y); // 시작 높이 저장
+                candidate.NetworkBestRaceHeight = candidate.NetworkRaceHeight; // 최고 높이 초기화
+                candidate.NetworkRaceRank = 1; // 실시간 순위 초기화
+                candidate.NetworkIsFinished = false; // FINISH 상태 초기화
+                candidate.NetworkResultLocked = false; // 결과 잠금 초기화
+                candidate.NetworkFinalRank = 0; // 최종 순위 초기화
+                candidate.NetworkFinishElapsedSeconds = -1f; // FINISH 시간 초기화
+                candidate.ResolveReferences(); // Player 참조 보정
+
+                if (candidate.networkPlayer != null)
+                {
+                    candidate.networkPlayer.StopMotionForMatchLock(); // 카운트다운 시작 시 이동 정지
+                }
+            }
+        }
+
+        private void ConfirmFinishAuthority()
+        {
+            UpdateRaceHeightAndBest(); // FINISH 순간 높이와 최고 높이 확정
+
+            int finishOrder =
+                GetFinishedPlayerCount() + 1; // 현재까지 도착한 인원 다음 순서
+
+            NetworkIsFinished = true; // 정상 도달 저장
+            NetworkResultLocked = true; // 개인 결과 즉시 고정
+            NetworkFinalRank = finishOrder; // 도착 순서를 최종 순위로 저장
+            NetworkRaceRank = finishOrder; // 표시 순위를 최종 순위로 교체
+            NetworkFinishElapsedSeconds = Mathf.Clamp(
+                MatchDurationSeconds - MatchTimeRemaining,
+                0f,
+                MatchDurationSeconds
+            ); // 서버 경기 타이머 기준 도착 시간 저장
+            NetworkExternalVelocity = Vector3.zero; // FINISH 후 외력 제거
+            NetworkRespawnProtectionTimer = TickTimer.None; // FINISH 후 보호 Timer 제거
+
+            ResolveReferences();
+
+            if (networkPlayer != null)
+            {
+                networkPlayer.StopMotionForMatchLock(); // FINISH Player 이동 정지
+            }
+
+            Debug.Log(
+                "[Project J/Fusion] 71일차 FINISH / P" +
+                Object.InputAuthority.AsIndex +
+                " / Rank " +
+                NetworkFinalRank +
+                " / " +
+                NetworkFinishElapsedSeconds.ToString("F2") +
+                "s"
+            );
+
+            RefreshAllLiveRanksAuthority(); // 남은 Player 순위에 완주자 수 반영
+
+            ProjectJNetworkExternalGameplay coordinator =
+                GetMatchCoordinator(); // 경기 기준 Player 조회
+
+            if (
+                coordinator != null &&
+                coordinator.Object.HasStateAuthority &&
+                GetUnfinishedPlayerCount() == 0
+            )
+            {
+                coordinator.FinishMatchAuthority(ProjectJNetworkMatchEndReason.AllFinished); // 전원 완주 즉시 경기 종료
+            }
+        }
+
+        private void LockUnfinishedResultsByHeightAuthority()
+        {
+            int finishedCount =
+                GetFinishedPlayerCount(); // 이미 정상 도달한 인원 수
+
+            foreach (ProjectJNetworkExternalGameplay player in ActivePlayers)
+            {
+                if (
+                    !IsValidPlayer(player) ||
+                    player.NetworkResultLocked
+                )
+                {
+                    continue;
+                }
+
+                int higherUnfinishedCount = 0; // 자신보다 높은 미완주 Player 수
+
+                foreach (ProjectJNetworkExternalGameplay candidate in ActivePlayers)
+                {
+                    if (
+                        !IsValidPlayer(candidate) ||
+                        candidate == player ||
+                        candidate.NetworkIsFinished
+                    )
+                    {
+                        continue;
+                    }
+
+                    if (candidate.NetworkRaceHeight > player.NetworkRaceHeight)
+                    {
+                        higherUnfinishedCount++; // 높이가 더 높은 미완주 Player 계산
+                    }
+                }
+
+                player.NetworkFinalRank =
+                    finishedCount + 1 + higherUnfinishedCount; // 완주자 뒤에서 경쟁 순위 확정
+                player.NetworkRaceRank = player.NetworkFinalRank; // 표시 순위 고정
+                player.NetworkResultLocked = true; // 결과 확정
+                player.NetworkExternalVelocity = Vector3.zero; // 종료 후 외력 제거
+                player.ResolveReferences();
+
+                if (player.networkPlayer != null)
+                {
+                    player.networkPlayer.StopMotionForMatchLock(); // 종료 Player 이동 정지
+                }
+            }
+        }
+
+        private void RefreshAllLiveRanksAuthority()
+        {
+            foreach (ProjectJNetworkExternalGameplay candidate in ActivePlayers)
+            {
+                if (
+                    !IsValidPlayer(candidate) ||
+                    candidate.NetworkResultLocked
+                )
+                {
+                    continue;
+                }
+
+                candidate.UpdateRaceHeightAndBest(); // 현재 높이 보정
+                candidate.UpdateRaceRank(); // 완주자 Offset 반영
+            }
         }
 
         private void ResolveReferences()
         {
-            if (networkPlayer == null) // Network Player 참조 확인
+            if (networkPlayer == null)
             {
-                networkPlayer = GetComponent<ProjectJNetworkPlayer>(); // 같은 오브젝트에서 조회
+                networkPlayer = GetComponent<ProjectJNetworkPlayer>(); // 같은 오브젝트 Network Player 조회
             }
 
-            if (networkTransform == null) // NetworkTransform 참조 확인
+            if (networkTransform == null)
             {
-                networkTransform = GetComponent<NetworkTransform>(); // 같은 오브젝트에서 조회
+                networkTransform = GetComponent<NetworkTransform>(); // 같은 오브젝트 NetworkTransform 조회
             }
 
-            if (fallLimitSet == null) // 낙하 한계 참조 확인
+            if (fallLimitSet == null)
             {
-                fallLimitSet = FindFirstObjectByType<CheckpointFallLimitSet>(); // 현재 Scene 설정 조회
+                fallLimitSet = FindFirstObjectByType<CheckpointFallLimitSet>(); // 현재 Scene 낙하 한계 조회
             }
         }
 
         private bool EvaluateFallRespawn()
         {
-            if (fallLimitSet == null) // 낙하 한계 설정 존재 확인
+            if (
+                fallLimitSet == null ||
+                NetworkResultLocked
+            )
             {
-                return false; // 자동 낙하 부활 생략
+                return false;
             }
 
-            float fallLimitY = fallLimitSet.GetFallLimitY(CurrentCheckpointId); // 현재 구간 낙하 기준 조회
+            float fallLimitY =
+                fallLimitSet.GetFallLimitY(CurrentCheckpointId); // 현재 Checkpoint 낙하 기준 조회
 
-            if (transform.position.y >= fallLimitY) // 낙하 기준 통과 여부 확인
+            if (transform.position.y >= fallLimitY)
             {
-                return false; // 정상 높이 유지
+                return false;
             }
 
             PerformRespawn(ProjectJNetworkRespawnReason.Fall); // 낙하 부활 실행
-            return true; // 부활 발생 반환
+            return true;
         }
 
-        private void PerformRespawn(ProjectJNetworkRespawnReason reason)
+        private void PerformRespawn(
+            ProjectJNetworkRespawnReason reason
+        )
         {
-            if (!Object.HasStateAuthority) // State Authority 확인
+            if (
+                !Object.HasStateAuthority ||
+                NetworkResultLocked ||
+                !GameplayInputAllowed
+            )
             {
-                return; // Client 직접 부활 차단
+                return;
             }
 
-            ResolveReferences(); // 필수 참조 보정
+            ResolveReferences();
             NetworkExternalVelocity = Vector3.zero; // 이전 외력 제거
             NetworkLastExternalForceSource = (int)ProjectJExternalForceSource.None; // 외력 원인 초기화
 
-            if (networkPlayer != null) // Network Player 존재 확인
+            if (networkPlayer != null)
             {
-                networkPlayer.ResetMotionForRespawn(); // 수직 속도와 Ground 상태 초기화
+                networkPlayer.ResetMotionForRespawn(); // 수직 이동 상태 초기화
             }
 
-            Quaternion respawnRotation = RespawnRotation; // 저장된 부활 회전 조회
+            Quaternion respawnRotation =
+                RespawnRotation; // 저장된 부활 회전 조회
 
-            if (networkTransform != null) // NetworkTransform 존재 확인
+            if (networkTransform != null)
             {
-                networkTransform.Teleport(NetworkRespawnPosition, respawnRotation); // 모든 Peer에 순간이동 전파
+                networkTransform.Teleport(
+                    NetworkRespawnPosition,
+                    respawnRotation
+                ); // 네트워크 순간이동
             }
-            else // NetworkTransform 누락 대비
+            else
             {
-                transform.SetPositionAndRotation(NetworkRespawnPosition, respawnRotation); // 로컬 Transform 부활 처리
+                transform.SetPositionAndRotation(
+                    NetworkRespawnPosition,
+                    respawnRotation
+                ); // NetworkTransform 누락 대비
             }
 
             NetworkRespawnProtectionTimer = TickTimer.CreateFromSeconds(
                 Runner,
                 RespawnProtectionSeconds
-            ); // 3초 보호 시작
+            ); // 3초 부활 보호 시작
 
             NetworkRespawnCount++; // 부활 횟수 증가
-            NetworkLastRespawnReason = (int)reason; // 마지막 부활 원인 저장
-            NetworkRaceHeight = TruncateHeight(NetworkRespawnPosition.y); // 부활 높이 즉시 저장
+            NetworkLastRespawnReason = (int)reason; // 부활 원인 저장
+            NetworkRaceHeight = TruncateHeight(NetworkRespawnPosition.y); // 부활 높이 저장
 
             Debug.Log(
-                "[Project J/Fusion] 70일차 Respawn / P" +
+                "[Project J/Fusion] 71일차 Respawn / P" +
                 Object.InputAuthority.AsIndex +
                 " / " +
-                reason +
-                " / " +
-                NetworkRespawnPosition +
-                " / Protection " +
-                RespawnProtectionSeconds.ToString("F1") +
-                "s"
-            ); // 부활 확인 로그
+                reason
+            );
         }
 
-        private void UpdatePushForward(Vector2 moveInput)
+        private void UpdatePushForward(
+            Vector2 moveInput
+        )
         {
-            if (moveInput.sqrMagnitude <= 0.0001f) // 이동 입력 존재 확인
+            if (moveInput.sqrMagnitude <= 0.0001f)
             {
-                return; // 마지막 방향 유지
+                return;
             }
 
-            Vector3 nextForward = new Vector3(moveInput.x, 0f, moveInput.y); // XZ 진행 방향 생성
+            Vector3 nextForward =
+                new Vector3(
+                    moveInput.x,
+                    0f,
+                    moveInput.y
+                ); // XZ 진행 방향 생성
 
-            if (nextForward.sqrMagnitude <= 0.0001f) // 방향 유효성 확인
+            if (nextForward.sqrMagnitude <= 0.0001f)
             {
-                return; // 잘못된 방향 차단
+                return;
             }
 
-            NetworkPushForward = nextForward.normalized; // 마지막 이동 방향 저장
+            NetworkPushForward = nextForward.normalized; // 마지막 진행 방향 저장
         }
 
         private void ProcessPush()
         {
-            NetworkPushAttemptCount++; // 밀치기 시도 횟수 증가
-            NetworkLastPushTargetIndex = -1; // 이전 대상 초기화
+            if (
+                NetworkResultLocked ||
+                MatchState != ProjectJNetworkMatchState.Playing
+            )
+            {
+                return; // 경기 외 Push 차단
+            }
 
-            if (!NetworkPushCooldown.ExpiredOrNotRunning(Runner)) // 쿨타임 확인
+            NetworkPushAttemptCount++; // 밀치기 시도 횟수 증가
+            NetworkLastPushTargetIndex = -1; // 이전 Target 초기화
+
+            if (!NetworkPushCooldown.ExpiredOrNotRunning(Runner))
             {
                 NetworkLastPushResult = (int)ProjectJNetworkPushResult.Cooldown; // 쿨타임 결과 저장
-                return; // 밀치기 처리 종료
+                return;
             }
 
-            NetworkPushCooldown = TickTimer.CreateFromSeconds(Runner, PushCooldownSeconds); // 시도 즉시 쿨타임 시작
+            NetworkPushCooldown = TickTimer.CreateFromSeconds(
+                Runner,
+                PushCooldownSeconds
+            ); // 시도 즉시 쿨타임 시작
 
-            ProjectJNetworkExternalGameplay target = FindClosestPushTarget(); // 가장 가까운 Target 검색
+            ProjectJNetworkExternalGameplay target =
+                FindClosestPushTarget(); // 최근접 유효 Target 검색
 
-            if (target == null) // Target 존재 확인
+            if (target == null)
             {
-                NetworkLastPushResult = (int)ProjectJNetworkPushResult.Miss; // 빗나감 결과 저장
-                return; // 밀치기 처리 종료
+                NetworkLastPushResult = (int)ProjectJNetworkPushResult.Miss; // 대상 없음
+                return;
             }
 
-            NetworkLastPushTargetIndex = target.Object.InputAuthority.AsIndex; // 찾은 Target 저장
+            NetworkLastPushTargetIndex =
+                target.Object.InputAuthority.AsIndex; // Target 저장
 
-            if (target.IsRespawnProtected) // Target 부활 보호 확인
+            if (target.IsRespawnProtected)
             {
-                NetworkLastPushResult = (int)ProjectJNetworkPushResult.Protected; // 보호 차단 결과 저장
-                return; // 외력 적용 차단
+                NetworkLastPushResult = (int)ProjectJNetworkPushResult.Protected; // 보호 차단
+                return;
             }
 
-            Vector3 pushDirection = target.transform.position - transform.position; // 실행자에서 Target 방향 계산
+            Vector3 pushDirection =
+                target.transform.position -
+                transform.position; // Target 방향 계산
+
             pushDirection.y = 0f; // 수평 방향 제한
 
-            if (pushDirection.sqrMagnitude <= 0.0001f) // 위치 중첩 확인
+            if (pushDirection.sqrMagnitude <= 0.0001f)
             {
-                pushDirection = NetworkPushForward; // 마지막 진행 방향 사용
+                pushDirection = NetworkPushForward; // 마지막 이동 방향 사용
             }
 
-            if (pushDirection.sqrMagnitude <= 0.0001f) // 최종 방향 확인
+            if (pushDirection.sqrMagnitude <= 0.0001f)
             {
                 pushDirection = Vector3.forward; // 기본 전방 사용
             }
 
-            bool applied = target.TryApplyExternalVelocityChange(
-                ProjectJExternalForceSource.Push,
-                pushDirection.normalized * PushForce
-            ); // Target 외력 적용 요청
+            bool applied =
+                target.TryApplyExternalVelocityChange(
+                    ProjectJExternalForceSource.Push,
+                    pushDirection.normalized * PushForce
+                ); // Target 외력 적용
 
-            if (!applied) // 외력 적용 실패 확인
+            if (!applied)
             {
                 NetworkLastPushResult = target.IsRespawnProtected
                     ? (int)ProjectJNetworkPushResult.Protected
                     : (int)ProjectJNetworkPushResult.Invalid; // 실패 원인 저장
-                return; // 밀치기 처리 종료
+                return;
             }
 
             NetworkLastPushResult = (int)ProjectJNetworkPushResult.Success; // 성공 결과 저장
             NetworkPushSuccessCount++; // 성공 횟수 증가
-
-            Debug.Log(
-                "[Project J/Fusion] 70일차 Push 성공 / P" +
-                Object.InputAuthority.AsIndex +
-                " -> P" +
-                NetworkLastPushTargetIndex +
-                " / Force " +
-                PushForce
-            ); // 밀치기 확인 로그
         }
 
         private ProjectJNetworkExternalGameplay FindClosestPushTarget()
@@ -611,167 +1119,360 @@ namespace ProjectJ.Networking.Fusion
             float closestDistanceSquared = float.PositiveInfinity; // 최근접 거리 초기화
             Vector3 forward = NetworkPushForward.sqrMagnitude > 0.0001f
                 ? NetworkPushForward.normalized
-                : Vector3.forward; // 밀치기 기준 방향 선택
+                : Vector3.forward; // Push 기준 방향 선택
 
-            foreach (ProjectJNetworkExternalGameplay candidate in ActivePlayers) // 전체 활성 Player 순회
+            foreach (ProjectJNetworkExternalGameplay candidate in ActivePlayers)
             {
-                if (candidate == null) // 삭제된 Player 확인
-                {
-                    continue; // 다음 후보 이동
-                }
-
-                if (candidate == this) // 자기 자신 확인
-                {
-                    continue; // 자기 자신 제외
-                }
-
                 if (
-                    candidate.Object == null || // NetworkObject 존재 확인
-                    !candidate.Object.IsValid || // NetworkObject 유효 확인
-                    !candidate.Object.HasStateAuthority // 같은 Host 권한 확인
+                    !IsValidPlayer(candidate) ||
+                    candidate == this ||
+                    candidate.NetworkResultLocked ||
+                    !candidate.Object.HasStateAuthority
                 )
                 {
-                    continue; // 잘못된 후보 제외
+                    continue; // 잘못된 Target 제외
                 }
 
-                Vector3 toTarget = candidate.transform.position - transform.position; // Target 방향 계산
-                float distanceSquared = toTarget.sqrMagnitude; // Target 거리 제곱 계산
+                Vector3 toTarget =
+                    candidate.transform.position -
+                    transform.position; // Target 방향 계산
 
-                if (distanceSquared > PushSearchRange * PushSearchRange) // 최대 거리 확인
+                float distanceSquared =
+                    toTarget.sqrMagnitude; // 거리 제곱 계산
+
+                if (distanceSquared > PushSearchRange * PushSearchRange)
                 {
-                    continue; // 범위 밖 후보 제외
+                    continue;
                 }
 
-                Vector3 horizontalDirection = new Vector3(toTarget.x, 0f, toTarget.z); // 수평 Target 방향 계산
+                Vector3 horizontalDirection =
+                    new Vector3(
+                        toTarget.x,
+                        0f,
+                        toTarget.z
+                    ); // 수평 방향 계산
 
-                if (horizontalDirection.sqrMagnitude > 0.0001f) // 방향 계산 가능 확인
+                if (horizontalDirection.sqrMagnitude > 0.0001f)
                 {
-                    float angle = Vector3.Angle(forward, horizontalDirection.normalized); // 전방 각도 계산
+                    float angle =
+                        Vector3.Angle(
+                            forward,
+                            horizontalDirection.normalized
+                        ); // 전방 각도 계산
 
-                    if (angle > PushSearchHalfAngle) // 90도 전방 범위 확인
+                    if (angle > PushSearchHalfAngle)
                     {
-                        continue; // 전방 범위 밖 후보 제외
+                        continue;
                     }
                 }
 
-                if (distanceSquared >= closestDistanceSquared) // 최근접 여부 확인
+                if (distanceSquared >= closestDistanceSquared)
                 {
-                    continue; // 더 먼 후보 제외
+                    continue;
                 }
 
                 closestTarget = candidate; // 최근접 Target 갱신
                 closestDistanceSquared = distanceSquared; // 최근접 거리 갱신
             }
 
-            return closestTarget; // 최종 Target 반환
+            return closestTarget;
         }
 
         private void SimulateExternalVelocity()
         {
-            Vector3 externalVelocity = NetworkExternalVelocity; // 현재 외부 속도 읽기
+            Vector3 externalVelocity =
+                NetworkExternalVelocity; // 현재 외부 속도 조회
 
-            if (externalVelocity.sqrMagnitude <= 0.0001f) // 외력 존재 확인
+            if (externalVelocity.sqrMagnitude <= 0.0001f)
             {
                 NetworkExternalVelocity = Vector3.zero; // 미세 외력 정리
-                return; // 이동 처리 종료
+                return;
             }
 
-            transform.position += externalVelocity * Runner.DeltaTime; // 외부 속도 위치 반영
+            transform.position +=
+                externalVelocity *
+                Runner.DeltaTime; // 외부 속도 위치 반영
+
             externalVelocity = Vector3.MoveTowards(
                 externalVelocity,
                 Vector3.zero,
                 ExternalVelocityDecayPerSecond * Runner.DeltaTime
-            ); // Tick 기반 외력 감속
+            ); // 외력 Tick 감속
 
-            if (externalVelocity.magnitude <= ExternalVelocityStopThreshold) // 정지 임계값 확인
+            if (externalVelocity.magnitude <= ExternalVelocityStopThreshold)
             {
-                externalVelocity = Vector3.zero; // 외력 완전 정지
+                externalVelocity = Vector3.zero; // 임계값 이하 외력 제거
             }
 
-            NetworkExternalVelocity = externalVelocity; // 감속 결과 동기화
+            NetworkExternalVelocity = externalVelocity; // 감속 결과 저장
         }
 
-        private void UpdateRaceHeight()
+        private void UpdateRaceHeightAndBest()
         {
-            NetworkRaceHeight = TruncateHeight(transform.position.y); // 발 기준 World Y를 0.00 단위로 저장
+            NetworkRaceHeight =
+                TruncateHeight(transform.position.y); // 발 기준 World Y 저장
+
+            if (NetworkRaceHeight > NetworkBestRaceHeight)
+            {
+                NetworkBestRaceHeight = NetworkRaceHeight; // 최고 높이 갱신
+            }
         }
 
         private void UpdateRaceRank()
         {
-            int rank = 1; // 기본 1위로 시작
-
-            foreach (ProjectJNetworkExternalGameplay candidate in ActivePlayers) // 전체 활성 Player 순회
+            if (NetworkResultLocked)
             {
-                if (
-                    candidate == null || // 삭제된 Player 확인
-                    candidate == this || // 자기 자신 제외
-                    candidate.Object == null || // NetworkObject 존재 확인
-                    !candidate.Object.IsValid // NetworkObject 유효 확인
-                )
+                NetworkRaceRank = NetworkFinalRank; // 확정 순위 유지
+                return;
+            }
+
+            int finishedCount = 0; // 자신보다 앞에서 확정된 완주자 수
+            int higherUnfinishedCount = 0; // 자신보다 높은 미완주 Player 수
+
+            foreach (ProjectJNetworkExternalGameplay candidate in ActivePlayers)
+            {
+                if (!IsValidPlayer(candidate))
                 {
-                    continue; // 순위 후보 제외
+                    continue;
                 }
 
-                if (candidate.NetworkRaceHeight > NetworkRaceHeight) // 자신보다 높은 Player 확인
+                if (candidate.NetworkIsFinished)
                 {
-                    rank++; // 높은 Player 수만큼 순위 증가
+                    finishedCount++; // 완주자는 항상 미완주자보다 앞 순위
+                    continue;
+                }
+
+                if (
+                    candidate == this ||
+                    candidate.NetworkResultLocked
+                )
+                {
+                    continue;
+                }
+
+                if (candidate.NetworkRaceHeight > NetworkRaceHeight)
+                {
+                    higherUnfinishedCount++; // 높은 미완주 Player 수 계산
                 }
             }
 
-            NetworkRaceRank = rank; // 경쟁 순위 저장
+            NetworkRaceRank =
+                finishedCount + 1 + higherUnfinishedCount; // 완주자 Offset 포함 경쟁 순위 저장
         }
 
-        private static float TruncateHeight(float worldY)
+        private static float TruncateHeight(
+            float worldY
+        )
         {
-            int scaledHeight = (int)(worldY * 100f); // 셋째 자리 이하를 0 방향으로 버림
-            return scaledHeight / 100f; // 소수점 둘째 자리 값 반환
+            int scaledHeight =
+                (int)(worldY * 100f); // 셋째 자리 이하를 0 방향으로 버림
+
+            return scaledHeight / 100f; // 0.00 높이 반환
         }
 
-        private static bool IsHostileExternalForce(ProjectJExternalForceSource source)
+        private static bool IsHostileExternalForce(
+            ProjectJExternalForceSource source
+        )
         {
             return
-                source == ProjectJExternalForceSource.Push || // 플레이어 밀치기 차단 대상
-                source == ProjectJExternalForceSource.Item; // 적대 아이템 차단 대상
+                source == ProjectJExternalForceSource.Push ||
+                source == ProjectJExternalForceSource.Item; // Player 간 적대 외력 판정
+        }
+
+        private static bool IsValidPlayer(
+            ProjectJNetworkExternalGameplay player
+        )
+        {
+            return
+                player != null &&
+                player.Object != null &&
+                player.Object.IsValid; // Registry 유효 Player 판정
+        }
+
+        private static int GetActivePlayerCount()
+        {
+            int count = 0;
+
+            foreach (ProjectJNetworkExternalGameplay candidate in ActivePlayers)
+            {
+                if (IsValidPlayer(candidate))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static int GetFinishedPlayerCount()
+        {
+            int count = 0;
+
+            foreach (ProjectJNetworkExternalGameplay candidate in ActivePlayers)
+            {
+                if (
+                    IsValidPlayer(candidate) &&
+                    candidate.NetworkIsFinished
+                )
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static int GetUnfinishedPlayerCount()
+        {
+            int count = 0;
+
+            foreach (ProjectJNetworkExternalGameplay candidate in ActivePlayers)
+            {
+                if (
+                    IsValidPlayer(candidate) &&
+                    !candidate.NetworkIsFinished
+                )
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static ProjectJNetworkExternalGameplay GetMatchCoordinator()
+        {
+            ProjectJNetworkExternalGameplay coordinator = null; // 가장 낮은 PlayerRef를 경기 기준으로 사용
+
+            foreach (ProjectJNetworkExternalGameplay candidate in ActivePlayers)
+            {
+                if (!IsValidPlayer(candidate))
+                {
+                    continue;
+                }
+
+                if (
+                    coordinator == null ||
+                    candidate.Object.InputAuthority.AsIndex <
+                    coordinator.Object.InputAuthority.AsIndex
+                )
+                {
+                    coordinator = candidate; // 더 낮은 PlayerRef 선택
+                }
+            }
+
+            return coordinator;
+        }
+
+        private static float GetRemainingTime(
+            TickTimer timer,
+            NetworkRunner runner
+        )
+        {
+            if (runner == null)
+            {
+                return 0f;
+            }
+
+            float? remaining =
+                timer.RemainingTime(runner); // Fusion TickTimer 남은 시간 조회
+
+            if (!remaining.HasValue)
+            {
+                return 0f;
+            }
+
+            return Mathf.Max(
+                0f,
+                remaining.Value
+            ); // 음수 방지 후 반환
         }
 
         private void OnGUI()
         {
-            if (!Application.isEditor && !Debug.isDebugBuild) // 개발 환경 확인
+            if (!Application.isEditor && !Debug.isDebugBuild)
             {
-                return; // Release 디버그 표시 차단
+                return;
             }
 
             if (
-                Object == null || // NetworkObject 존재 확인
-                !Object.IsValid || // NetworkObject 유효 확인
-                !Object.HasInputAuthority // 자신의 Player 확인
+                Object == null ||
+                !Object.IsValid ||
+                !Object.HasInputAuthority
             )
             {
-                return; // 원격 Player 표시 차단
+                return;
             }
 
             string protectionText = IsRespawnProtected
                 ? RespawnProtectionRemaining.ToString("F2") + "s"
-                : "OFF"; // 보호 상태 문자열 생성
+                : "OFF"; // 보호 상태 문자열
+
+            string matchText = MatchState.ToString();
+
+            if (MatchState == ProjectJNetworkMatchState.Countdown)
+            {
+                matchText +=
+                    " / " +
+                    Mathf.CeilToInt(CountdownRemaining); // 3·2·1 표시
+            }
+            else if (MatchState == ProjectJNetworkMatchState.Playing)
+            {
+                int remainingSeconds =
+                    Mathf.CeilToInt(MatchTimeRemaining); // 남은 경기 시간 초 단위 계산
+
+                matchText +=
+                    " / " +
+                    (remainingSeconds / 60).ToString("00") +
+                    ":" +
+                    (remainingSeconds % 60).ToString("00"); // MM:SS 표시
+            }
+            else if (MatchState == ProjectJNetworkMatchState.Finished)
+            {
+                matchText +=
+                    " / " +
+                    MatchEndReason; // 종료 원인 표시
+            }
+
+            string resultText = NetworkResultLocked
+                ? (
+                    "Final #" +
+                    NetworkFinalRank +
+                    " / FINISH " +
+                    NetworkIsFinished +
+                    (
+                        NetworkIsFinished
+                            ? " / " + NetworkFinishElapsedSeconds.ToString("F2") + "s"
+                            : string.Empty
+                    )
+                )
+                : "RUNNING"; // 개인 결과 문자열
 
             string debugText =
-                "DAY 70 NETWORK\n" +
-                "Height: " + RaceHeight.ToString("F2") + " / Rank: " + RaceRank + "\n" +
-                "Respawn: " + LastRespawnReason + " x" + RespawnCount + " / Protection: " + protectionText + "\n" +
-                "External: " + ExternalVelocity.ToString("F2") + " / " + LastExternalForceSource + "\n" +
-                "Push: " + LastPushResult + " / Target P" + LastPushTargetIndex + " / CD " + PushCooldownRemaining.ToString("F2") + "\n" +
-                "Checkpoint: " + CurrentCheckpointId + " / Respawn " + RespawnPosition.ToString("F2") + "\n" +
-                "R: Manual Respawn"; // 70일차 상태 문자열 생성
+                "DAY 71 NETWORK\n" +
+                "Match: " + matchText + "\n" +
+                "Height: " + RaceHeight.ToString("F2") +
+                " / Best: " + BestRaceHeight.ToString("F2") +
+                " / Rank: " + RaceRank + "\n" +
+                "Result: " + resultText + "\n" +
+                "Respawn: " + LastRespawnReason +
+                " x" + RespawnCount +
+                " / Protection: " + protectionText + "\n" +
+                "Push: " + LastPushResult +
+                " / Target P" + LastPushTargetIndex +
+                " / CD " + PushCooldownRemaining.ToString("F2") + "\n" +
+                "Checkpoint: " + CurrentCheckpointId + "\n" +
+                "R: Respawn / F5: Solo Start / F6: Force End"; // 71일차 디버그 상태
 
             GUI.Box(
                 new Rect(
                     20f,
-                    Screen.height - 185f,
-                    580f,
-                    165f
+                    Screen.height - 205f,
+                    650f,
+                    185f
                 ),
                 debugText
-            ); // 로컬 디버그 박스 표시
+            );
         }
     }
 }

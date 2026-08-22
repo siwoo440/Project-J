@@ -37,6 +37,20 @@ namespace ProjectJ.Finish
                 return;
             }
 
+            MonoBehaviour[] behaviours =
+                other.GetComponentsInParent<MonoBehaviour>(
+                    true
+                ); // 부모 계층 FINISH 수신자 조회
+
+            for (int index = 0; index < behaviours.Length; index++)
+            {
+                if (behaviours[index] is IFinishReceiver receiver)
+                {
+                    receiver.ReceiveFinish(); // 네트워크 또는 공통 FINISH 처리 전달
+                    return; // 공통 수신자가 처리한 대상은 로컬 처리 차단
+                }
+            }
+
             PlayerFinishState player =
                 other.GetComponentInParent<
                     PlayerFinishState

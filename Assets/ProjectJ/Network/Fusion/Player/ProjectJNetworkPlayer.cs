@@ -34,6 +34,7 @@ namespace ProjectJ.Networking.Fusion
         private Camera authorityCamera;
         private NetworkTransform networkTransform;
         private CapsuleCollider bodyCollider;
+        private ProjectJNetworkExternalGameplay externalGameplay; // 경기 상태 입력 잠금 조회
 
         private readonly RaycastHit[] groundHitBuffer = new RaycastHit[16];
         private readonly Collider[] standOverlapBuffer = new Collider[16];
@@ -332,6 +333,17 @@ namespace ProjectJ.Networking.Fusion
             LastReceivedCrouch = input.Buttons.IsSet(ProjectJNetworkButton.Crouch);
             LastReceivedTick = Runner.Tick.ToString();
 
+            if (
+                externalGameplay != null && // 경기 상태 컴포넌트 확인
+                !externalGameplay.GameplayInputAllowed // 경기 조작 허용 여부 확인
+            )
+            {
+                NetworkVerticalVelocity = 0f; // 잠금 중 수직 이동 정지
+                NetworkIsSprinting = false; // 잠금 중 달리기 정지
+                LastSimulationPosition = transform.position; // 현재 위치를 Simulation 기준으로 유지
+                return; // 이동·점프·달리기·앉기 입력 처리 차단
+            }
+
             float deltaTime = Runner.DeltaTime;
             bool hasMoveInput = moveInput.sqrMagnitude > 0.0001f;
 
@@ -418,6 +430,25 @@ namespace ProjectJ.Networking.Fusion
             LastSimulationPosition = transform.position; // Simulation 기준 위치 갱신
             lastForwardPosition = transform.position; // Prediction 기준 위치 갱신
             hasForwardPosition = true; // Prediction 기준 위치 활성화
+        }
+
+        public void StopMotionForMatchLock()
+        {
+            if (
+                Object == null || // NetworkObject 존재 확인
+                !Object.IsValid || // NetworkObject 유효 확인
+                !Object.HasStateAuthority // State Authority 확인
+            )
+            {
+                return; // Client 직접 상태 확정 차단
+            }
+
+            NetworkVerticalVelocity = 0f; // 경기 잠금 시 수직 속도 제거
+            NetworkGrounded = false; // 다음 허용 시 Ground 재판정
+            NetworkIsSprinting = false; // 경기 잠금 시 달리기 종료
+            LastSimulationPosition = transform.position; // Simulation 기준 위치 고정
+            lastForwardPosition = transform.position; // Prediction 기준 위치 고정
+            hasForwardPosition = true; // Prediction 기준 유지
         }
 
         private void UpdateCrouchState()
@@ -749,6 +780,7 @@ namespace ProjectJ.Networking.Fusion
             authorityCamera = GetComponentInChildren<Camera>(true);
             bodyCollider = GetComponent<CapsuleCollider>();
             networkTransform = GetComponent<NetworkTransform>();
+            externalGameplay = GetComponent<ProjectJNetworkExternalGameplay>(); // 경기 상태 컴포넌트 조회
         }
 
         private void ApplyAuthorityPresentation()

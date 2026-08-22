@@ -19,7 +19,7 @@ namespace ProjectJ.Networking.Fusion
         private ProjectJFusionBootstrap bootstrap;
 
         private bool visible =
-            true;
+            false; // 79일차부터 기본 화면은 F6 Network Condition Gate 사용
 
         private float smoothedFps;
 

@@ -1,3 +1,4 @@
+using System; // 게임 모드 선택 확정 이벤트 사용
 using UnityEngine; // MonoBehaviour와 Debug 사용
 using UnityEngine.UI; // 상세 정보와 SELECT 버튼 사용
 
@@ -31,6 +32,9 @@ namespace ProjectJ
         public ProjectJGameModeCard
             SelectedCard =>
                 selectedCard;
+
+        public event Action<ProjectJGameModeCard>
+            SelectionConfirmed;
 
         public void Configure(
             ProjectJGameModeCard[] modeCards,
@@ -228,26 +232,12 @@ namespace ProjectJ
                 return;
             }
 
-            if (
-                selectedCard.ModeId ==
-                ProjectJGameModeId.PrivateMatch
-            )
-            {
-                Debug.Log(
-                    "[Project J/Day87] PRIVATE MATCH 선택 완료 - Host/Join UI는 88일차에 연결합니다."
-                );
-
-                if (detailStatusText != null)
-                {
-                    detailStatusText.text =
-                        "PRIVATE MATCH 선택 완료 · 88일차 Host/Join UI 연결 예정";
-                }
-
-                return;
-            }
+            SelectionConfirmed?.Invoke(
+                selectedCard
+            );
 
             Debug.Log(
-                "[Project J/Day87] 선택 모드: " +
+                "[Project J/Day88] 선택 확정: " +
                 selectedCard.DisplayName
             );
         }

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 namespace ProjectJ.Networking.Fusion
 {
@@ -64,6 +65,8 @@ namespace ProjectJ.Networking.Fusion
         private float pitch;
         private float cameraDistance =
             DefaultDistance;
+
+        private bool refreshPresentationAfterSceneChange;
 
         public static
             ProjectJLocalPlayerPresentationController
@@ -185,6 +188,17 @@ namespace ProjectJ.Networking.Fusion
 
         private void LateUpdate()
         {
+            if (refreshPresentationAfterSceneChange)
+            {
+                refreshPresentationAfterSceneChange =
+                    false;
+
+                if (boundPlayer != null)
+                {
+                    SuspendOtherLocalPresentation();
+                }
+            }
+
             if (
                 boundPlayer == null ||
                 gameplayCamera == null ||
@@ -221,6 +235,12 @@ namespace ProjectJ.Networking.Fusion
 
             EnsureCameraRig();
             SuspendOtherLocalPresentation();
+
+            SceneManager.activeSceneChanged -=
+                OnActiveSceneChanged;
+
+            SceneManager.activeSceneChanged +=
+                OnActiveSceneChanged;
 
             cameraRigRoot.SetActive(
                 true
@@ -270,6 +290,12 @@ namespace ProjectJ.Networking.Fusion
                 return;
             }
 
+            SceneManager.activeSceneChanged -=
+                OnActiveSceneChanged;
+
+            refreshPresentationAfterSceneChange =
+                false;
+
             boundPlayer =
                 null;
 
@@ -298,6 +324,20 @@ namespace ProjectJ.Networking.Fusion
                 CursorLockMode.None;
 
             Cursor.visible =
+                true;
+        }
+
+        private void OnActiveSceneChanged(
+            Scene previousScene,
+            Scene newScene
+        )
+        {
+            if (boundPlayer == null)
+            {
+                return;
+            }
+
+            refreshPresentationAfterSceneChange =
                 true;
         }
 
@@ -661,6 +701,12 @@ namespace ProjectJ.Networking.Fusion
 
         private void OnDestroy()
         {
+            SceneManager.activeSceneChanged -=
+                OnActiveSceneChanged;
+
+            refreshPresentationAfterSceneChange =
+                false;
+
             RestoreSuspendedLocalPresentation();
 
             if (Instance == this)

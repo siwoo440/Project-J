@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Fusion;
 using Photon.Realtime;
@@ -21,6 +22,14 @@ namespace ProjectJ.Networking.Fusion
     {
         private const int PrivateRoomPlayerCount =
             8;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static readonly string
+            DevelopmentFusionInstanceId =
+                Guid.NewGuid()
+                    .ToString("N")
+                    .Substring(0, 8);
+#endif
 
         private NetworkRunner runner;
         private GameObject runnerObject;
@@ -411,6 +420,10 @@ namespace ProjectJ.Networking.Fusion
                     ProjectJFusionInputProvider
                 >();
 
+            runner.AddCallbacks(
+                inputProvider
+            );
+
             GameObject playerPrefabObject =
                 Resources.Load<GameObject>(
                     "ProjectJNetworkPlayer"
@@ -467,11 +480,15 @@ namespace ProjectJ.Networking.Fusion
                         NetworkSceneManagerDefault
                     >();
 
+            string fusionUserId =
+                BuildFusionUserId(
+                    steamIdentity
+                );
+
             AuthenticationValues
                 authenticationValues =
                     new AuthenticationValues(
-                        steamIdentity
-                            .ProjectAccountId
+                        fusionUserId
                     );
 
             StartGameArgs startArgs =
@@ -570,11 +587,30 @@ namespace ProjectJ.Networking.Fusion
                 ConnectedRoomCode +
                 " / 세션: " +
                 sessionName +
-                " / ProjectAccountId: " +
+                " / SteamProjectAccountId: " +
                 steamIdentity.ProjectAccountId +
+                " / FusionUserId: " +
+                fusionUserId +
                 " / ProvideInput: " +
                 runner.ProvideInput
             );
+        }
+
+        private static string BuildFusionUserId(
+            ProjectJSteamIdentityService steamIdentity
+        )
+        {
+            string baseUserId =
+                steamIdentity.ProjectAccountId;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return
+                baseUserId +
+                "-dev-" +
+                DevelopmentFusionInstanceId;
+#else
+            return baseUserId;
+#endif
         }
 
         private async Task ShutdownRunnerAsync()
@@ -660,7 +696,8 @@ namespace ProjectJ.Networking.Fusion
                     runnerObject
                 );
 
-                runnerObject = null;
+                runnerObject =
+                    null;
 
                 await Task.Yield();
             }

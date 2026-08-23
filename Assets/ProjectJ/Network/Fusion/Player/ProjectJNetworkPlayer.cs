@@ -313,25 +313,65 @@ namespace ProjectJ.Networking.Fusion
         {
             LastSimulationPosition = transform.position;
 
-            if (!GetInput<ProjectJNetworkInput>(out ProjectJNetworkInput input))
+            ProjectJNetworkInput input =
+                default;
+
+            bool hasInput =
+                GetInput<ProjectJNetworkInput>(
+                    out input
+                );
+
+            Vector2 moveInput =
+                Vector2.zero;
+
+            if (hasInput)
             {
-                return;
+                HasReceivedInput =
+                    true;
+
+                moveInput =
+                    input.Move;
+
+                if (moveInput.sqrMagnitude > 1f)
+                {
+                    moveInput.Normalize();
+                }
+
+                LastReceivedMove =
+                    moveInput;
+
+                LastReceivedJump =
+                    input.Buttons.IsSet(
+                        ProjectJNetworkButton.Jump
+                    );
+
+                LastReceivedSprint =
+                    input.Buttons.IsSet(
+                        ProjectJNetworkButton.Sprint
+                    );
+
+                LastReceivedCrouch =
+                    input.Buttons.IsSet(
+                        ProjectJNetworkButton.Crouch
+                    );
+
+                LastReceivedTick =
+                    Runner.Tick.ToString();
             }
-
-            HasReceivedInput = true;
-
-            Vector2 moveInput = input.Move;
-
-            if (moveInput.sqrMagnitude > 1f)
+            else
             {
-                moveInput.Normalize();
-            }
+                LastReceivedMove =
+                    Vector2.zero;
 
-            LastReceivedMove = moveInput;
-            LastReceivedJump = input.Buttons.IsSet(ProjectJNetworkButton.Jump);
-            LastReceivedSprint = input.Buttons.IsSet(ProjectJNetworkButton.Sprint);
-            LastReceivedCrouch = input.Buttons.IsSet(ProjectJNetworkButton.Crouch);
-            LastReceivedTick = Runner.Tick.ToString();
+                LastReceivedJump =
+                    false;
+
+                LastReceivedSprint =
+                    false;
+
+                LastReceivedCrouch =
+                    false;
+            }
 
             if (
                 externalGameplay != null && // 경기 상태 컴포넌트 확인

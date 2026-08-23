@@ -20,11 +20,7 @@ namespace ProjectJ.Finish
 
         private void Awake()
         {
-            Collider trigger =
-                GetComponent<Collider>();
-
-            trigger.isTrigger = true;
-
+            EnsureTriggerPhysics(); // FINISH Trigger 이벤트 조건 보장
             ResolveManager();
         }
 
@@ -104,6 +100,30 @@ namespace ProjectJ.Finish
                 FindFirstObjectByType<
                     FinishOrderManager
                 >();
+        }
+
+        private void EnsureTriggerPhysics()
+        {
+            Collider trigger =
+                GetComponent<Collider>();
+
+            if (trigger != null)
+            {
+                trigger.isTrigger = true;
+            }
+
+            Rigidbody triggerBody =
+                GetComponent<Rigidbody>();
+
+            if (triggerBody == null)
+            {
+                triggerBody =
+                    gameObject.AddComponent<Rigidbody>();
+            }
+
+            triggerBody.isKinematic = true;
+            triggerBody.useGravity = false;
+            triggerBody.detectCollisions = true;
         }
     }
 }

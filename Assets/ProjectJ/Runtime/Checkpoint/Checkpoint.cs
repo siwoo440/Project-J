@@ -47,15 +47,9 @@ namespace ProjectJ.Checkpoint
             }
         }
 
-        private void Awake() // Trigger 설정 보정
+        private void Awake() // Trigger 물리 설정 보정
         {
-            Collider trigger = // 현재 Collider 조회
-                GetComponent<Collider>();
-
-            if (trigger != null) // Collider 존재 확인
-            {
-                trigger.isTrigger = true; // Trigger 강제 설정
-            }
+            EnsureTriggerPhysics(); // Trigger 이벤트 발생 조건 보장
         }
 
         private void OnTriggerEnter( // 플레이어 접촉 처리
@@ -106,6 +100,30 @@ namespace ProjectJ.Checkpoint
         {
             checkpointId = id; // 체크포인트 ID 저장
             respawnPoint = targetRespawnPoint; // 부활 지점 저장
+        }
+
+        private void EnsureTriggerPhysics() // Trigger 충돌 이벤트 조건 보장
+        {
+            Collider trigger = // 현재 Collider 조회
+                GetComponent<Collider>();
+
+            if (trigger != null) // Collider 존재 확인
+            {
+                trigger.isTrigger = true; // Trigger 강제 설정
+            }
+
+            Rigidbody triggerBody = // Trigger Rigidbody 조회
+                GetComponent<Rigidbody>();
+
+            if (triggerBody == null) // Rigidbody 누락 확인
+            {
+                triggerBody =
+                    gameObject.AddComponent<Rigidbody>(); // 런타임 Rigidbody 추가
+            }
+
+            triggerBody.isKinematic = true; // Trigger 위치를 물리로 움직이지 않음
+            triggerBody.useGravity = false; // Trigger 중력 비활성화
+            triggerBody.detectCollisions = true; // Trigger 충돌 감지 활성화
         }
     }
 }

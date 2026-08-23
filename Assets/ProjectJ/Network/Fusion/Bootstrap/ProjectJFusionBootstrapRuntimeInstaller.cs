@@ -10,6 +10,23 @@ namespace ProjectJ.Networking.Fusion
         )]
         private static void Install()
         {
+            ProjectJDay96ServerModeBootstrap
+                serverModeBootstrap =
+                    Object.FindFirstObjectByType<
+                        ProjectJDay96ServerModeBootstrap
+                    >();
+
+            if (serverModeBootstrap != null)
+            {
+                Debug.Log(
+                    "[Project J/Day96] " +
+                    "Server Mode Scene 감지 / " +
+                    "일반 Host·Client Bootstrap 자동 설치 생략"
+                );
+
+                return;
+            }
+
             ProjectJFusionBootstrap existing =
                 Object.FindFirstObjectByType<
                     ProjectJFusionBootstrap

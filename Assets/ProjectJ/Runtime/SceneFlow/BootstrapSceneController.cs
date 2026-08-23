@@ -1,19 +1,13 @@
-using UnityEngine;
-using UnityEngine.SceneManagement;
+using UnityEngine; // 기존 Bootstrap Scene 직행 컴포넌트 유지
 
 namespace ProjectJ
 {
-    public sealed class BootstrapSceneController : MonoBehaviour
+    [DisallowMultipleComponent]
+    public sealed class BootstrapSceneController :
+        MonoBehaviour
     {
-        private void Start()
-        {
-            if (!Application.CanStreamedLevelBeLoaded(SceneNames.MainMenu))
-            {
-                Debug.LogError($"Build Settings에서 Scene을 찾을 수 없습니다: {SceneNames.MainMenu}");
-                return;
-            }
-
-            SceneManager.LoadSceneAsync(SceneNames.MainMenu, LoadSceneMode.Single);
-        }
+        // 85일차:
+        // MainMenu 전환은 ProjectJDay82SceneFlowCoordinator가 담당한다.
+        // 구형 Start() 자동 Scene 전환은 제거했다.
     }
 }

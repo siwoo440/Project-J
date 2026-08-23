@@ -77,7 +77,20 @@ namespace ProjectJ.Steam
         } =
             "Steam 초기화 전";
 
+        public bool IsSteamInitialized
+        {
+            get
+            {
+#if STEAMWORKS_NET
+                return steamInitialized; // 실제 SteamAPI 초기화 상태
+#else
+                return false; // Steamworks 미포함 상태
+#endif
+            }
+        }
+
         public bool IsAuthenticated =>
+            IsSteamInitialized &&
             State ==
                 ProjectJSteamAuthState.Authenticated &&
             !string.IsNullOrEmpty(
@@ -476,6 +489,14 @@ namespace ProjectJ.Steam
                     false;
             }
 #endif
+
+            State =
+                ProjectJSteamAuthState.Uninitialized; // 종료 후 인증 상태 해제
+
+            StatusMessage =
+                "Steam 종료됨"; // 종료 상태 표시
+
+            ResetIdentity(); // 종료 후 인증 데이터 초기화
         }
     }
 }

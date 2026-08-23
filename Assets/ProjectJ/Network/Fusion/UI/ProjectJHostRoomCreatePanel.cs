@@ -98,6 +98,10 @@ namespace ProjectJ.Networking.Fusion
         [SerializeField]
         private Button playerLobbyBackButton;
 
+        [SerializeField]
+        private ProjectJPlayerLobbyPanel
+            playerLobbyPanel;
+
         private ProjectJDay82SceneFlowCoordinator
             sceneFlow;
 
@@ -237,6 +241,18 @@ namespace ProjectJ.Networking.Fusion
                 lobbyPreviewBackButton;
         }
 
+        public void ConfigurePlayerLobbyPanel(
+            ProjectJPlayerLobbyPanel panel,
+            Button lobbyBackButton
+        )
+        {
+            playerLobbyPanel =
+                panel;
+
+            playerLobbyBackButton =
+                lobbyBackButton;
+        }
+
         private void Awake()
         {
             ResolveSceneFlow();
@@ -338,6 +354,17 @@ namespace ProjectJ.Networking.Fusion
             if (IsConnecting())
             {
                 return;
+            }
+
+            if (playerLobbyPanel != null)
+            {
+                playerLobbyPanel.SetPreviewData(
+                    RoomName,
+                    maxPlayers,
+                    RoundCount,
+                    Difficulty,
+                    usePassword
+                );
             }
 
             if (hostRoomCreateRoot != null)

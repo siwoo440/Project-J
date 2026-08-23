@@ -31,7 +31,12 @@ namespace ProjectJ.Networking.Fusion
         [SerializeField]
         private Text statusText;
 
-        private ProjectJDay82SceneFlowCoordinator sceneFlow;
+        [SerializeField]
+        private ProjectJHostRoomCreatePanel
+            hostRoomCreatePanel;
+
+        private ProjectJDay82SceneFlowCoordinator
+            sceneFlow;
 
         private bool requestPending;
 
@@ -46,18 +51,43 @@ namespace ProjectJ.Networking.Fusion
             Text connectionStatus
         )
         {
-            modeSelectRoot = modeSelection;
-            privateMatchRoot = privateMatch;
-            createRoomButton = createButton;
-            joinRoomButton = joinButton;
-            backButton = returnButton;
-            roomCodeInput = codeInput;
-            statusText = connectionStatus;
+            playModePanel =
+                modePanel;
+
+            modeSelectRoot =
+                modeSelection;
+
+            privateMatchRoot =
+                privateMatch;
+
+            createRoomButton =
+                createButton;
+
+            joinRoomButton =
+                joinButton;
+
+            backButton =
+                returnButton;
+
+            roomCodeInput =
+                codeInput;
+
+            statusText =
+                connectionStatus;
+        }
+
+        public void ConfigureHostRoomCreatePanel(
+            ProjectJHostRoomCreatePanel panel
+        )
+        {
+            hostRoomCreatePanel =
+                panel;
         }
 
         private void Awake()
         {
             ResolvePlayModePanel();
+            ResolveHostRoomCreatePanel();
             ResolveSceneFlow();
             BindUi();
 
@@ -107,7 +137,8 @@ namespace ProjectJ.Networking.Fusion
         public void Open()
         {
             ResolveSceneFlow();
-            requestPending = false;
+            requestPending =
+                false;
 
             if (modeSelectRoot != null)
             {
@@ -139,7 +170,8 @@ namespace ProjectJ.Networking.Fusion
                 return;
             }
 
-            requestPending = false;
+            requestPending =
+                false;
 
             if (privateMatchRoot != null)
             {
@@ -154,30 +186,25 @@ namespace ProjectJ.Networking.Fusion
 
         public void CreateRoom()
         {
-            ResolveSceneFlow();
+            ResolveHostRoomCreatePanel();
 
-            if (sceneFlow == null)
+            if (hostRoomCreatePanel == null)
             {
                 SetStatus(
-                    "온라인 Scene Flow를 찾을 수 없습니다."
+                    "Host Room Create 화면을 찾을 수 없습니다."
+                );
+
+                Debug.LogWarning(
+                    "[Project J/Day89] ProjectJHostRoomCreatePanel 연결 없음"
                 );
 
                 return;
             }
 
-            if (IsConnecting())
-            {
-                return;
-            }
+            requestPending =
+                false;
 
-            requestPending = true;
-            SetButtonsInteractable(false);
-
-            SetStatus(
-                "비공개 방 생성 요청 중..."
-            );
-
-            sceneFlow.RequestCreatePrivateRoom();
+            hostRoomCreatePanel.OpenFromPrivateMatch();
         }
 
         public void JoinRoom()
@@ -204,14 +231,18 @@ namespace ProjectJ.Networking.Fusion
                     : string.Empty;
 
             if (
-                !ProjectJFusionRoomCode.TryNormalize(
-                    inputValue,
-                    out string normalizedCode,
-                    out string errorMessage
-                )
+                !ProjectJFusionRoomCode
+                    .TryNormalize(
+                        inputValue,
+                        out string normalizedCode,
+                        out string errorMessage
+                    )
             )
             {
-                SetStatus(errorMessage);
+                SetStatus(
+                    errorMessage
+                );
+
                 return;
             }
 
@@ -222,8 +253,12 @@ namespace ProjectJ.Networking.Fusion
                 );
             }
 
-            requestPending = true;
-            SetButtonsInteractable(false);
+            requestPending =
+                true;
+
+            SetButtonsInteractable(
+                false
+            );
 
             SetStatus(
                 normalizedCode +
@@ -237,9 +272,16 @@ namespace ProjectJ.Networking.Fusion
 
             if (!requested)
             {
-                requestPending = false;
-                SetButtonsInteractable(true);
-                SetStatus(sceneFlow.StatusText);
+                requestPending =
+                    false;
+
+                SetButtonsInteractable(
+                    true
+                );
+
+                SetStatus(
+                    sceneFlow.StatusText
+                );
             }
         }
 
@@ -253,30 +295,34 @@ namespace ProjectJ.Networking.Fusion
 
             if (createRoomButton != null)
             {
-                createRoomButton.onClick.AddListener(
-                    CreateRoom
-                );
+                createRoomButton.onClick
+                    .AddListener(
+                        CreateRoom
+                    );
             }
 
             if (joinRoomButton != null)
             {
-                joinRoomButton.onClick.AddListener(
-                    JoinRoom
-                );
+                joinRoomButton.onClick
+                    .AddListener(
+                        JoinRoom
+                    );
             }
 
             if (backButton != null)
             {
-                backButton.onClick.AddListener(
-                    Close
-                );
+                backButton.onClick
+                    .AddListener(
+                        Close
+                    );
             }
 
             if (roomCodeInput != null)
             {
-                roomCodeInput.onValueChanged.AddListener(
-                    NormalizeInputDisplay
-                );
+                roomCodeInput.onValueChanged
+                    .AddListener(
+                        NormalizeInputDisplay
+                    );
             }
         }
 
@@ -290,30 +336,34 @@ namespace ProjectJ.Networking.Fusion
 
             if (createRoomButton != null)
             {
-                createRoomButton.onClick.RemoveListener(
-                    CreateRoom
-                );
+                createRoomButton.onClick
+                    .RemoveListener(
+                        CreateRoom
+                    );
             }
 
             if (joinRoomButton != null)
             {
-                joinRoomButton.onClick.RemoveListener(
-                    JoinRoom
-                );
+                joinRoomButton.onClick
+                    .RemoveListener(
+                        JoinRoom
+                    );
             }
 
             if (backButton != null)
             {
-                backButton.onClick.RemoveListener(
-                    Close
-                );
+                backButton.onClick
+                    .RemoveListener(
+                        Close
+                    );
             }
 
             if (roomCodeInput != null)
             {
-                roomCodeInput.onValueChanged.RemoveListener(
-                    NormalizeInputDisplay
-                );
+                roomCodeInput.onValueChanged
+                    .RemoveListener(
+                        NormalizeInputDisplay
+                    );
             }
         }
 
@@ -327,7 +377,9 @@ namespace ProjectJ.Networking.Fusion
             }
 
             string upper =
-                string.IsNullOrEmpty(value)
+                string.IsNullOrEmpty(
+                    value
+                )
                     ? string.Empty
                     : value.ToUpperInvariant();
 
@@ -359,6 +411,19 @@ namespace ProjectJ.Networking.Fusion
                     "[Project J/Day88] 같은 PlayPanel에서 ProjectJPlayModePanel을 찾지 못했습니다."
                 );
             }
+        }
+
+        private void ResolveHostRoomCreatePanel()
+        {
+            if (hostRoomCreatePanel != null)
+            {
+                return;
+            }
+
+            hostRoomCreatePanel =
+                GetComponent<
+                    ProjectJHostRoomCreatePanel
+                >();
         }
 
         private void ResolveSceneFlow()
@@ -409,9 +474,14 @@ namespace ProjectJ.Networking.Fusion
                     ProjectJFusionBootstrapState.Failed
             )
             {
-                requestPending = false;
+                requestPending =
+                    false;
+
                 SetButtonsInteractable(true);
-                SetStatus(bootstrap.StatusMessage);
+                SetStatus(
+                    bootstrap.StatusMessage
+                );
+
                 return;
             }
 
@@ -432,7 +502,8 @@ namespace ProjectJ.Networking.Fusion
 
             if (requestPending)
             {
-                requestPending = false;
+                requestPending =
+                    false;
             }
 
             SetButtonsInteractable(
@@ -503,7 +574,8 @@ namespace ProjectJ.Networking.Fusion
         {
             if (statusText != null)
             {
-                statusText.text = message;
+                statusText.text =
+                    message;
             }
         }
     }

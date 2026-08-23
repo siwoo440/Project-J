@@ -56,6 +56,10 @@ namespace ProjectJ.Networking.Fusion
             bootstrapObject.AddComponent<
                 ProjectJDay82SceneFlowDebugView
             >();
+
+            bootstrapObject.AddComponent<
+                ProjectJDay94SceneFlowGuard
+            >(); // 실제 UI Scene 전환 잠금·수명 점검 자동 설치
         }
 
         private static void
@@ -105,6 +109,17 @@ namespace ProjectJ.Networking.Fusion
                 bootstrapObject.AddComponent<
                     ProjectJDay82SceneFlowDebugView
                 >();
+            }
+
+            if (
+                bootstrapObject.GetComponent<
+                    ProjectJDay94SceneFlowGuard
+                >() == null
+            )
+            {
+                bootstrapObject.AddComponent<
+                    ProjectJDay94SceneFlowGuard
+                >(); // 기존 영구 Bootstrap에도 Day94 Guard 보장
             }
         }
     }

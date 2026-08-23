@@ -65,8 +65,6 @@ namespace ProjectJ.Networking.Fusion
 
         private bool countdownRequested;
 
-        private bool returnToLobbyRequested;
-
         public ProjectJNetworkLobbyFlowPhase Phase
         {
             get;
@@ -158,9 +156,6 @@ namespace ProjectJ.Networking.Fusion
                 lobbyLoadRequested =
                     false;
 
-                returnToLobbyRequested =
-                    false;
-
                 UpdateLobby(
                     runner
                 );
@@ -222,8 +217,6 @@ namespace ProjectJ.Networking.Fusion
                     true;
             }
 
-            returnToLobbyRequested =
-                true;
 
             lobbyLoadRequested =
                 true;
@@ -812,8 +805,6 @@ namespace ProjectJ.Networking.Fusion
             countdownRequested =
                 false;
 
-            returnToLobbyRequested =
-                false;
 
             ReadyPlayerCount =
                 0;
@@ -857,8 +848,6 @@ namespace ProjectJ.Networking.Fusion
             countdownRequested =
                 false;
 
-            returnToLobbyRequested =
-                false;
 
             ReadyPlayerCount =
                 0;

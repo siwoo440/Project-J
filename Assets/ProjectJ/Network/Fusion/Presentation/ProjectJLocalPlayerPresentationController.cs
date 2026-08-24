@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using ProjectJ.CameraSystem; // 카메라 위치 보간 정책 사용
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -46,6 +47,12 @@ namespace ProjectJ.Networking.Fusion
         private const float FovChangeSpeed =
             8f;
 
+        private const float CameraPositionSmoothingSpeed = // 카메라 위치 추적 속도
+            18f; // 빠른 반응과 Tick 흔들림 완화 균형값
+
+        private const float CameraSnapDistance = // 순간이동 즉시 추적 거리
+            4f; // 부활·Scene 전환 보간 이동 방지 기준
+
         private readonly List<Camera>
             suspendedCameras =
                 new List<Camera>();
@@ -65,6 +72,10 @@ namespace ProjectJ.Networking.Fusion
         private float pitch;
         private float cameraDistance =
             DefaultDistance;
+
+        private Vector3 smoothedCameraTargetPosition; // 현재 보간된 카메라 목표 위치
+
+        private bool hasSmoothedCameraTargetPosition; // 카메라 보간 위치 초기화 여부
 
         private bool refreshPresentationAfterSceneChange;
 
@@ -97,6 +108,18 @@ namespace ProjectJ.Networking.Fusion
 
         public int SuspendedCameraCount =>
             suspendedCameras.Count;
+
+        public float CameraFollowOffset // 카메라와 실제 목표 위치 차이
+        {
+            get; // 외부 진단 화면 조회
+            private set; // 내부 카메라 추적에서만 변경
+        }
+
+        public float CameraStepDistance // 최근 프레임 카메라 이동 거리
+        {
+            get; // 외부 진단 화면 조회
+            private set; // 내부 카메라 추적에서만 변경
+        }
 
         [RuntimeInitializeOnLoadMethod(
             RuntimeInitializeLoadType.BeforeSceneLoad
@@ -263,6 +286,8 @@ namespace ProjectJ.Networking.Fusion
             cameraDistance =
                 DefaultDistance;
 
+            ResetCameraPositionSmoothing(); // 새 Player 위치에서 보간 상태 초기화
+
             UpdateCameraTransform();
 
             Cursor.lockState =
@@ -298,6 +323,8 @@ namespace ProjectJ.Networking.Fusion
 
             boundPlayer =
                 null;
+
+            ResetCameraPositionSmoothing(); // 연결 해제 시 이전 위치 제거
 
             if (gameplayCamera != null)
             {
@@ -339,6 +366,8 @@ namespace ProjectJ.Networking.Fusion
 
             refreshPresentationAfterSceneChange =
                 true;
+
+            ResetCameraPositionSmoothing(); // 새 Scene에서 이전 위치 보간 방지
         }
 
         private void EnsureCameraRig()
@@ -590,10 +619,60 @@ namespace ProjectJ.Networking.Fusion
                     ? CrouchTargetHeight
                     : StandingTargetHeight;
 
-            cameraRigRoot.transform.position =
+            Vector3 targetPosition = // Player 기준 카메라 목표 위치
                 boundPlayer.transform.position +
                 Vector3.up *
                 targetHeight;
+
+            Vector3 previousCameraPosition = // 이전 프레임 카메라 위치
+                cameraRigRoot.transform.position; // 현재 Rig 위치 저장
+
+            bool hadPreviousPosition = // 이전 보간 위치 존재 여부
+                hasSmoothedCameraTargetPosition; // 초기화 상태 저장
+
+            bool shouldSnap = // 즉시 목표 위치 이동 여부
+                !hadPreviousPosition || // 최초 연결 상태 확인
+                ProjectJCameraSmoothingPolicy.ShouldSnap( // 순간이동 거리 판정
+                    smoothedCameraTargetPosition, // 현재 보간 위치 전달
+                    targetPosition, // 새 목표 위치 전달
+                    CameraSnapDistance // 순간이동 거리 기준 전달
+                );
+
+            if (shouldSnap) // 최초 연결·순간이동 확인
+            {
+                smoothedCameraTargetPosition = // 목표 위치 즉시 적용
+                    targetPosition; // 부활·Scene 전환 위치 사용
+            }
+            else
+            {
+                smoothedCameraTargetPosition = // 다음 보간 위치 계산
+                    ProjectJCameraSmoothingPolicy.CalculateNextPosition( // 프레임 독립 보간 호출
+                        smoothedCameraTargetPosition, // 현재 보간 위치 전달
+                        targetPosition, // Player 목표 위치 전달
+                        CameraPositionSmoothingSpeed, // 카메라 추적 속도 전달
+                        Time.deltaTime // 현재 프레임 시간 전달
+                    );
+            }
+
+            cameraRigRoot.transform.position = // 카메라 Rig 위치 적용
+                smoothedCameraTargetPosition; // 계산된 보간 위치 사용
+
+            CameraStepDistance = // 최근 프레임 카메라 이동 거리 갱신
+                hadPreviousPosition // 이전 위치 존재 여부 확인
+                    ? Vector3.Distance( // 이전 위치와 현재 위치 거리 계산
+                        previousCameraPosition, // 이전 카메라 위치
+                        smoothedCameraTargetPosition // 현재 보간 위치
+                    )
+                    : 0f; // 최초 연결 이동량 제외
+
+            CameraFollowOffset = // 실제 목표와 보간 위치 차이 갱신
+                Vector3.Distance( // 두 위치 거리 계산
+                    smoothedCameraTargetPosition, // 현재 보간 위치
+                    targetPosition // Player 기준 목표 위치
+                );
+
+            hasSmoothedCameraTargetPosition = // 다음 프레임 보간 활성화
+                true; // 현재 위치 초기화 완료
 
             cameraRigRoot.transform.rotation =
                 Quaternion.Euler(
@@ -618,6 +697,21 @@ namespace ProjectJ.Networking.Fusion
 
             gameplayCamera.transform.localRotation =
                 Quaternion.identity;
+        }
+
+        private void ResetCameraPositionSmoothing() // 카메라 보간 상태 초기화
+        {
+            smoothedCameraTargetPosition = // 이전 보간 위치 제거
+                Vector3.zero; // 기본 위치 사용
+
+            hasSmoothedCameraTargetPosition = // 초기화 상태 해제
+                false; // 다음 추적에서 즉시 목표 적용
+
+            CameraFollowOffset = // 목표 위치 차이 초기화
+                0f; // 초기 진단값 사용
+
+            CameraStepDistance = // 프레임 이동 거리 초기화
+                0f; // 초기 진단값 사용
         }
 
         private void UpdateCameraFov()

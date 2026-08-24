@@ -352,11 +352,24 @@ namespace ProjectJ.Networking.Fusion
                     rttSampleCount;
             }
 
-            bool twoPlayerMeasurementGate = // Day99 2인 측정 준비 여부
+            bool twoPlayerMeasurementGate = // Day100 2인 개선 확인 준비 여부
                 bootstrap.ParticipantCount ==
                     RequiredPlayerCount &&
                 bootstrap.SpawnedPlayerCount ==
                     RequiredPlayerCount;
+
+            ProjectJLocalPlayerPresentationController localPresentation = // 현재 Client 로컬 표시 관리자
+                ProjectJLocalPlayerPresentationController.Instance; // Runtime 자동 설치 Instance 조회
+
+            float localCameraStepDistance = // 최근 로컬 카메라 이동 거리
+                localPresentation != null // 표시 관리자 존재 여부 확인
+                    ? localPresentation.CameraStepDistance // 실제 최근 이동 거리 사용
+                    : 0f; // 관리자 없음 기본값
+
+            float localCameraFollowOffset = // 로컬 카메라 목표 추적 오차
+                localPresentation != null // 표시 관리자 존재 여부 확인
+                    ? localPresentation.CameraFollowOffset // 실제 목표 추적 오차 사용
+                    : 0f; // 관리자 없음 기본값
 
             float width =
                 Mathf.Min(
@@ -367,7 +380,7 @@ namespace ProjectJ.Networking.Fusion
             float height =
                 Mathf.Min(
                     Screen.height - 24f,
-                    250f + // Day99 전체 측정 줄 높이 확보
+                    277f + // Day100 카메라 진단 줄 높이 확보
                     players.Count *
                     54f // 플레이어당 두 줄 표시 높이 확보
                 );
@@ -388,7 +401,7 @@ namespace ProjectJ.Networking.Fusion
             DrawLine(
                 ref y,
                 width,
-                "DAY 99 - HOST·CLIENT MOVEMENT DIAGNOSTICS / F6 Toggle" // Day99 측정 화면 제목
+                "DAY 100 - PREDICTION·INTERPOLATION·CAMERA / F6 Toggle" // Day100 개선 확인 화면 제목
             );
 
             DrawLine(
@@ -472,6 +485,15 @@ namespace ProjectJ.Networking.Fusion
                 maxRenderStepDistance.ToString("F3") + // 최대 Render 이동 거리 표시
                 "    Max Simulation Offset:" + // 최대 위치 차이 레이블
                 maxSimulationOffset.ToString("F3") // 최대 Simulation·Render 위치 차이 표시
+            );
+
+            DrawLine( // 로컬 카메라 보간 결과 표시
+                ref y, // 다음 출력 위치 갱신
+                width, // 현재 진단 창 너비 전달
+                "Local Camera Step:" + // 최근 카메라 이동 거리 레이블
+                localCameraStepDistance.ToString("F3") + // 최근 카메라 이동 거리 표시
+                "    Follow Offset:" + // 카메라 목표 추적 오차 레이블
+                localCameraFollowOffset.ToString("F3") // 카메라 목표 추적 오차 표시
             );
 
             DrawLine(

@@ -36,6 +36,34 @@ namespace ProjectJ.Networking.Fusion
         private static readonly HashSet<ProjectJNetworkExternalGameplay> ActivePlayers =
             new HashSet<ProjectJNetworkExternalGameplay>(); // 현재 프로세스 Player Registry
 
+        internal static void CollectActivePlayers( // 현재 Runner Player 목록 복사
+            NetworkRunner runner, // 조회할 Runner
+            List<ProjectJNetworkExternalGameplay> results // 재사용 결과 목록
+        )
+        {
+            results.Clear(); // 이전 Tick 후보 제거
+
+            if (runner == null) // Runner 누락 확인
+            {
+                return; // 조회 차단
+            }
+
+            foreach (ProjectJNetworkExternalGameplay candidate in ActivePlayers) // 활성 Player Registry 순회
+            {
+                if (
+                    candidate == null || // Player 누락 조건
+                    candidate.Runner != runner || // 다른 Runner Player 제외
+                    candidate.Object == null || // NetworkObject 누락 조건
+                    !candidate.Object.IsValid // NetworkObject 무효 조건
+                )
+                {
+                    continue; // 결과 목록 제외
+                }
+
+                results.Add(candidate); // 현재 Runner Player 추가
+            }
+        }
+
         private ProjectJNetworkPlayer networkPlayer; // 이동 상태 초기화 대상
         private ProjectJNetworkItemInventory itemInventory; // 73일차 젤리 보호막 상태 조회
         private NetworkTransform networkTransform; // 순간이동 동기화 대상
@@ -586,6 +614,31 @@ namespace ProjectJ.Networking.Fusion
             Vector3 velocityChange
         )
         {
+            return TryApplyExternalVelocityChangeInternal( // 기존 수평 외력 처리 위임
+                source, // 외력 원인 전달
+                velocityChange, // 외력 속도 전달
+                false // 수직 성분 제거
+            );
+        }
+
+        internal bool TryApplyExternalVelocityChange3D( // 지뢰용 3차원 외력 적용
+            ProjectJExternalForceSource source, // 외력 원인
+            Vector3 velocityChange // 수직 성분 포함 외력 속도
+        )
+        {
+            return TryApplyExternalVelocityChangeInternal( // 공통 보호 판정 처리 위임
+                source, // 외력 원인 전달
+                velocityChange, // 3차원 외력 전달
+                true // 수직 성분 유지
+            );
+        }
+
+        private bool TryApplyExternalVelocityChangeInternal( // 공통 외력 적용 처리
+            ProjectJExternalForceSource source, // 외력 원인
+            Vector3 velocityChange, // 적용할 속도 변화
+            bool allowVertical // 수직 성분 허용 여부
+        )
+        {
             if (!Object.HasStateAuthority)
             {
                 return false;
@@ -614,7 +667,10 @@ namespace ProjectJ.Networking.Fusion
                 return false; // 보호 중 적대 외력 차단
             }
 
-            velocityChange.y = 0f; // 현재 수평 외력 유지
+            if (!allowVertical) // 기존 수평 외력 확인
+            {
+                velocityChange.y = 0f; // 기존 아이템·밀치기 수직 성분 제거
+            }
 
             if (velocityChange.sqrMagnitude <= 0.0001f)
             {
@@ -664,6 +720,37 @@ namespace ProjectJ.Networking.Fusion
             }
 
             return itemInventory.ApplySnowballSlowAuthority(); // Target 감속 Timer 적용
+        }
+
+        internal bool CanReceiveMineExplosionAuthority( // 지뢰 폭발 Target 사전 판정
+            PlayerRef sourceOwner // 지뢰 설치 사용자
+        )
+        {
+            ResolveReferences(); // Target 아이템 상태 참조 보정
+
+            bool runnerReady =
+                Runner != null && // Runner 존재 조건
+                Object != null && // NetworkObject 존재 조건
+                Object.IsValid && // NetworkObject 유효 조건
+                Object.HasStateAuthority; // Target 서버 권한 조건
+
+            bool isOwner =
+                Object != null && // NetworkObject 존재 조건
+                Object.IsValid && // NetworkObject 유효 조건
+                Object.InputAuthority == sourceOwner; // 설치 사용자 자기 판정
+
+            bool isShielded =
+                itemInventory != null && // 인벤토리 존재 조건
+                itemInventory.BlocksExternalForce(ProjectJExternalForceSource.Item); // Jelly 보호막 판정
+
+            return ProjectJMinePolicy.CanAffectTarget( // 공통 지뢰 보호 정책 적용
+                runnerReady, // 서버 권한 상태 전달
+                GameplayInputAllowed, // 경기 입력 상태 전달
+                isOwner, // 소유자 상태 전달
+                IsFinished, // 완주 상태 전달
+                IsRespawnProtected, // 부활 보호 상태 전달
+                isShielded // Jelly 보호막 상태 전달
+            );
         }
 
         public void RequestToggleLobbyReady()

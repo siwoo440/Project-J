@@ -474,6 +474,10 @@ namespace ProjectJ.Networking.Fusion
                     success = UseSnowballAuthority();
                     break;
 
+                case ProjectJNetworkItemId.Mine: // 지뢰 선택 상태
+                    success = UseMineAuthority(); // 서버 권한 설치 시도
+                    break; // 지뢰 분기 종료
+
                 default:
                     success = false;
                     break;

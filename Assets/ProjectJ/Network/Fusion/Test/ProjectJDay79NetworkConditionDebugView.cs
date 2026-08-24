@@ -14,7 +14,7 @@ namespace ProjectJ.Networking.Fusion
             "Assets/ProjectJ/Scenes/Game.unity";
 
         private const int RequiredPlayerCount =
-            8;
+            2; // Day99 Host 1명·Client 1명 측정 기준
 
         private const float JitterSmoothing =
             0.15f;
@@ -229,8 +229,17 @@ namespace ProjectJ.Networking.Fusion
             float maxCorrection =
                 0f;
 
+            float maxRenderStepDistance = // 최대 Render 이동 거리
+                0f; // 측정 시작값 초기화
+
+            float maxSimulationOffset = // 최대 Simulation·Render 위치 차이
+                0f; // 측정 시작값 초기화
+
             int totalResimulationBatches =
                 0;
+
+            int totalResimulationTicks = // 전체 Resimulation Tick 누적값
+                0; // 측정 시작값 초기화
 
             double averageRtt =
                 0d;
@@ -314,6 +323,24 @@ namespace ProjectJ.Networking.Fusion
                 totalResimulationBatches +=
                     networkPlayer
                         .ResimulationBatchCount;
+
+                totalResimulationTicks += // 전체 Resimulation Tick 누적
+                    networkPlayer // 현재 Network Player 사용
+                        .ResimulationTickCount; // 누적 Tick 값 추가
+
+                maxRenderStepDistance = // 최대 Render 이동 거리 갱신
+                    Mathf.Max( // 기존 최대값과 현재값 비교
+                        maxRenderStepDistance, // 기존 최대 Render 이동 거리
+                        networkPlayer // 현재 Network Player 사용
+                            .LastRenderStepDistance // 최근 Render 이동 거리
+                    );
+
+                maxSimulationOffset = // 최대 Simulation·Render 위치 차이 갱신
+                    Mathf.Max( // 기존 최대값과 현재값 비교
+                        maxSimulationOffset, // 기존 최대 위치 차이
+                        networkPlayer // 현재 Network Player 사용
+                            .RenderSimulationOffset // 현재 Simulation·Render 위치 차이
+                    );
             }
 
             if (rttSampleCount > 0)
@@ -325,7 +352,7 @@ namespace ProjectJ.Networking.Fusion
                     rttSampleCount;
             }
 
-            bool eightPlayerGate =
+            bool twoPlayerMeasurementGate = // Day99 2인 측정 준비 여부
                 bootstrap.ParticipantCount ==
                     RequiredPlayerCount &&
                 bootstrap.SpawnedPlayerCount ==
@@ -340,9 +367,9 @@ namespace ProjectJ.Networking.Fusion
             float height =
                 Mathf.Min(
                     Screen.height - 24f,
-                    220f +
+                    250f + // Day99 전체 측정 줄 높이 확보
                     players.Count *
-                    30f
+                    54f // 플레이어당 두 줄 표시 높이 확보
                 );
 
             GUI.Box(
@@ -361,7 +388,7 @@ namespace ProjectJ.Networking.Fusion
             DrawLine(
                 ref y,
                 width,
-                "DAY 79 - NETWORK CONDITION GATE / F6 Toggle"
+                "DAY 99 - HOST·CLIENT MOVEMENT DIAGNOSTICS / F6 Toggle" // Day99 측정 화면 제목
             );
 
             DrawLine(
@@ -371,9 +398,12 @@ namespace ProjectJ.Networking.Fusion
                 smoothedFps.ToString("F1") +
                 "    Players : " +
                 bootstrap.ParticipantCount +
-                " / 8    Objects : " +
+                " / " + // 목표 참가 인원 구분자
+                RequiredPlayerCount + // Day99 목표 참가 인원 표시
+                "    Objects : " +
                 bootstrap.SpawnedPlayerCount +
-                " / 8"
+                " / " + // 목표 Spawn 수 구분자
+                RequiredPlayerCount // Day99 목표 Spawn 수 표시
             );
 
             DrawLine(
@@ -429,16 +459,27 @@ namespace ProjectJ.Networking.Fusion
                 width,
                 "Resimulation Batches:" +
                 totalResimulationBatches +
+                "    Ticks:" + // 전체 Resimulation Tick 표시
+                totalResimulationTicks + // 누적 Tick 값 표시
                 "    Max Correction:" +
                 maxCorrection.ToString("F3")
+            );
+
+            DrawLine( // Render 경로 위치 오차 요약 표시
+                ref y, // 다음 출력 위치 갱신
+                width, // 현재 진단 창 너비 전달
+                "Max Render Step:" + // 최대 Render 이동 거리 레이블
+                maxRenderStepDistance.ToString("F3") + // 최대 Render 이동 거리 표시
+                "    Max Simulation Offset:" + // 최대 위치 차이 레이블
+                maxSimulationOffset.ToString("F3") // 최대 Simulation·Render 위치 차이 표시
             );
 
             DrawLine(
                 ref y,
                 width,
-                eightPlayerGate
-                    ? "8P BASE GATE : PASS"
-                    : "8P BASE GATE : WAIT"
+                twoPlayerMeasurementGate // 2인 측정 준비 상태 확인
+                    ? "2P MEASURE GATE : PASS" // Host·Client 및 PlayerObject 준비 완료
+                    : "2P MEASURE GATE : WAIT" // 2인 측정 준비 대기
             );
 
             DrawLine(
@@ -536,7 +577,7 @@ namespace ProjectJ.Networking.Fusion
                 return;
             }
 
-            string text =
+            string playerStateText = // 플레이어 네트워크·경기 상태 첫 줄
                 "P" +
                 player.AsIndex +
                 " RTT:" +
@@ -556,23 +597,38 @@ namespace ProjectJ.Networking.Fusion
                 " CP:" +
                 gameplay.CurrentCheckpointId +
                 " FIN:" +
-                gameplay.IsFinished +
-                " Corr:" +
-                networkPlayer
-                    .LastCorrectionDistance
-                    .ToString("F3") +
-                " Roll:" +
-                networkPlayer
-                    .LastRollbackDistance
-                    .ToString("F3") +
-                " ReSim:" +
-                networkPlayer
-                    .ResimulationBatchCount;
+                gameplay.IsFinished; // 완주 여부로 첫 줄 종료
 
-            DrawLine(
-                ref y,
-                width,
-                text
+            DrawLine( // 플레이어 기본 상태 표시
+                ref y, // 다음 출력 위치 갱신
+                width, // 현재 진단 창 너비 전달
+                playerStateText // 네트워크·경기 상태 문자열 표시
+            );
+
+            string movementDiagnosticText = // 플레이어 이동 진단 두 번째 줄
+                "  Move Corr:" + // 최근·최대 보정 거리 레이블
+                networkPlayer.LastCorrectionDistance.ToString("F3") + // 최근 보정 거리 표시
+                "/" + // 최근값과 최대값 구분
+                networkPlayer.MaxCorrectionDistance.ToString("F3") + // 최대 보정 거리 표시
+                " Roll:" + // Rollback 거리 레이블
+                networkPlayer.LastRollbackDistance.ToString("F3") + // 최근 Rollback 거리 표시
+                " ReSim B/T:" + // Resimulation Batch·Tick 레이블
+                networkPlayer.ResimulationBatchCount + // 누적 Batch 수 표시
+                "/" + // Batch와 Tick 구분
+                networkPlayer.ResimulationTickCount + // 누적 Tick 수 표시
+                " Last R/F:" + // 최근 Resimulation·Forward Tick 레이블
+                networkPlayer.LastResimulationTickCount + // 최근 Resimulation Tick 수 표시
+                "/" + // Resimulation과 Forward 구분
+                networkPlayer.LastForwardTickCount + // 최근 Forward Tick 수 표시
+                " Step:" + // 최근 Render 이동 거리 레이블
+                networkPlayer.LastRenderStepDistance.ToString("F3") + // 최근 Render 이동 거리 표시
+                " Offset:" + // Simulation·Render 위치 차이 레이블
+                networkPlayer.RenderSimulationOffset.ToString("F3"); // 현재 위치 차이 표시
+
+            DrawLine( // 플레이어 이동 진단 표시
+                ref y, // 다음 출력 위치 갱신
+                width, // 현재 진단 창 너비 전달
+                movementDiagnosticText // 이동 진단 문자열 표시
             );
         }
 

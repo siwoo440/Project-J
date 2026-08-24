@@ -1,6 +1,7 @@
 using System; // 문자열 비교와 Type 사용
 using System.Collections.Generic; // Debug Window 목록 사용
 using System.Reflection; // OnGUI와 내부 표시 상태 탐색
+using ProjectJ.Debugging; // 전용 단축키 화면 분리 정책 사용
 using UnityEngine; // MonoBehaviour와 Runtime 초기화 사용
 using UnityEngine.InputSystem; // F1, F2 키 입력 사용
 using UnityEngine.SceneManagement; // Scene 전환 감지 사용
@@ -348,6 +349,16 @@ namespace ProjectJ.Networking.Fusion // Project J Fusion 네임스페이스
 
             string typeName = // 타입 이름 조회
                 type.Name; // 클래스 이름 저장
+
+            if ( // 전용 단축키 화면 여부 확인
+                ProjectJDebugWindowRoutingPolicy.UsesDedicatedHotkey( // 공통 단축키 분리 정책 호출
+                    type.FullName ?? // 전체 타입 이름 우선 사용
+                    typeName // 전체 이름이 없으면 클래스 이름 사용
+                )
+            )
+            {
+                return false; // F6 전용 화면을 F1·F2 관리에서 제외
+            }
 
             return // Debug 관련 이름 판정 결과 반환
                 ContainsIgnoreCase( // Debug 문자열 확인

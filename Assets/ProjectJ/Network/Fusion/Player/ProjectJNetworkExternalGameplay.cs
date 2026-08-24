@@ -1,6 +1,7 @@
 using System.Collections.Generic; // 활성 Player Registry 사용
 using Fusion; // NetworkBehaviour와 TickTimer 사용
 using ProjectJ.Checkpoint; // 체크포인트와 낙하 한계 사용
+using ProjectJ.Debugging; // 네트워크 디버그 단축키 정책 사용
 using ProjectJ.Finish; // FINISH 공통 수신 계약 사용
 using UnityEngine; // Unity 기본 타입 사용
 using UnityEngine.InputSystem; // 개발 테스트 키 사용
@@ -495,7 +496,11 @@ namespace ProjectJ.Networking.Fusion
             }
 
             if (
-                keyboard.f5Key.wasPressedThisFrame &&
+                keyboard[ // 단독 경기 시작 키 조회
+                    ProjectJNetworkDebugHotkeyPolicy.GetKey( // 공통 단축키 정책 호출
+                        ProjectJNetworkDebugAction.SoloStart // 단독 경기 시작 기능 전달
+                    )
+                ].wasPressedThisFrame && // 현재 프레임 F5 입력 확인
                 IsGameSceneActive() &&
                 Object.HasStateAuthority &&
                 GetMatchCoordinator() == this
@@ -505,12 +510,20 @@ namespace ProjectJ.Networking.Fusion
             }
 
             if (
-                keyboard.f6Key.wasPressedThisFrame &&
-                Object.HasStateAuthority &&
-                GetMatchCoordinator() == this
+                keyboard[ // 강제 경기 종료 키 조회
+                    ProjectJNetworkDebugHotkeyPolicy.GetKey( // 공통 단축키 정책 호출
+                        ProjectJNetworkDebugAction.ForceMatchEnd // 강제 경기 종료 기능 전달
+                    )
+                ].wasPressedThisFrame && // 현재 프레임 F11 입력 확인
+                ProjectJNetworkDebugHotkeyPolicy.CanForceMatchEnd( // 강제 경기 종료 조건 검사
+                    IsGameSceneActive(), // Game Scene 활성 여부 전달
+                    Object.HasStateAuthority, // State Authority 보유 여부 전달
+                    GetMatchCoordinator() == this, // Match Coordinator 일치 여부 전달
+                    GameplayInputAllowed // 실제 경기 입력 허용 여부 전달
+                )
             )
             {
-                FinishMatchAuthority(ProjectJNetworkMatchEndReason.TimeExpired); // F6 제한 시간 종료 테스트
+                FinishMatchAuthority(ProjectJNetworkMatchEndReason.TimeExpired); // F11 제한 시간 종료 테스트
             }
         }
 
@@ -1683,7 +1696,7 @@ namespace ProjectJ.Networking.Fusion
                 " / Target P" + LastPushTargetIndex +
                 " / CD " + PushCooldownRemaining.ToString("F2") + "\n" +
                 "Checkpoint: " + CurrentCheckpointId + "\n" +
-                "R: Respawn / F5: Solo Start / F6: Force End"; // 71일차 디버그 상태
+                "R: Respawn / F5: Solo Start / F11: Force End"; // 102일차 디버그 단축키 상태
 
             GUI.Box(
                 new Rect(

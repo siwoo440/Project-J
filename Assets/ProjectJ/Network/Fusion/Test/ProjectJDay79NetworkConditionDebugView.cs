@@ -1,8 +1,8 @@
 using System.Collections.Generic; // RTT 샘플과 Player 정렬 사용
 using Fusion; // NetworkRunner와 NetworkProjectConfig 사용
-using ProjectJ.Debugging; // 이동 품질 역할·최대값 정책 사용
+using ProjectJ.Debugging; // 이동 품질과 디버그 단축키 정책 사용
 using UnityEngine; // FPS와 Debug GUI 사용
-using UnityEngine.InputSystem; // F6 표시와 F10 초기화 입력 사용
+using UnityEngine.InputSystem; // 공통 디버그 입력 사용
 using UnityEngine.SceneManagement; // Game Scene 확인
 
 namespace ProjectJ.Networking.Fusion
@@ -85,7 +85,11 @@ namespace ProjectJ.Networking.Fusion
 
             if (
                 keyboard != null &&
-                keyboard.f6Key.wasPressedThisFrame
+                keyboard[ // 이동 품질 진단 키 조회
+                    ProjectJNetworkDebugHotkeyPolicy.GetKey( // 공통 단축키 정책 호출
+                        ProjectJNetworkDebugAction.MovementDiagnostics // 이동 품질 진단 기능 전달
+                    )
+                ].wasPressedThisFrame // 현재 프레임 F6 입력 확인
             )
             {
                 visible =
@@ -102,7 +106,11 @@ namespace ProjectJ.Networking.Fusion
 
             if ( // 측정 초기화 입력 확인
                 keyboard != null && // 키보드 연결 확인
-                keyboard.f10Key.wasPressedThisFrame // F10 현재 프레임 입력 확인
+                keyboard[ // 측정 초기화 키 조회
+                    ProjectJNetworkDebugHotkeyPolicy.GetKey( // 공통 단축키 정책 호출
+                        ProjectJNetworkDebugAction.MeasurementReset // 측정 초기화 기능 전달
+                    )
+                ].wasPressedThisFrame // 현재 프레임 F10 입력 확인
             )
             {
                 ResetMeasurementDiagnostics(); // 현재 측정 구간 초기화
@@ -580,7 +588,7 @@ namespace ProjectJ.Networking.Fusion
             DrawLine(
                 ref y,
                 width,
-                "DAY 101 - REMOTE PLAYER MOVEMENT QUALITY / F6 Toggle" // Day101 원격 이동 품질 화면 제목
+                "DAY 102 - DEBUG HOTKEYS & MOVEMENT QUALITY / F6 Toggle" // Day102 네트워크 진단 화면 제목
             );
 
             DrawLine(
@@ -680,7 +688,7 @@ namespace ProjectJ.Networking.Fusion
                 width, // 현재 진단 창 너비 전달
                 "MEASURE : " + // 측정 구간 레이블
                 measurementElapsed.ToString("F1") + // 경과 시간 표시
-                "s    F10 : RESET MEASUREMENT" // 충돌 없는 초기화 단축키 안내
+                "s    F10 : RESET    F11 : FORCE END (HOST)" // Day102 분리 단축키 안내
             );
 
             DrawLine( // 현재 측정 구간 최대값 표시

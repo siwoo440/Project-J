@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Fusion;
+using ProjectJ.Networking; // 공통 네트워크 실행 정책 사용
 using UnityEngine;
 
 namespace ProjectJ.Networking.Fusion
@@ -131,10 +132,27 @@ namespace ProjectJ.Networking.Fusion
 
         private void Start()
         {
-            if (startOnPlay)
+            bool shouldAutoStart = // Dedicated 자동 시작 여부
+                ProjectJNetworkExecutionPolicy.ShouldAutoStartDedicatedServer( // 공통 실행 정책 호출
+                    ProjectJNetworkExecutionPolicy.IsDedicatedServerBuild, // 현재 Server 빌드 여부 전달
+                    startOnPlay // 기존 자동 시작 설정 전달
+                );
+
+            if (!shouldAutoStart) // 자동 시작 차단 상태 확인
             {
-                RequestStartServer();
+                if (startOnPlay) // 일반 실행에서 기존 자동 시작 설정 확인
+                {
+                    Debug.Log(
+                        "[Project J/Day98] " +
+                        "일반 Host·Client 실행에서는 " +
+                        "Dedicated Server 자동 시작을 생략합니다."
+                    );
+                }
+
+                return;
             }
+
+            RequestStartServer(); // Server 빌드에서만 자동 시작
         }
 
         private void Update()

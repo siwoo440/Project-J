@@ -1,3 +1,4 @@
+using ProjectJ.Networking; // 공통 네트워크 실행 정책 사용
 using UnityEngine; // Runtime 구성요소 자동 설치
 
 namespace ProjectJ.Networking.Fusion
@@ -10,18 +11,17 @@ namespace ProjectJ.Networking.Fusion
         )]
         private static void Install()
         {
-            ProjectJDay96ServerModeBootstrap
-                serverModeBootstrap =
-                    Object.FindFirstObjectByType<
-                        ProjectJDay96ServerModeBootstrap
-                    >();
+            bool shouldInstall = // Host·Client Bootstrap 설치 여부
+                ProjectJNetworkExecutionPolicy.ShouldInstallHostClientBootstrap( // 공통 실행 정책 호출
+                    ProjectJNetworkExecutionPolicy.IsDedicatedServerBuild // 현재 Server 빌드 여부 전달
+                );
 
-            if (serverModeBootstrap != null)
+            if (!shouldInstall) // Dedicated Server 빌드 확인
             {
                 Debug.Log(
-                    "[Project J/Day96] " +
-                    "Server Mode Scene 감지 / " +
-                    "일반 Host·Client Bootstrap 자동 설치 생략"
+                    "[Project J/Day98] " +
+                    "Dedicated Server 빌드 감지 / " +
+                    "Host·Client Bootstrap 자동 설치 생략"
                 );
 
                 return;

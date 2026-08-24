@@ -214,6 +214,9 @@ namespace ProjectJ.Networking.Fusion
         public bool IsFeatherShoesActive =>
             itemInventory != null && itemInventory.IsFeatherShoesActive; // 깃털 신발 활성 여부
 
+        public bool IsSnowballSlowed =>
+            itemInventory != null && itemInventory.IsSnowballSlowed; // 눈덩이 감속 활성 여부
+
         public float CurrentMoveSpeed
         {
             get
@@ -222,10 +225,15 @@ namespace ProjectJ.Networking.Fusion
                     ? SprintMoveSpeed
                     : BaseMoveSpeed; // 달리기 상태의 기본 속도 선택
 
-                return ProjectJFeatherShoesPolicy.CalculateMovementSpeed(
+                float featherShoesSpeed = ProjectJFeatherShoesPolicy.CalculateMovementSpeed(
                     baseSpeed,
                     IsFeatherShoesActive
                 ); // 깃털 신발 속도 배율 적용
+
+                return ProjectJSnowballPolicy.CalculateMovementSpeed(
+                    featherShoesSpeed,
+                    IsSnowballSlowed
+                ); // 눈덩이 감속 배율 적용
             }
         }
 

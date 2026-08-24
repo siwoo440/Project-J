@@ -3,6 +3,7 @@ using Fusion; // NetworkBehaviour와 TickTimer 사용
 using ProjectJ.Checkpoint; // 체크포인트와 낙하 한계 사용
 using ProjectJ.Debugging; // 네트워크 디버그 단축키 정책 사용
 using ProjectJ.Finish; // FINISH 공통 수신 계약 사용
+using ProjectJ.Items; // 눈덩이 적중 정책 사용
 using UnityEngine; // Unity 기본 타입 사용
 using UnityEngine.InputSystem; // 개발 테스트 키 사용
 using UnityEngine.SceneManagement; // Lobby / Game Scene 상태 확인
@@ -625,6 +626,44 @@ namespace ProjectJ.Networking.Fusion
             NetworkExternalForceApplyCount++; // 외력 횟수 증가
 
             return true;
+        }
+
+        internal bool TryApplySnowballSlowAuthority( // 눈덩이 적중 감속 적용
+            PlayerRef sourceOwner // 투척 사용자
+        )
+        {
+            ResolveReferences(); // Target 아이템 상태 참조 보정
+
+            bool runnerReady =
+                Runner != null &&
+                Object != null &&
+                Object.IsValid &&
+                Object.HasStateAuthority; // Target 서버 권한 준비 여부
+
+            bool isOwner =
+                Object != null &&
+                Object.IsValid &&
+                Object.InputAuthority == sourceOwner; // 투척 사용자 자기 적중 여부
+
+            bool isShielded =
+                itemInventory != null &&
+                itemInventory.BlocksExternalForce(ProjectJExternalForceSource.Item); // 젤리 보호막 상태 조회
+
+            bool canAffect = ProjectJSnowballPolicy.CanAffectTarget(
+                runnerReady,
+                GameplayInputAllowed,
+                isOwner,
+                IsFinished,
+                IsRespawnProtected,
+                isShielded
+            ); // 눈덩이 적중 조건 계산
+
+            if (!canAffect || itemInventory == null)
+            {
+                return false; // 보호·완주·누락 Target 차단
+            }
+
+            return itemInventory.ApplySnowballSlowAuthority(); // Target 감속 Timer 적용
         }
 
         public void RequestToggleLobbyReady()

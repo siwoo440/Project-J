@@ -11,7 +11,8 @@ namespace ProjectJ.Networking.Fusion
         BalloonHorn = 4, // balloon_horn
         WaterGun = 5, // water_gun
         Firework = 6, // firework
-        FeatherShoes = 7 // feather_shoes
+        FeatherShoes = 7, // feather_shoes
+        Snowball = 8 // snowball
     }
 
     public static class ProjectJNetworkItemCatalog
@@ -74,6 +75,10 @@ namespace ProjectJ.Networking.Fusion
                     networkItemId = (int)ProjectJNetworkItemId.FeatherShoes;
                     return true;
 
+                case "snowball":
+                    networkItemId = (int)ProjectJNetworkItemId.Snowball;
+                    return true;
+
                 default:
                     return false;
             }
@@ -104,6 +109,9 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.FeatherShoes:
                     return "feather_shoes";
 
+                case ProjectJNetworkItemId.Snowball:
+                    return "snowball";
+
                 default:
                     return "empty";
             }
@@ -133,6 +141,9 @@ namespace ProjectJ.Networking.Fusion
 
                 case ProjectJNetworkItemId.FeatherShoes:
                     return "깃털 신발";
+
+                case ProjectJNetworkItemId.Snowball:
+                    return "눈덩이";
 
                 default:
                     return "Empty";

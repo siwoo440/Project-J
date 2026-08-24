@@ -238,6 +238,7 @@ namespace ProjectJ.Networking.Fusion
             NetworkUseFailCount = 0; // 실패 횟수 초기화
             InitializeFireworkAuthority(); // 폭죽 준비 상태 초기화
             InitializeFeatherShoesAuthority(); // 깃털 신발 효과 초기화
+            InitializeSnowballAuthority(); // 눈덩이 감속 상태 초기화
         }
 
         public override void Despawned(NetworkRunner runner, bool hasState)
@@ -399,12 +400,14 @@ namespace ProjectJ.Networking.Fusion
             DeactivateBananaAuthority(); // 설치 바나나 제거
             CancelFireworkPreparationAuthority(false); // 폭죽 준비 상태 제거
             ClearFeatherShoesAuthority(); // 깃털 신발 효과 제거
+            ClearSnowballSlowAuthority(); // 눈덩이 감속 효과 제거
         }
 
         internal void HandleRespawnAuthority()
         {
             CancelFireworkPreparationAuthority(); // 준비 중인 폭죽 취소
             ClearFeatherShoesAuthority(); // 부활 시 깃털 신발 효과 제거
+            ClearSnowballSlowAuthority(); // 부활 시 눈덩이 감속 제거
         }
 
         private bool TryUseSelectedItemAuthority()
@@ -465,6 +468,10 @@ namespace ProjectJ.Networking.Fusion
 
                 case ProjectJNetworkItemId.FeatherShoes:
                     success = UseFeatherShoesAuthority();
+                    break;
+
+                case ProjectJNetworkItemId.Snowball:
+                    success = UseSnowballAuthority();
                     break;
 
                 default:
@@ -1037,7 +1044,7 @@ namespace ProjectJ.Networking.Fusion
             }
 
             GUILayout.BeginArea(
-                new Rect(12f, 650f, 390f, 220f),
+                new Rect(12f, 650f, 390f, 250f),
                 GUI.skin.box
             ); // 73일차 개발 확인 영역
 
@@ -1071,6 +1078,10 @@ namespace ProjectJ.Networking.Fusion
             GUILayout.Label(
                 "Feather Shoes : " +
                 (IsFeatherShoesActive ? FeatherShoesRemaining.ToString("0.0") + "s" : "OFF")
+            );
+            GUILayout.Label(
+                "Snowball Slow : " +
+                (IsSnowballSlowed ? SnowballSlowRemaining.ToString("0.0") + "s" : "OFF")
             );
             GUILayout.Label(
                 "Last Use : " +

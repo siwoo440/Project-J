@@ -17,7 +17,7 @@ MonoBehaviour:
   category: 2
   useMode: 1
   targetType: 1
-  duration: 0
+  duration: 2.5
   cooldown: 0
   isPlaceable: 0
   icon: {fileID: 21300000, guid: 2708e6ede85434f43b0c741e4ad9f693, type: 3}

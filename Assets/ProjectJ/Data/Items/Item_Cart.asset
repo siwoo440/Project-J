@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a1e5ea29147247f980dc38a4d72a2ffc, type: 3}
-  m_Name: Item_BananaCushion
+  m_Name: Item_Cart
   m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Items.ItemDefinition
-  itemId: banana_cushion
-  displayName: 바나나 쿠션
-  category: 3
-  useMode: 3
-  targetType: 3
-  duration: 20
+  itemId: cart
+  displayName: 카트
+  category: 0
+  useMode: 0
+  targetType: 0
+  duration: 8
   cooldown: 0
-  isPlaceable: 1
-  icon: {fileID: 21300000, guid: 2f6a1da546202ad47a762855a70e320d, type: 3}
+  isPlaceable: 0
+  icon: {fileID: 21300000, guid: 74fdd8d5ee62ec545a53cf20bbddfb1a, type: 3}

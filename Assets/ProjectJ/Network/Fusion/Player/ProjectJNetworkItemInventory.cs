@@ -10,7 +10,7 @@ namespace ProjectJ.Networking.Fusion
     [DisallowMultipleComponent] // 동일 네트워크 인벤토리 중복 방지
     [RequireComponent(typeof(ProjectJNetworkExternalGameplay))] // 경기 상태 확인 보장
     [RequireComponent(typeof(ProjectJNetworkPlayer))] // 스프링 신발 수직 속도 적용 보장
-    public sealed class ProjectJNetworkItemInventory :
+    public sealed partial class ProjectJNetworkItemInventory :
         NetworkBehaviour
     {
         private const int EmptyItemId = 0; // 빈 슬롯 네트워크 ID
@@ -236,6 +236,7 @@ namespace ProjectJ.Networking.Fusion
             NetworkLastUsedItemId = EmptyItemId; // 마지막 사용 초기화
             NetworkUseSuccessCount = 0; // 성공 횟수 초기화
             NetworkUseFailCount = 0; // 실패 횟수 초기화
+            InitializeFireworkAuthority(); // 폭죽 준비 상태 초기화
         }
 
         public override void Despawned(NetworkRunner runner, bool hasState)
@@ -253,6 +254,7 @@ namespace ProjectJ.Networking.Fusion
             ResolveReferences(); // 참조 유실 보정
             UpdateTimedEffectsAuthority(); // 지속 효과 상태 보정
             UpdateBananaAuthority(); // 설치 바나나 수명·접촉 판정
+            UpdateFireworkAuthority(); // 폭죽 준비·취소·발동 판정
 
             if (
                 externalGameplay == null ||
@@ -394,6 +396,7 @@ namespace ProjectJ.Networking.Fusion
             NetworkJellyShieldTimer = TickTimer.None; // 보호막 제거
             StopWaterGunAuthority(); // 물총 종료
             DeactivateBananaAuthority(); // 설치 바나나 제거
+            CancelFireworkPreparationAuthority(false); // 폭죽 준비 상태 제거
         }
 
         private bool TryUseSelectedItemAuthority()
@@ -446,6 +449,10 @@ namespace ProjectJ.Networking.Fusion
 
                 case ProjectJNetworkItemId.WaterGun:
                     success = UseWaterGunAuthority();
+                    break;
+
+                case ProjectJNetworkItemId.Firework:
+                    success = UseFireworkAuthority();
                     break;
 
                 default:
@@ -1042,6 +1049,13 @@ namespace ProjectJ.Networking.Fusion
             );
             GUILayout.Label("Banana : " + (NetworkBananaActive ? "ACTIVE" : "OFF"));
             GUILayout.Label("Water Gun : " + (NetworkWaterGunActive ? "HOLD" : "OFF"));
+            GUILayout.Label(
+                "Firework : " +
+                (IsFireworkPreparing ? FireworkRemaining.ToString("0.0") + "s" : "OFF") +
+                " / Blast " + FireworkActivationCount +
+                " / Cancel " + FireworkCancellationCount +
+                " / Targets " + FireworkLastTargetCount
+            );
             GUILayout.Label(
                 "Last Use : " +
                 ProjectJNetworkItemCatalog.GetDisplayName(NetworkLastUsedItemId) +

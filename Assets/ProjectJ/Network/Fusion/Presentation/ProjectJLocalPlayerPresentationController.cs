@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using ProjectJ.CameraSystem; // 카메라 위치 보간 정책 사용
+using ProjectJ.Debugging; // 개발용 커서 입력 정책 사용
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -231,8 +232,17 @@ namespace ProjectJ.Networking.Fusion
                 return;
             }
 
-            UpdateLook();
-            UpdateZoom();
+            bool canProcessCameraInput = // 카메라 입력 가능 여부 계산
+                ProjectJDebugCursorReleasePolicy.CanProcessCameraInput( // 커서 입력 정책 호출
+                    ProjectJDebugCursorReleaseController.IsCursorReleased // 현재 커서 해제 상태 전달
+                );
+
+            if (canProcessCameraInput) // 게임 카메라 입력 허용 확인
+            {
+                UpdateLook(); // 마우스 시점 회전 처리
+                UpdateZoom(); // 마우스 휠 줌 처리
+            }
+
             UpdateCameraTransform();
             UpdateCameraFov();
         }

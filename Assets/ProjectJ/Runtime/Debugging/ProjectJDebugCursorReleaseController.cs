@@ -9,7 +9,12 @@ namespace ProjectJ.Debugging
     {
         private CursorLockMode previousLockState;
         private bool previousVisible;
-        private bool isReleasedByAlt;
+
+        public static bool IsCursorReleased // 개발용 커서 해제 상태
+        {
+            get; // 외부 카메라 입력 정책 조회
+            private set; // 컨트롤러 내부 상태 변경 제한
+        }
 
         [RuntimeInitializeOnLoadMethod(
             RuntimeInitializeLoadType.AfterSceneLoad
@@ -48,28 +53,35 @@ namespace ProjectJ.Debugging
             Keyboard keyboard =
                 Keyboard.current;
 
-            bool isAltPressed =
+            bool wasAltPressedThisFrame =
                 keyboard != null &&
                 (
-                    keyboard.leftAltKey.isPressed ||
-                    keyboard.rightAltKey.isPressed
+                    keyboard.leftAltKey.wasPressedThisFrame ||
+                    keyboard.rightAltKey.wasPressedThisFrame
                 );
 
-            if (
-                isAltPressed &&
-                !isReleasedByAlt
-            )
+            if (wasAltPressedThisFrame)
             {
-                ReleaseCursor();
+                bool nextReleasedState = // 다음 커서 토글 상태 계산
+                    ProjectJDebugCursorReleasePolicy.GetNextReleasedState( // 토글 정책 호출
+                        IsCursorReleased // 현재 커서 해제 상태 전달
+                    );
+
+                if (nextReleasedState) // 커서 해제 전환 확인
+                {
+                    ReleaseCursor(); // 커서 표시와 잠금 해제
+                }
+                else
+                {
+                    RestoreCursor(); // 이전 커서 상태 복구
+                }
+
                 return;
             }
 
-            if (
-                !isAltPressed &&
-                isReleasedByAlt
-            )
+            if (IsCursorReleased) // 커서 해제 상태 유지 확인
             {
-                RestoreCursor();
+                ApplyReleasedCursorState(); // 외부 재잠금 이후 해제 상태 재적용
             }
 #endif
         }
@@ -80,11 +92,11 @@ namespace ProjectJ.Debugging
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (
-                !hasFocus &&
-                isReleasedByAlt
+                hasFocus &&
+                IsCursorReleased
             )
             {
-                RestoreCursor();
+                ApplyReleasedCursorState(); // 포커스 복귀 후 커서 해제 유지
             }
 #endif
         }
@@ -92,7 +104,7 @@ namespace ProjectJ.Debugging
         private void OnDisable()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (isReleasedByAlt)
+            if (IsCursorReleased)
             {
                 RestoreCursor();
             }
@@ -107,12 +119,17 @@ namespace ProjectJ.Debugging
             previousVisible =
                 Cursor.visible;
 
+            ApplyReleasedCursorState(); // 커서 해제 상태 적용
+
+            IsCursorReleased = true; // 개발용 커서 해제 상태 저장
+        }
+
+        private static void ApplyReleasedCursorState() // 커서 해제 상태 강제 적용
+        {
             Cursor.lockState =
                 CursorLockMode.None;
 
             Cursor.visible = true;
-
-            isReleasedByAlt = true;
         }
 
         private void RestoreCursor()
@@ -123,7 +140,7 @@ namespace ProjectJ.Debugging
             Cursor.visible =
                 previousVisible;
 
-            isReleasedByAlt = false;
+            IsCursorReleased = false; // 개발용 커서 잠금 상태 저장
         }
     }
 }

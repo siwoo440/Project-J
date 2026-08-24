@@ -387,16 +387,14 @@ namespace ProjectJ.Networking.Fusion
                     : 0;
 
             string leftName =
-                ProjectJNetworkItemCatalog
-                    .GetDisplayName(
-                        leftItemId
-                    );
+                localInventory != null
+                    ? localInventory.GetSlotDisplayName(0)
+                    : ProjectJNetworkItemCatalog.GetDisplayName(leftItemId); // 첫 슬롯 Stack 표시
 
             string rightName =
-                ProjectJNetworkItemCatalog
-                    .GetDisplayName(
-                        rightItemId
-                    );
+                localInventory != null
+                    ? localInventory.GetSlotDisplayName(1)
+                    : ProjectJNetworkItemCatalog.GetDisplayName(rightItemId); // 두 번째 슬롯 Stack 표시
 
             SetText(
                 leftItemText,

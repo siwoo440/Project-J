@@ -286,7 +286,7 @@ namespace ProjectJ.Networking.Fusion
 
             if (input.Buttons.IsSet(ProjectJNetworkButton.ItemUse))
             {
-                TryUseSelectedItemAuthority(); // 우클릭 사용 시작 판정
+                TryUseSelectedItemWithStackAuthority(); // Stack 포함 선택 아이템 사용
             }
 
             UpdateWaterGunAuthority(

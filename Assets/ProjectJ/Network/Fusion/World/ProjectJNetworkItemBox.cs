@@ -125,7 +125,7 @@ namespace ProjectJ.Networking.Fusion
                 return; // 지급 데이터 누락 처리
             }
 
-            bool stored = collector.TryStoreItemAuthority(
+            bool stored = collector.TryStoreWorldItemAuthority(
                 legacyPickup.Definition,
                 out int storedSlotIndex
             ); // State Authority 인벤토리 저장

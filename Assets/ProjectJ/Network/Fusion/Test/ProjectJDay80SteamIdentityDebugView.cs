@@ -13,11 +13,8 @@ namespace ProjectJ.Networking.Fusion
 
         private ProjectJSteamIdentityService steamIdentity;
 
-        private ProjectJDay79NetworkConditionDebugView
-            day79DebugView;
-
         private bool visible =
-            false; // 81일차부터 기본 화면은 F8 Steam Invite 사용
+            false; // 통합 패널 기본 숨김
 
         [RuntimeInitializeOnLoadMethod(
             RuntimeInitializeLoadType.AfterSceneLoad
@@ -51,9 +48,6 @@ namespace ProjectJ.Networking.Fusion
         private void Start()
         {
             FindReferences();
-            SetDay79Suppressed(
-                visible
-            );
         }
 
         private void Update()
@@ -68,20 +62,9 @@ namespace ProjectJ.Networking.Fusion
             {
                 visible =
                     !visible;
-
-                SetDay79Suppressed(
-                    visible
-                );
             }
 
             FindReferences();
-        }
-
-        private void OnDisable()
-        {
-            SetDay79Suppressed(
-                false
-            );
         }
 
         private void OnGUI()
@@ -302,33 +285,6 @@ namespace ProjectJ.Networking.Fusion
                 steamIdentity =
                     ProjectJSteamIdentityService
                         .Instance;
-            }
-
-            if (day79DebugView == null)
-            {
-                day79DebugView =
-                    FindFirstObjectByType<
-                        ProjectJDay79NetworkConditionDebugView
-                    >();
-            }
-        }
-
-        private void SetDay79Suppressed(
-            bool suppress
-        )
-        {
-            if (day79DebugView == null)
-            {
-                day79DebugView =
-                    FindFirstObjectByType<
-                        ProjectJDay79NetworkConditionDebugView
-                    >();
-            }
-
-            if (day79DebugView != null)
-            {
-                day79DebugView.enabled =
-                    !suppress;
             }
         }
 

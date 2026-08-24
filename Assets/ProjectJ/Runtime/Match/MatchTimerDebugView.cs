@@ -1,3 +1,4 @@
+using ProjectJ.Debugging; // 통합 디버그 패널 표시 상태 사용
 using UnityEngine;
 
 namespace ProjectJ.Match
@@ -32,6 +33,11 @@ namespace ProjectJ.Match
 
         private void OnGUI()
         {
+            if (!ProjectJDebugOverlayController.IsVisible) // 통합 패널 선택 상태 확인
+            {
+                return; // 독립 진단창 출력 차단
+            }
+
             ResolveTimer();
 
             if (matchTimer == null)

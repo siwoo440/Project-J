@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace ProjectJ.Debugging
 {
@@ -49,21 +48,12 @@ namespace ProjectJ.Debugging
             );
         }
 
-        private void Update()
+        public static void SetVisible( // 통합 패널의 레거시 표시 상태 적용
+            bool isVisible // 적용할 표시 상태
+        )
         {
-            Keyboard keyboard =
-                Keyboard.current;
-
-            if (
-                keyboard == null ||
-                !keyboard.f1Key.wasPressedThisFrame
-            )
-            {
-                return;
-            }
-
             IsVisible =
-                !IsVisible;
+                isVisible; // 전달된 표시 상태 저장
         }
     }
 }

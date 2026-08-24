@@ -16,7 +16,7 @@ namespace ProjectJ.Networking.Fusion
             string.Empty;
 
         private bool visible =
-            true;
+            false; // 통합 패널 기본 숨김
 
         private void Awake()
         {

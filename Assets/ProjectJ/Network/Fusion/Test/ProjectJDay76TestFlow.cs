@@ -1,5 +1,6 @@
 using System.Collections.Generic; // Player 정렬과 보존 ID 사용
 using Fusion; // NetworkRunner와 SceneRef 사용
+using ProjectJ.Debugging; // 통합 디버그 패널 표시 상태 사용
 using UnityEngine; // Runtime UI와 Scene 오브젝트 사용
 using UnityEngine.SceneManagement; // Game Scene 로드
 
@@ -85,6 +86,11 @@ namespace ProjectJ.Networking.Fusion
 
         private void OnGUI()
         {
+            if (!ProjectJDebugOverlayController.IsVisible) // 통합 패널 선택 상태 확인
+            {
+                return; // 독립 진단창 출력 차단
+            }
+
             NetworkRunner runner =
                 bootstrap != null
                     ? bootstrap.Runner

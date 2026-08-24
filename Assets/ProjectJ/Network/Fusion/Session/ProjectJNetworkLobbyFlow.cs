@@ -1,5 +1,6 @@
 using System.Collections.Generic; // 보존 Player Instance ID 저장
 using Fusion; // NetworkRunner와 SceneRef 사용
+using ProjectJ.Debugging; // 통합 디버그 패널 표시 상태 사용
 using UnityEngine; // MonoBehaviour와 GUI 사용
 using UnityEngine.SceneManagement; // Scene 로드와 Build Index 확인
 
@@ -866,6 +867,11 @@ namespace ProjectJ.Networking.Fusion
         private void OnGUI()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!ProjectJDebugOverlayController.IsVisible) // 통합 패널 선택 상태 확인
+            {
+                return; // 독립 진단창 출력 차단
+            }
+
             if (
                 trackedRunner == null ||
                 !trackedRunner.IsRunning

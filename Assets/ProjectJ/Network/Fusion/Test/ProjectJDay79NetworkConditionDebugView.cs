@@ -31,7 +31,7 @@ namespace ProjectJ.Networking.Fusion
         private ProjectJFusionBootstrap bootstrap;
 
         private bool visible =
-            true;
+            false; // 통합 패널 기본 숨김
 
         private float smoothedFps;
 

@@ -756,6 +756,11 @@ namespace ProjectJ.Networking.Fusion
         private void OnGUI()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!ProjectJDebugOverlayController.IsVisible) // 통합 패널 선택 상태 확인
+            {
+                return; // 독립 진단창 출력 차단
+            }
+
             if (boundPlayer == null)
             {
                 return;

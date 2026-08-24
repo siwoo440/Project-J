@@ -18,7 +18,7 @@ namespace ProjectJ.Networking.Fusion
         private ProjectJSteamInviteService inviteService;
 
         private bool visible =
-            true;
+            false; // 통합 패널 기본 숨김
 
         [RuntimeInitializeOnLoadMethod(
             RuntimeInitializeLoadType.AfterSceneLoad

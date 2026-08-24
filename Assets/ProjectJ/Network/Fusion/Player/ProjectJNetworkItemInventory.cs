@@ -1,5 +1,6 @@
 using System; // RaycastHit 정렬 사용
 using Fusion; // NetworkBehaviour와 TickTimer 사용
+using ProjectJ.Debugging; // 통합 디버그 패널 표시 상태 사용
 using ProjectJ.Items; // 기존 ItemDefinition 사용
 using ProjectJ.Items.Placement; // 기존 설치 위치 검증 사용
 using UnityEngine; // Unity 기본 타입 사용
@@ -1002,6 +1003,11 @@ namespace ProjectJ.Networking.Fusion
 
         private void OnGUI()
         {
+            if (!ProjectJDebugOverlayController.IsVisible) // 통합 패널 선택 상태 확인
+            {
+                return; // 독립 진단창 출력 차단
+            }
+
             if (
                 Object == null ||
                 !Object.IsValid ||

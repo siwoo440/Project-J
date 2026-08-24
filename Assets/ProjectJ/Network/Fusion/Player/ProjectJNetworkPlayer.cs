@@ -472,6 +472,72 @@ namespace ProjectJ.Networking.Fusion
             hasForwardPosition = true; // Prediction 기준 위치 활성화
         }
 
+        public void ResetMovementDiagnostics() // 현재 PC의 이동 진단 누적값 초기화
+        {
+            Vector3 currentPosition = // 초기화 시점 Player 위치
+                transform.position; // 현재 Transform 위치 사용
+
+            LastSimulationPosition = // Simulation 기준 위치 초기화
+                currentPosition; // 현재 위치 저장
+
+            LastRenderPosition = // Render 기준 위치 초기화
+                currentPosition; // 현재 위치 저장
+
+            RenderSimulationOffset = // Simulation·Render 차이 초기화
+                0f; // 측정 시작값 사용
+
+            LastRenderStepDistance = // 최근 Render 이동 거리 초기화
+                0f; // 측정 시작값 사용
+
+            RenderSampleCount = // Render 표본 수 초기화
+                0; // 새 측정 구간 시작
+
+            previousRenderPosition = // 다음 Render 거리 기준 위치 갱신
+                currentPosition; // 현재 위치 사용
+
+            hasRenderPosition = // Render 기준 위치 활성화
+                true; // 다음 프레임부터 거리 측정
+
+            ResimulationBatchCount = // 누적 Resimulation Batch 초기화
+                0; // 새 측정 구간 시작
+
+            ResimulationTickCount = // 누적 Resimulation Tick 초기화
+                0; // 새 측정 구간 시작
+
+            LastResimulationTickCount = // 최근 Resimulation Tick 초기화
+                0; // 기록 없음 상태
+
+            LastForwardTickCount = // 최근 Forward Tick 초기화
+                0; // 기록 없음 상태
+
+            LastRollbackDistance = // 최근 Rollback 거리 초기화
+                0f; // 측정 시작값 사용
+
+            LastCorrectionDistance = // 최근 Correction 거리 초기화
+                0f; // 측정 시작값 사용
+
+            MaxCorrectionDistance = // 최대 Correction 거리 초기화
+                0f; // 새 측정 구간 시작
+
+            predictedPositionBeforeResimulation = // 내부 Prediction 기준 위치 초기화
+                currentPosition; // 현재 위치 사용
+
+            PredictionPositionBeforeResimulation = // 외부 표시 Prediction 위치 초기화
+                currentPosition; // 현재 위치 사용
+
+            RollbackPosition = // 외부 표시 Rollback 위치 초기화
+                currentPosition; // 현재 위치 사용
+
+            CorrectedPositionAfterResimulation = // 외부 표시 Correction 위치 초기화
+                currentPosition; // 현재 위치 사용
+
+            lastForwardPosition = // 다음 Resimulation 비교 기준 갱신
+                currentPosition; // 현재 위치 사용
+
+            hasForwardPosition = // Forward 비교 기준 활성화
+                true; // 현재 위치 기준 사용
+        }
+
         public void StopMotionForMatchLock()
         {
             if (

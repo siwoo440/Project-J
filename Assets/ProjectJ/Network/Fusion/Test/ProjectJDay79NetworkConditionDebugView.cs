@@ -1,7 +1,8 @@
 using System.Collections.Generic; // RTT 샘플과 Player 정렬 사용
 using Fusion; // NetworkRunner와 NetworkProjectConfig 사용
+using ProjectJ.Debugging; // 이동 품질 역할·최대값 정책 사용
 using UnityEngine; // FPS와 Debug GUI 사용
-using UnityEngine.InputSystem; // F6 입력 사용
+using UnityEngine.InputSystem; // F6 표시와 F10 초기화 입력 사용
 using UnityEngine.SceneManagement; // Game Scene 확인
 
 namespace ProjectJ.Networking.Fusion
@@ -33,6 +34,18 @@ namespace ProjectJ.Networking.Fusion
             true;
 
         private float smoothedFps;
+
+        private float measurementStartedAt; // 현재 측정 구간 시작 시각
+
+        private float peakRenderStepDistance; // 구간 최대 Render 이동 거리
+
+        private float peakSimulationOffset; // 구간 최대 Simulation Offset
+
+        private float peakCameraStepDistance; // 구간 최대 로컬 카메라 이동 거리
+
+        private float peakCameraFollowOffset; // 구간 최대 카메라 추적 오차
+
+        private bool measurementRunning; // 측정 구간 활성화 여부
 
         [RuntimeInitializeOnLoadMethod(
             RuntimeInitializeLoadType.AfterSceneLoad
@@ -87,7 +100,165 @@ namespace ProjectJ.Networking.Fusion
                     >();
             }
 
+            if ( // 측정 초기화 입력 확인
+                keyboard != null && // 키보드 연결 확인
+                keyboard.f10Key.wasPressedThisFrame // F10 현재 프레임 입력 확인
+            )
+            {
+                ResetMeasurementDiagnostics(); // 현재 측정 구간 초기화
+            }
+
             UpdateRttSamples();
+            UpdateMeasurementPeaks(); // 역할별 이동·카메라 최대값 누적
+        }
+
+        private void UpdateMeasurementPeaks() // 현재 측정 구간 최대값 갱신
+        {
+            if ( // 실행 중인 Runner 확인
+                bootstrap == null || // Bootstrap 누락 확인
+                bootstrap.Runner == null || // Runner 누락 확인
+                !bootstrap.Runner.IsRunning // Runner 실행 상태 확인
+            )
+            {
+                measurementRunning = // 측정 활성 상태 해제
+                    false; // 다음 경기에서 새 구간 시작
+
+                return; // 최대값 갱신 중단
+            }
+
+            if (!measurementRunning) // 새 경기의 측정 시작 여부 확인
+            {
+                ClearPeakMeasurements(); // 이전 경기 최대값 제거
+
+                measurementStartedAt = // 측정 시작 시각 저장
+                    Time.unscaledTime; // 현재 비스케일 시간 사용
+
+                measurementRunning = // 측정 활성 상태 설정
+                    true; // 최대값 누적 시작
+            }
+
+            NetworkRunner runner = // 현재 Fusion Runner 조회
+                bootstrap.Runner; // Bootstrap Runner 사용
+
+            foreach (PlayerRef player in runner.ActivePlayers) // 참가 Player 전체 순회
+            {
+                if ( // Player Object 조회 확인
+                    !runner.TryGetPlayerObject( // 참가자 Player Object 검색
+                        player, // 현재 PlayerRef 전달
+                        out NetworkObject playerObject // 검색 결과 저장
+                    ) ||
+                    playerObject == null // Player Object 누락 확인
+                )
+                {
+                    continue; // 다음 Player 확인
+                }
+
+                ProjectJNetworkPlayer networkPlayer = // 이동 진단 Component 조회
+                    playerObject.GetComponent< // Player Object Component 검색
+                        ProjectJNetworkPlayer // 대상 이동 Component
+                    >();
+
+                if (networkPlayer == null) // 이동 Component 누락 확인
+                {
+                    continue; // 다음 Player 확인
+                }
+
+                peakRenderStepDistance = // Render 이동 최대값 갱신
+                    ProjectJMovementQualityPolicy.AccumulatePeak( // 최대값 누적 정책 호출
+                        peakRenderStepDistance, // 기존 구간 최대값
+                        networkPlayer.LastRenderStepDistance // 현재 Player 표본
+                    );
+
+                peakSimulationOffset = // Simulation Offset 최대값 갱신
+                    ProjectJMovementQualityPolicy.AccumulatePeak( // 최대값 누적 정책 호출
+                        peakSimulationOffset, // 기존 구간 최대값
+                        networkPlayer.RenderSimulationOffset // 현재 Player 표본
+                    );
+            }
+
+            ProjectJLocalPlayerPresentationController localPresentation = // 로컬 카메라 관리자 조회
+                ProjectJLocalPlayerPresentationController.Instance; // Runtime 자동 설치 Instance 사용
+
+            if (localPresentation == null) // 로컬 카메라 관리자 누락 확인
+            {
+                return; // 카메라 최대값 갱신 생략
+            }
+
+            peakCameraStepDistance = // 로컬 카메라 이동 최대값 갱신
+                ProjectJMovementQualityPolicy.AccumulatePeak( // 최대값 누적 정책 호출
+                    peakCameraStepDistance, // 기존 구간 최대값
+                    localPresentation.CameraStepDistance // 현재 카메라 표본
+                );
+
+            peakCameraFollowOffset = // 카메라 추적 오차 최대값 갱신
+                ProjectJMovementQualityPolicy.AccumulatePeak( // 최대값 누적 정책 호출
+                    peakCameraFollowOffset, // 기존 구간 최대값
+                    localPresentation.CameraFollowOffset // 현재 추적 오차 표본
+                );
+        }
+
+        private void ResetMeasurementDiagnostics() // F10 측정 구간 초기화
+        {
+            previousRttByPlayer.Clear(); // 이전 RTT 표본 제거
+            jitterByPlayer.Clear(); // 이전 Jitter 누적값 제거
+            ClearPeakMeasurements(); // 구간 최대값 제거
+
+            measurementStartedAt = // 새 측정 시작 시각 저장
+                Time.unscaledTime; // 현재 비스케일 시간 사용
+
+            measurementRunning = // 측정 활성 상태 갱신
+                bootstrap != null && // Bootstrap 존재 확인
+                bootstrap.Runner != null && // Runner 존재 확인
+                bootstrap.Runner.IsRunning; // Runner 실행 여부 사용
+
+            if (!measurementRunning) // 실행 중인 경기가 없는지 확인
+            {
+                return; // Player 진단 초기화 생략
+            }
+
+            NetworkRunner runner = // 현재 Fusion Runner 조회
+                bootstrap.Runner; // Bootstrap Runner 사용
+
+            foreach (PlayerRef player in runner.ActivePlayers) // 참가 Player 전체 순회
+            {
+                if ( // Player Object 조회 확인
+                    !runner.TryGetPlayerObject( // 참가자 Player Object 검색
+                        player, // 현재 PlayerRef 전달
+                        out NetworkObject playerObject // 검색 결과 저장
+                    ) ||
+                    playerObject == null // Player Object 누락 확인
+                )
+                {
+                    continue; // 다음 Player 확인
+                }
+
+                ProjectJNetworkPlayer networkPlayer = // 이동 진단 Component 조회
+                    playerObject.GetComponent< // Player Object Component 검색
+                        ProjectJNetworkPlayer // 대상 이동 Component
+                    >();
+
+                if (networkPlayer == null) // 이동 Component 누락 확인
+                {
+                    continue; // 다음 Player 확인
+                }
+
+                networkPlayer.ResetMovementDiagnostics(); // Player별 진단 누적값 초기화
+            }
+        }
+
+        private void ClearPeakMeasurements() // 화면 구간 최대값 초기화
+        {
+            peakRenderStepDistance = // Render 이동 최대값 초기화
+                0f; // 측정 시작값 사용
+
+            peakSimulationOffset = // Simulation Offset 최대값 초기화
+                0f; // 측정 시작값 사용
+
+            peakCameraStepDistance = // 카메라 이동 최대값 초기화
+                0f; // 측정 시작값 사용
+
+            peakCameraFollowOffset = // 카메라 추적 오차 최대값 초기화
+                0f; // 측정 시작값 사용
         }
 
         private void UpdateFps()
@@ -371,6 +542,14 @@ namespace ProjectJ.Networking.Fusion
                     ? localPresentation.CameraFollowOffset // 실제 목표 추적 오차 사용
                     : 0f; // 관리자 없음 기본값
 
+            float measurementElapsed = // 현재 측정 구간 경과 시간
+                measurementRunning // 측정 활성 상태 확인
+                    ? ProjectJMovementQualityPolicy.CalculateElapsed( // 경과 시간 정책 호출
+                        measurementStartedAt, // 구간 시작 시각 전달
+                        Time.unscaledTime // 현재 비스케일 시간 전달
+                    )
+                    : 0f; // 측정 전 기본값
+
             float width =
                 Mathf.Min(
                     Screen.width - 24f,
@@ -380,9 +559,9 @@ namespace ProjectJ.Networking.Fusion
             float height =
                 Mathf.Min(
                     Screen.height - 24f,
-                    277f + // Day100 카메라 진단 줄 높이 확보
+                    331f + // Day101 구간 측정 두 줄 높이 확보
                     players.Count *
-                    54f // 플레이어당 두 줄 표시 높이 확보
+                    81f // 플레이어당 세 줄 표시 높이 확보
                 );
 
             GUI.Box(
@@ -401,7 +580,7 @@ namespace ProjectJ.Networking.Fusion
             DrawLine(
                 ref y,
                 width,
-                "DAY 100 - PREDICTION·INTERPOLATION·CAMERA / F6 Toggle" // Day100 개선 확인 화면 제목
+                "DAY 101 - REMOTE PLAYER MOVEMENT QUALITY / F6 Toggle" // Day101 원격 이동 품질 화면 제목
             );
 
             DrawLine(
@@ -494,6 +673,27 @@ namespace ProjectJ.Networking.Fusion
                 localCameraStepDistance.ToString("F3") + // 최근 카메라 이동 거리 표시
                 "    Follow Offset:" + // 카메라 목표 추적 오차 레이블
                 localCameraFollowOffset.ToString("F3") // 카메라 목표 추적 오차 표시
+            );
+
+            DrawLine( // 현재 측정 구간 상태 표시
+                ref y, // 다음 출력 위치 갱신
+                width, // 현재 진단 창 너비 전달
+                "MEASURE : " + // 측정 구간 레이블
+                measurementElapsed.ToString("F1") + // 경과 시간 표시
+                "s    F10 : RESET MEASUREMENT" // 충돌 없는 초기화 단축키 안내
+            );
+
+            DrawLine( // 현재 측정 구간 최대값 표시
+                ref y, // 다음 출력 위치 갱신
+                width, // 현재 진단 창 너비 전달
+                "PEAK Step:" + // 최대 Render 이동 거리 레이블
+                peakRenderStepDistance.ToString("F3") + // 최대 Render 이동 거리 표시
+                " Offset:" + // 최대 Simulation Offset 레이블
+                peakSimulationOffset.ToString("F3") + // 최대 Simulation Offset 표시
+                " CameraStep:" + // 최대 카메라 이동 거리 레이블
+                peakCameraStepDistance.ToString("F3") + // 최대 카메라 이동 거리 표시
+                " Follow:" + // 최대 카메라 추적 오차 레이블
+                peakCameraFollowOffset.ToString("F3") // 최대 카메라 추적 오차 표시
             );
 
             DrawLine(
@@ -602,6 +802,12 @@ namespace ProjectJ.Networking.Fusion
             string playerStateText = // 플레이어 네트워크·경기 상태 첫 줄
                 "P" +
                 player.AsIndex +
+                " [" + // 역할 표시 시작 구분자
+                ProjectJMovementQualityPolicy.GetRoleLabel( // 현재 PC 기준 역할 판정
+                    networkPlayer.HasLocalInputAuthority, // Input Authority 보유 여부 전달
+                    networkPlayer.HasLocalStateAuthority // State Authority 보유 여부 전달
+                ) +
+                "]" + // 역할 표시 종료 구분자
                 " RTT:" +
                 (
                     rtt *
@@ -651,6 +857,30 @@ namespace ProjectJ.Networking.Fusion
                 ref y, // 다음 출력 위치 갱신
                 width, // 현재 진단 창 너비 전달
                 movementDiagnosticText // 이동 진단 문자열 표시
+            );
+
+            string movementStateText = // 플레이어 현재 동작 상태 세 번째 줄
+                "  State:" + // 동작 상태 레이블
+                (
+                    networkPlayer.LastReceivedMove.sqrMagnitude > 0.0001f // 이동 입력 존재 여부 확인
+                        ? "MOVE" // 이동 중 표시
+                        : "IDLE" // 정지 상태 표시
+                ) +
+                " Sprint:" + // 달리기 상태 레이블
+                networkPlayer.IsSprinting + // 현재 달리기 상태 표시
+                " Jump:" + // 점프 입력 상태 레이블
+                networkPlayer.LastReceivedJump + // 최근 점프 입력 표시
+                " Ground:" + // 지면 상태 레이블
+                networkPlayer.IsGrounded + // 현재 지면 판정 표시
+                " Crouch:" + // 앉기 상태 레이블
+                networkPlayer.IsCrouching + // 현재 앉기 상태 표시
+                " Speed:" + // 현재 이동 속도 레이블
+                networkPlayer.MovementSpeed.ToString("F1"); // 현재 이동 속도 표시
+
+            DrawLine( // 플레이어 현재 동작 상태 표시
+                ref y, // 다음 출력 위치 갱신
+                width, // 현재 진단 창 너비 전달
+                movementStateText // 동작 상태 문자열 표시
             );
         }
 

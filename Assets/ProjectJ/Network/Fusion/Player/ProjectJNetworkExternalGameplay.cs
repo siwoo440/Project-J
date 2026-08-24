@@ -1172,7 +1172,7 @@ namespace ProjectJ.Networking.Fusion
             }
 
             ResolveReferences();
-            itemInventory?.CancelFireworkPreparationAuthority(); // 부활 직전 폭죽 준비 취소
+            itemInventory?.HandleRespawnAuthority(); // 부활 직전 지속·준비 효과 정리
             NetworkExternalVelocity = Vector3.zero; // 이전 외력 제거
             NetworkLastExternalForceSource = (int)ProjectJExternalForceSource.None; // 외력 원인 초기화
 

@@ -237,6 +237,7 @@ namespace ProjectJ.Networking.Fusion
             NetworkUseSuccessCount = 0; // 성공 횟수 초기화
             NetworkUseFailCount = 0; // 실패 횟수 초기화
             InitializeFireworkAuthority(); // 폭죽 준비 상태 초기화
+            InitializeFeatherShoesAuthority(); // 깃털 신발 효과 초기화
         }
 
         public override void Despawned(NetworkRunner runner, bool hasState)
@@ -397,6 +398,13 @@ namespace ProjectJ.Networking.Fusion
             StopWaterGunAuthority(); // 물총 종료
             DeactivateBananaAuthority(); // 설치 바나나 제거
             CancelFireworkPreparationAuthority(false); // 폭죽 준비 상태 제거
+            ClearFeatherShoesAuthority(); // 깃털 신발 효과 제거
+        }
+
+        internal void HandleRespawnAuthority()
+        {
+            CancelFireworkPreparationAuthority(); // 준비 중인 폭죽 취소
+            ClearFeatherShoesAuthority(); // 부활 시 깃털 신발 효과 제거
         }
 
         private bool TryUseSelectedItemAuthority()
@@ -453,6 +461,10 @@ namespace ProjectJ.Networking.Fusion
 
                 case ProjectJNetworkItemId.Firework:
                     success = UseFireworkAuthority();
+                    break;
+
+                case ProjectJNetworkItemId.FeatherShoes:
+                    success = UseFeatherShoesAuthority();
                     break;
 
                 default:
@@ -1055,6 +1067,10 @@ namespace ProjectJ.Networking.Fusion
                 " / Blast " + FireworkActivationCount +
                 " / Cancel " + FireworkCancellationCount +
                 " / Targets " + FireworkLastTargetCount
+            );
+            GUILayout.Label(
+                "Feather Shoes : " +
+                (IsFeatherShoesActive ? FeatherShoesRemaining.ToString("0.0") + "s" : "OFF")
             );
             GUILayout.Label(
                 "Last Use : " +

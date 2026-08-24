@@ -10,7 +10,8 @@ namespace ProjectJ.Networking.Fusion
         BananaCushion = 3, // banana_cushion
         BalloonHorn = 4, // balloon_horn
         WaterGun = 5, // water_gun
-        Firework = 6 // firework
+        Firework = 6, // firework
+        FeatherShoes = 7 // feather_shoes
     }
 
     public static class ProjectJNetworkItemCatalog
@@ -69,6 +70,10 @@ namespace ProjectJ.Networking.Fusion
                     networkItemId = (int)ProjectJNetworkItemId.Firework;
                     return true;
 
+                case "feather_shoes":
+                    networkItemId = (int)ProjectJNetworkItemId.FeatherShoes;
+                    return true;
+
                 default:
                     return false;
             }
@@ -96,6 +101,9 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.Firework:
                     return "firework";
 
+                case ProjectJNetworkItemId.FeatherShoes:
+                    return "feather_shoes";
+
                 default:
                     return "empty";
             }
@@ -122,6 +130,9 @@ namespace ProjectJ.Networking.Fusion
 
                 case ProjectJNetworkItemId.Firework:
                     return "폭죽";
+
+                case ProjectJNetworkItemId.FeatherShoes:
+                    return "깃털 신발";
 
                 default:
                     return "Empty";

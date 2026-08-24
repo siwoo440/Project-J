@@ -1,4 +1,5 @@
 using Fusion;
+using ProjectJ.Items; // 깃털 신발 수치 정책 사용
 using UnityEngine;
 
 namespace ProjectJ.Networking.Fusion
@@ -35,6 +36,7 @@ namespace ProjectJ.Networking.Fusion
         private NetworkTransform networkTransform;
         private CapsuleCollider bodyCollider;
         private ProjectJNetworkExternalGameplay externalGameplay; // 경기 상태 입력 잠금 조회
+        private ProjectJNetworkItemInventory itemInventory; // 깃털 신발 효과 상태 조회
 
         private readonly RaycastHit[] groundHitBuffer = new RaycastHit[16];
         private readonly Collider[] standOverlapBuffer = new Collider[16];
@@ -209,7 +211,30 @@ namespace ProjectJ.Networking.Fusion
         public float MovementSpeed => CurrentMoveSpeed;
         public float WalkSpeed => BaseMoveSpeed;
         public float SprintSpeed => SprintMoveSpeed;
-        public float CurrentMoveSpeed => NetworkIsSprinting ? SprintMoveSpeed : BaseMoveSpeed;
+        public bool IsFeatherShoesActive =>
+            itemInventory != null && itemInventory.IsFeatherShoesActive; // 깃털 신발 활성 여부
+
+        public float CurrentMoveSpeed
+        {
+            get
+            {
+                float baseSpeed = NetworkIsSprinting
+                    ? SprintMoveSpeed
+                    : BaseMoveSpeed; // 달리기 상태의 기본 속도 선택
+
+                return ProjectJFeatherShoesPolicy.CalculateMovementSpeed(
+                    baseSpeed,
+                    IsFeatherShoesActive
+                ); // 깃털 신발 속도 배율 적용
+            }
+        }
+
+        public float CurrentSprintStaminaDrainPerSecond =>
+            ProjectJFeatherShoesPolicy.CalculateSprintStaminaDrain(
+                SprintStaminaDrainPerSecond,
+                IsFeatherShoesActive
+            ); // 깃털 신발 추가 소모 적용
+
         public float Stamina => NetworkStamina;
         public float StaminaMaximum => MaxStamina;
         public bool IsSprinting => NetworkIsSprinting;
@@ -676,7 +701,7 @@ namespace ProjectJ.Networking.Fusion
                 NetworkIsSprinting = true;
                 stamina = Mathf.Max(
                     0f,
-                    stamina - SprintStaminaDrainPerSecond * deltaTime
+                    stamina - CurrentSprintStaminaDrainPerSecond * deltaTime
                 );
 
                 if (stamina <= 0f)
@@ -958,6 +983,7 @@ namespace ProjectJ.Networking.Fusion
             bodyCollider = GetComponent<CapsuleCollider>();
             networkTransform = GetComponent<NetworkTransform>();
             externalGameplay = GetComponent<ProjectJNetworkExternalGameplay>(); // 경기 상태 컴포넌트 조회
+            itemInventory = GetComponent<ProjectJNetworkItemInventory>(); // 깃털 신발 효과 컴포넌트 조회
         }
 
         private void ApplyAuthorityPresentation()

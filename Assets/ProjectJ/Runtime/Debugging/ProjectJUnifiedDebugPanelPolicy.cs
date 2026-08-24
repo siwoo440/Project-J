@@ -45,7 +45,6 @@ namespace ProjectJ.Debugging // 디버그 공통 네임스페이스
                 "EightPlayer", // 8인 진단 키워드
                 "PlayerMatchResult", // 플레이어 결과 키워드
                 "Checkpoint", // 체크포인트 키워드
-                "Respawn", // 부활 키워드
                 "Spectator", // 관전 키워드
                 "LocalPlayer" // 로컬 플레이어 키워드
             ))
@@ -69,6 +68,7 @@ namespace ProjectJ.Debugging // 디버그 공통 네임스페이스
                 "Match", // 경기 상태 키워드
                 "Finish", // 완주 상태 키워드
                 "Fall", // 낙하 상태 키워드
+                "Respawn", // 부활과 보호 상태 키워드
                 "Inventory", // 아이템 상태 키워드
                 "ExternalGameplay" // 네트워크 경기 키워드
             ))

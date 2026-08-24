@@ -42,13 +42,7 @@ namespace ProjectJ.Networking.Fusion // Project J Fusion 네임스페이스
     {
         private const float RefreshInterval = 0.25f; // 진단창 검색 주기
         private const int PanelWindowId = 10500; // IMGUI Window 고유 번호
-        private const float OuterMargin = 16f; // 화면 가장자리 여백
-        private const float NavigationWidth = 220f; // 좌측 창 목록 너비
         private const float HeaderHeight = 66f; // 상단 탭 영역 높이
-        private const float MinimumPanelWidth = 640f; // 패널 권장 최소 너비
-        private const float MinimumPanelHeight = 360f; // 패널 권장 최소 높이
-        private const float MaximumPanelWidth = 1440f; // 패널 최대 너비
-        private const float MaximumPanelHeight = 1000f; // 패널 최대 높이
 
         private static readonly ProjectJDebugPanelCategory[] Categories = // 탭 표시 순서
         {
@@ -220,10 +214,15 @@ namespace ProjectJ.Networking.Fusion // Project J Fusion 네임스페이스
 
         private void DrawWindowNavigation() // 좌측 진단창 목록 출력
         {
+            float navigationWidth = // 현재 패널의 목록 너비 계산
+                ProjectJUnifiedDebugPanelLayoutPolicy.CalculateNavigationWidth( // 반응형 목록 정책 호출
+                    panelRect.width // 현재 패널 너비 전달
+                );
+
             Rect navigationRect = new Rect( // 목록 표시 영역
                 12f, // 왼쪽 위치
                 HeaderHeight + 10f, // 탭 아래 위치
-                NavigationWidth, // 목록 너비
+                navigationWidth, // 반응형 목록 너비
                 panelRect.height - HeaderHeight - 22f // 목록 높이
             );
 
@@ -233,7 +232,7 @@ namespace ProjectJ.Networking.Fusion // Project J Fusion 네임스페이스
             Rect viewRect = new Rect( // 목록 스크롤 내부 영역
                 0f, // 내부 왼쪽 위치
                 0f, // 내부 위쪽 위치
-                NavigationWidth - 28f, // 스크롤바 여백 제외 너비
+                Mathf.Max(0f, navigationWidth - 28f), // 스크롤바 여백 제외 너비
                 Mathf.Max(navigationRect.height - 16f, matchingCount * 38f + 12f) // 항목 전체 높이
             );
 
@@ -277,10 +276,15 @@ namespace ProjectJ.Networking.Fusion // Project J Fusion 네임스페이스
 
         private void DrawSelectedWindow() // 선택 진단창 내용 출력
         {
+            float navigationWidth = // 현재 패널의 목록 너비 계산
+                ProjectJUnifiedDebugPanelLayoutPolicy.CalculateNavigationWidth( // 반응형 목록 정책 호출
+                    panelRect.width // 현재 패널 너비 전달
+                );
+
             Rect contentRect = new Rect( // 우측 내용 표시 영역
-                NavigationWidth + 22f, // 목록 오른쪽 위치
+                navigationWidth + 22f, // 목록 오른쪽 위치
                 HeaderHeight + 10f, // 탭 아래 위치
-                panelRect.width - NavigationWidth - 34f, // 내용 너비
+                Mathf.Max(0f, panelRect.width - navigationWidth - 34f), // 내용 너비
                 panelRect.height - HeaderHeight - 22f // 내용 높이
             );
 
@@ -305,11 +309,17 @@ namespace ProjectJ.Networking.Fusion // Project J Fusion 네임스페이스
                 contentRect.height - 16f // 내부 높이
             );
 
+            Vector2 legacyCanvasSize = // 기존 진단창 가상 영역 계산
+                ProjectJUnifiedDebugPanelLayoutPolicy.CalculateLegacyCanvasSize( // 가상 영역 정책 호출
+                    Screen.width, // 현재 화면 너비 전달
+                    Screen.height // 현재 화면 높이 전달
+                );
+
             Rect viewRect = new Rect( // 레거시 진단창 가상 화면
                 0f, // 가상 왼쪽 위치
                 0f, // 가상 위쪽 위치
-                Mathf.Max(Screen.width, 1280f), // 기존 고정 좌표 수용 너비
-                Mathf.Max(Screen.height, 1080f) // 기존 고정 좌표 수용 높이
+                legacyCanvasSize.x, // 기존 고정 좌표 수용 너비
+                legacyCanvasSize.y // 기존 고정 좌표 수용 높이
             );
 
             contentScroll = GUI.BeginScrollView( // 내용 스크롤 시작
@@ -651,27 +661,11 @@ namespace ProjectJ.Networking.Fusion // Project J Fusion 네임스페이스
 
         private void UpdatePanelRect() // 현재 해상도 패널 영역 계산
         {
-            float availableWidth = Mathf.Max(320f, Screen.width - OuterMargin * 2f); // 화면 사용 가능 너비
-            float availableHeight = Mathf.Max(240f, Screen.height - OuterMargin * 2f); // 화면 사용 가능 높이
-            float width = Mathf.Min(availableWidth, MaximumPanelWidth); // 화면을 넘지 않는 패널 너비
-            float height = Mathf.Min(availableHeight, MaximumPanelHeight); // 화면을 넘지 않는 패널 높이
-
-            if (availableWidth >= MinimumPanelWidth) // 권장 너비 적용 가능 여부 확인
-            {
-                width = Mathf.Max(width, MinimumPanelWidth); // 권장 최소 너비 적용
-            }
-
-            if (availableHeight >= MinimumPanelHeight) // 권장 높이 적용 가능 여부 확인
-            {
-                height = Mathf.Max(height, MinimumPanelHeight); // 권장 최소 높이 적용
-            }
-
-            panelRect = new Rect( // 화면 중앙 패널 영역 생성
-                (Screen.width - width) * 0.5f, // 가로 중앙 위치
-                (Screen.height - height) * 0.5f, // 세로 중앙 위치
-                width, // 계산된 너비
-                height // 계산된 높이
-            );
+            panelRect = // 현재 화면의 패널 영역 저장
+                ProjectJUnifiedDebugPanelLayoutPolicy.CalculatePanelRect( // 화면 경계 배치 정책 호출
+                    Screen.width, // 현재 화면 너비 전달
+                    Screen.height // 현재 화면 높이 전달
+                );
         }
 
         private void EnsureStyles() // 통합 패널 GUI 스타일 준비

@@ -567,9 +567,9 @@ namespace ProjectJ.Networking.Fusion
             float height =
                 Mathf.Min(
                     Screen.height - 24f,
-                    331f + // Day101 구간 측정 두 줄 높이 확보
+                    331f + // 공통 진단 정보 높이 확보
                     players.Count *
-                    81f // 플레이어당 세 줄 표시 높이 확보
+                    108f // Day103 플레이어당 네 줄 표시 높이 확보
                 );
 
             GUI.Box(
@@ -588,7 +588,7 @@ namespace ProjectJ.Networking.Fusion
             DrawLine(
                 ref y,
                 width,
-                "DAY 102 - DEBUG HOTKEYS & MOVEMENT QUALITY / F6 Toggle" // Day102 네트워크 진단 화면 제목
+                "DAY 103 - NETWORK TRANSFORM RUNTIME STATE / F6 Toggle" // Day103 NetworkTransform 진단 화면 제목
             );
 
             DrawLine(
@@ -889,6 +889,41 @@ namespace ProjectJ.Networking.Fusion
                 ref y, // 다음 출력 위치 갱신
                 width, // 현재 진단 창 너비 전달
                 movementStateText // 동작 상태 문자열 표시
+            );
+
+            bool physicsTuningApplicable = // Physics 보정값 조정 가능 여부
+                ProjectJNetworkTransformDiagnosticsPolicy.IsPhysicsTuningApplicable( // 적용 가능 정책 호출
+                    networkPlayer.NetworkTransformHasPhysicsBody, // 실제 Physics Body 상태 전달
+                    networkPlayer.NetworkTransformHasForecastEnabled // 실제 Forecast 상태 전달
+                );
+
+            string networkTransformDiagnosticText = // NetworkTransform 런타임 상태 네 번째 줄
+                "  NT Frame:" + // 실제 Render Timeframe 레이블
+                networkPlayer.RenderTimeframeLabel + // 현재 Timeframe 표시
+                " Path:" + // Render 경로 레이블
+                ProjectJNetworkTransformDiagnosticsPolicy.GetRenderPathLabel( // Render 경로 정책 호출
+                    networkPlayer.HasNetworkTransform, // NetworkTransform 존재 여부 전달
+                    networkPlayer.ForceRemoteRenderTimeframe, // Remote Timeframe 강제 여부 전달
+                    networkPlayer.UsesRemoteRenderTimeframe // 실제 Remote Timeframe 여부 전달
+                ) +
+                " Physics:" + // Physics Forecast 상태 레이블
+                ProjectJNetworkTransformDiagnosticsPolicy.GetPhysicsForecastLabel( // Forecast 상태 정책 호출
+                    networkPlayer.NetworkTransformHasPhysicsBody, // Physics Body 상태 전달
+                    networkPlayer.NetworkTransformHasForecastEnabled // Forecast 활성 상태 전달
+                ) +
+                " Tune:" + // Physics 보정값 조정 가능 레이블
+                (
+                    physicsTuningApplicable // 조정 가능 여부 확인
+                        ? "YES" // Physics 보정값 적용 가능
+                        : "NO" // Physics 보정값 적용 대상 아님
+                ) +
+                " ForceRemote:" + // 강제 Remote Timeframe 레이블
+                networkPlayer.ForceRemoteRenderTimeframe; // 실제 강제 설정 표시
+
+            DrawLine( // NetworkTransform 런타임 상태 표시
+                ref y, // 다음 출력 위치 갱신
+                width, // 현재 진단 창 너비 전달
+                networkTransformDiagnosticText // NetworkTransform 진단 문자열 표시
             );
         }
 

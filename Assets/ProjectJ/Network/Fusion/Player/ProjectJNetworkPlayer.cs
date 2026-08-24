@@ -109,6 +109,29 @@ namespace ProjectJ.Networking.Fusion
         public bool HasNetworkTransform =>
             networkTransform != null;
 
+        public bool NetworkTransformHasPhysicsBody => // NetworkTransform Physics Body 적용 여부
+            networkTransform != null && // NetworkTransform 존재 확인
+            networkTransform.HasPhysicsBody; // 실제 Physics Body 상태 반환
+
+        public bool NetworkTransformHasForecastEnabled => // 실제 Forecast Physics 활성 여부
+            networkTransform != null && // NetworkTransform 존재 확인
+            networkTransform.HasForecastEnabled; // 전역·로컬 Forecast 적용 결과 반환
+
+        public bool ForceRemoteRenderTimeframe => // Remote Timeframe 강제 여부
+            Object != null && // NetworkObject 존재 확인
+            Object.IsValid && // NetworkObject 유효성 확인
+            Object.ForceRemoteRenderTimeframe; // 강제 Remote 설정 반환
+
+        public bool UsesRemoteRenderTimeframe => // 실제 Remote Timeframe 사용 여부
+            Object != null && // NetworkObject 존재 확인
+            Object.IsValid && // NetworkObject 유효성 확인
+            Object.RenderTimeframe == RenderTimeframe.Remote; // 실제 Render Timeframe 비교
+
+        public string RenderTimeframeLabel => // 현재 Render Timeframe 표시 문자열
+            Object != null && Object.IsValid // NetworkObject 유효성 확인
+                ? Object.RenderTimeframe.ToString().ToUpperInvariant() // 실제 Timeframe 이름 반환
+                : "INVALID"; // 유효하지 않은 객체 상태 반환
+
         public bool RemoteInterpolationExpected =>
             IsRemoteView && HasNetworkTransform;
 

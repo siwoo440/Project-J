@@ -26,7 +26,8 @@ namespace ProjectJ.Networking.Fusion
         SmokeGrenade = 19, // smoke_grenade
         Trampoline = 20, // trampoline
         GiantBalloon = 21, // giant_balloon
-        Cart = 22 // cart
+        Cart = 22, // cart
+        RewindClock = 23 // rewind_clock
     }
 
     public static class ProjectJNetworkItemCatalog
@@ -149,6 +150,10 @@ namespace ProjectJ.Networking.Fusion
                     networkItemId = (int)ProjectJNetworkItemId.Cart;
                     return true;
 
+                case "rewind_clock":
+                    networkItemId = (int)ProjectJNetworkItemId.RewindClock;
+                    return true;
+
                 default:
                     return false;
             }
@@ -224,6 +229,9 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.Cart:
                     return "cart";
 
+                case ProjectJNetworkItemId.RewindClock:
+                    return "rewind_clock";
+
                 default:
                     return "empty";
             }
@@ -298,6 +306,9 @@ namespace ProjectJ.Networking.Fusion
 
                 case ProjectJNetworkItemId.Cart:
                     return "카트";
+
+                case ProjectJNetworkItemId.RewindClock:
+                    return "되감기 시계";
 
                 default:
                     return "Empty";

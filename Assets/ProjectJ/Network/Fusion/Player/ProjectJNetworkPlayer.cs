@@ -485,7 +485,10 @@ namespace ProjectJ.Networking.Fusion
 
             if (
                 itemInventory != null &&
-                itemInventory.IsCartRiding
+                (
+                    itemInventory.IsCartRiding ||
+                    itemInventory.IsRewindActive
+                )
             )
             {
                 moveInput = Vector2.zero;

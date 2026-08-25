@@ -250,6 +250,11 @@ namespace ProjectJ.Networking.Fusion
                 return;
             }
 
+            if (targetInventory.IsRewindActive) // 되감기 중 비눗방울 상태 차단
+            {
+                return;
+            }
+
             targetInventory.ApplySoapBubbleAuthority();
         }
 

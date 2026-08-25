@@ -242,6 +242,11 @@ namespace ProjectJ.Networking.Fusion
                 return;
             }
 
+            if (targetInventory.IsRewindActive) // 되감기 중 먹물 상태 차단
+            {
+                return;
+            }
+
             targetInventory.ApplyInkOctopusAuthority();
         }
 

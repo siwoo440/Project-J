@@ -248,6 +248,7 @@ namespace ProjectJ.Networking.Fusion
             InitializeGrapplingHookAuthority(); // 갈고리 연결 상태 초기화
             InitializeSoapBubbleAuthority(); // 비눗방울 이동 제한 상태 초기화
             InitializeSnowballAuthority(); // 눈덩이 감속 상태 초기화
+            InitializeRewindClockAuthority(); // 되감기 위치 기록 상태 초기화
         }
 
         public override void Despawned(NetworkRunner runner, bool hasState)
@@ -263,6 +264,13 @@ namespace ProjectJ.Networking.Fusion
             }
 
             ResolveReferences(); // 참조 유실 보정
+
+            if (UpdateRewindClockAuthority()) // 0.8초 역재생 또는 위치 기록 처리
+            {
+                StopWaterGunAuthority(); // 되감기 중 Hold 공격 정지
+                return; // 기존 아이템 상태 갱신과 입력 처리 차단
+            }
+
             UpdateTimedEffectsAuthority(); // 지속 효과 상태 보정
             UpdateBananaAuthority(); // 설치 바나나 수명·접촉 판정
             UpdateFireworkAuthority(); // 폭죽 준비·취소·발동 판정
@@ -383,6 +391,14 @@ namespace ProjectJ.Networking.Fusion
 
         public bool BlocksExternalForce(ProjectJExternalForceSource source)
         {
+            if (
+                IsRewindActive &&
+                source != ProjectJExternalForceSource.None
+            )
+            {
+                return true; // 되감기 중 모든 외부 속도 방해 차단
+            }
+
             if (!IsJellyShieldActive)
             {
                 return false; // 보호막 비활성
@@ -426,6 +442,7 @@ namespace ProjectJ.Networking.Fusion
             ClearGrapplingHookAuthority(); // 갈고리 연결 상태 제거
             ClearSoapBubbleAuthority(); // 비눗방울 이동 제한 상태 제거
             ClearSnowballSlowAuthority(); // 눈덩이 감속 효과 제거
+            ClearRewindClockAuthority(true); // 전체 초기화 시 되감기와 과거 기록 제거
         }
 
         internal void HandleRespawnAuthority()
@@ -442,6 +459,7 @@ namespace ProjectJ.Networking.Fusion
             ClearGrapplingHookAuthority(); // 부활 시 갈고리 연결 즉시 제거
             ClearSoapBubbleAuthority(); // 부활 시 비눗방울 이동 제한 즉시 제거
             ClearSnowballSlowAuthority(); // 부활 시 눈덩이 감속 제거
+            ClearRewindClockAuthority(true); // 부활 시 이전 생명의 위치 기록 제거
         }
 
         private bool TryUseSelectedItemAuthority()
@@ -551,6 +569,10 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.Cart: // 카트 선택 상태
                     success = UseCartAuthority(); // 서버 권한 Route Node 자동 이동 시작
                     break; // 카트 분기 종료
+
+                case ProjectJNetworkItemId.RewindClock: // 되감기 시계 선택 상태
+                    success = UseRewindClockAuthority(); // 서버 권한 5초 위치 역재생 시작
+                    break; // 되감기 시계 분기 종료
 
                 case ProjectJNetworkItemId.Snowball:
                     success = UseSnowballAuthority();

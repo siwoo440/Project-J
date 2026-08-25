@@ -1368,6 +1368,16 @@ namespace ProjectJ.Networking.Fusion
 
         private void ProcessPush()
         {
+            ResolveReferences(); // 되감기 상태 참조 보정
+
+            if (
+                itemInventory != null &&
+                itemInventory.IsRewindActive // 되감기 중 자신의 Push 입력 차단
+            )
+            {
+                return;
+            }
+
             if (
                 NetworkResultLocked ||
                 MatchState != ProjectJNetworkMatchState.Playing

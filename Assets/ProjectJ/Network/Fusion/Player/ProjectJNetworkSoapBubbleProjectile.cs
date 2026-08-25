@@ -197,6 +197,36 @@ namespace ProjectJ.Networking.Fusion
             ProjectJNetworkExternalGameplay nearestTarget =
                 nearestCollider.GetComponentInParent<ProjectJNetworkExternalGameplay>();
 
+            ProjectJNetworkItemInventory mirrorInventory =
+                nearestTarget != null
+                    ? nearestTarget.GetComponent<ProjectJNetworkItemInventory>()
+                    : null;
+
+            if (
+                mirrorInventory != null &&
+                mirrorInventory.TryReflectHandMirrorProjectileAuthority(
+                    NetworkOwner,
+                    NetworkDirection,
+                    out PlayerRef reflectedOwner,
+                    out Vector3 reflectedDirection
+                )
+            )
+            {
+                NetworkOwner =
+                    reflectedOwner;
+
+                NetworkDirection =
+                    reflectedDirection;
+
+                transform.position =
+                    ProjectJHandMirrorPolicy.ResolveSeparatedPosition(
+                        hitBuffer[nearestIndex].point,
+                        reflectedDirection
+                    );
+
+                return false;
+            }
+
             if (nearestTarget != null)
             {
                 TryApplySoapBubbleAuthority(

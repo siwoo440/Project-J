@@ -554,6 +554,77 @@ namespace ProjectJ.Networking.Fusion
                 hitPlayer.Object.IsValid
             )
             {
+                ProjectJNetworkItemInventory mirrorInventory =
+                    hitPlayer.GetComponent<ProjectJNetworkItemInventory>();
+
+                if (
+                    mirrorInventory != null &&
+                    mirrorInventory.TryReflectHandMirrorProjectileAuthority(
+                        NetworkOwner,
+                        direction,
+                        out PlayerRef reflectedOwner,
+                        out Vector3 reflectedDirection
+                    )
+                )
+                {
+                    PlayerRef previousOwner =
+                        NetworkOwner;
+
+                    NetworkOwner =
+                        reflectedOwner;
+
+                    transform.position =
+                        ProjectJHandMirrorPolicy.ResolveSeparatedPosition(
+                            castBuffer[nearestIndex].point,
+                            reflectedDirection
+                        );
+
+                    transform.rotation =
+                        Quaternion.LookRotation(
+                            reflectedDirection,
+                            Vector3.up
+                        );
+
+                    ProjectJNetworkExternalGameplay previousOwnerTarget =
+                        ResolvePlayerByRef(
+                            previousOwner
+                        );
+
+                    bool preferPreviousOwner =
+                        ProjectJHandMirrorPolicy.ShouldPreferPreviousOwnerAsTarget(
+                            previousOwnerTarget != null &&
+                            previousOwnerTarget.Object != null &&
+                            previousOwnerTarget.Object.IsValid,
+                            previousOwnerTarget != null &&
+                            previousOwnerTarget.GameplayInputAllowed,
+                            previousOwnerTarget != null &&
+                            IsVisibleToHomingMissile(
+                                previousOwnerTarget
+                            ),
+                            previousOwner ==
+                            NetworkOwner
+                        );
+
+                    if (preferPreviousOwner)
+                    {
+                        NetworkTarget =
+                            previousOwner;
+
+                        NetworkTargetRevision++;
+                        ClearRouteAuthority();
+                        return true;
+                    }
+
+                    ClearRouteAuthority();
+
+                    if (!TryReacquireAuthority())
+                    {
+                        DespawnAuthority();
+                    }
+
+                    return true;
+                }
+
                 hitPlayer.TryApplyExternalVelocityChange(
                     ProjectJExternalForceSource.Item,
                     ProjectJHomingMissilePolicy.ResolveHitVelocity(

@@ -33,7 +33,8 @@ namespace ProjectJ.Networking.Fusion
         SpikedArmor = 26, // spiked_armor
         Drone = 27, // drone
         InvisibilityCloak = 28, // invisibility_cloak
-        SniperWaterGun = 29 // sniper_water_gun
+        SniperWaterGun = 29, // sniper_water_gun
+        HandMirror = 30 // hand_mirror
     }
 
     public static class ProjectJNetworkItemCatalog
@@ -184,6 +185,10 @@ namespace ProjectJ.Networking.Fusion
                     networkItemId = (int)ProjectJNetworkItemId.SniperWaterGun;
                     return true;
 
+                case "hand_mirror":
+                    networkItemId = (int)ProjectJNetworkItemId.HandMirror;
+                    return true;
+
                 default:
                     return false;
             }
@@ -280,6 +285,9 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.SniperWaterGun:
                     return "sniper_water_gun";
 
+                case ProjectJNetworkItemId.HandMirror:
+                    return "hand_mirror";
+
                 default:
                     return "empty";
             }
@@ -375,6 +383,9 @@ namespace ProjectJ.Networking.Fusion
 
                 case ProjectJNetworkItemId.SniperWaterGun:
                     return "저격 물총";
+
+                case ProjectJNetworkItemId.HandMirror:
+                    return "손거울";
 
                 default:
                     return "Empty";

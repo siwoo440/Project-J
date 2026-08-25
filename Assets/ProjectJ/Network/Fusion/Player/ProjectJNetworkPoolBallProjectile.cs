@@ -169,6 +169,36 @@ namespace ProjectJ.Networking.Fusion // Fusion 네트워크 네임스페이스
             ProjectJNetworkExternalGameplay nearestTarget =
                 nearestCollider.GetComponentInParent<ProjectJNetworkExternalGameplay>(); // 가장 가까운 Player 조회
 
+            ProjectJNetworkItemInventory mirrorInventory =
+                nearestTarget != null
+                    ? nearestTarget.GetComponent<ProjectJNetworkItemInventory>()
+                    : null;
+
+            if (
+                mirrorInventory != null &&
+                mirrorInventory.TryReflectHandMirrorProjectileAuthority(
+                    NetworkOwner,
+                    NetworkDirection,
+                    out PlayerRef reflectedOwner,
+                    out Vector3 reflectedDirection
+                )
+            )
+            {
+                NetworkOwner =
+                    reflectedOwner;
+
+                NetworkDirection =
+                    reflectedDirection;
+
+                transform.position =
+                    ProjectJHandMirrorPolicy.ResolveSeparatedPosition(
+                        hitBuffer[nearestIndex].point,
+                        reflectedDirection
+                    );
+
+                return false;
+            }
+
             if (nearestTarget != null) // Player 적중 여부 확인
             {
                 nearestTarget.TryApplyExternalVelocityChange(

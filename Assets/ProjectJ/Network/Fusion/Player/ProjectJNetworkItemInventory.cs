@@ -254,6 +254,7 @@ namespace ProjectJ.Networking.Fusion
             InitializeSpikedArmorAuthority(); // 가시 갑옷 상태 초기화
             InitializeInvisibilityCloakAuthority(); // 투명 망토 상태 초기화
             InitializeSniperWaterGunAuthority(); // 저격 물총 조준 상태 초기화
+            InitializeHandMirrorAuthority(); // 손거울 4초 반사 상태 초기화
         }
 
         public override void Despawned(NetworkRunner runner, bool hasState)
@@ -280,6 +281,7 @@ namespace ProjectJ.Networking.Fusion
             UpdateShrinkPotionAuthority(); // 소형화 6초 종료·안전 복귀 대기 처리
             UpdateInvisibilityCloakAuthority(); // 투명 망토 5초·경기 종료 해제 처리
             UpdateSniperWaterGunLifecycleAuthority(); // 조준 중 경기·부활·아이템 상태 검증
+            UpdateHandMirrorAuthority(); // 손거울 시간 종료·경기 종료 해제 처리
             UpdateBananaAuthority(); // 설치 바나나 수명·접촉 판정
             UpdateFireworkAuthority(); // 폭죽 준비·취소·발동 판정
             UpdatePufferBalloonSuitAuthority(); // 복어 풍선옷 근접 자동 밀치기 판정
@@ -460,6 +462,7 @@ namespace ProjectJ.Networking.Fusion
             ClearSpikedArmorAuthority(); // 전체 초기화 시 가시 갑옷 상태 제거
             ClearInvisibilityCloakAuthority(); // 전체 초기화 시 투명 망토 제거
             ClearSniperWaterGunAuthority(); // 전체 초기화 시 저격 조준 제거
+            ClearHandMirrorAuthority(); // 전체 초기화 시 손거울 반사 상태 제거
         }
 
         internal void HandleRespawnAuthority()
@@ -481,6 +484,7 @@ namespace ProjectJ.Networking.Fusion
             ClearSpikedArmorAuthority(); // 부활 시 가시 갑옷 상태 즉시 제거
             ClearInvisibilityCloakAuthority(); // 부활 시 투명 망토 즉시 제거
             CancelSniperWaterGunAimAuthority(false); // 부활 시 저격 조준 취소
+            ClearHandMirrorAuthority(); // 부활 시 손거울 반사 상태 제거
         }
 
         private bool TryUseSelectedItemAuthority()
@@ -614,6 +618,10 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.InvisibilityCloak: // 투명 망토 선택 상태
                     success = UseInvisibilityCloakAuthority(); // 서버 권한 5초 은신 시작
                     break; // 투명 망토 분기 종료
+
+                case ProjectJNetworkItemId.HandMirror: // 손거울 선택 상태
+                    success = UseHandMirrorAuthority(); // 서버 권한 4초 투사체 반사 활성화
+                    break; // 손거울 분기 종료
 
                 case ProjectJNetworkItemId.Snowball:
                     success = UseSnowballAuthority();

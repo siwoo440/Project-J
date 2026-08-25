@@ -18,7 +18,8 @@ namespace ProjectJ.Networking.Fusion
         Jetpack = 11, // jetpack
         Hammer = 12, // hammer
         Bomb = 13, // bomb
-        PufferBalloonSuit = 14 // puffer_balloon_suit
+        PufferBalloonSuit = 14, // puffer_balloon_suit
+        InkOctopus = 15 // ink_octopus
     }
 
     public static class ProjectJNetworkItemCatalog
@@ -85,29 +86,33 @@ namespace ProjectJ.Networking.Fusion
                     networkItemId = (int)ProjectJNetworkItemId.Snowball;
                     return true;
 
-                case "mine": // 지뢰 문자열 ID
-                    networkItemId = (int)ProjectJNetworkItemId.Mine; // 지뢰 네트워크 ID 저장
-                    return true; // 문자열 변환 성공
+                case "mine":
+                    networkItemId = (int)ProjectJNetworkItemId.Mine;
+                    return true;
 
-                case "pool_ball": // 풀 공 문자열 ID
-                    networkItemId = (int)ProjectJNetworkItemId.PoolBall; // 풀 공 네트워크 ID 저장
-                    return true; // 문자열 변환 성공
+                case "pool_ball":
+                    networkItemId = (int)ProjectJNetworkItemId.PoolBall;
+                    return true;
 
-                case "jetpack": // 제트팩 문자열 ID
-                    networkItemId = (int)ProjectJNetworkItemId.Jetpack; // 제트팩 네트워크 ID 저장
-                    return true; // 문자열 변환 성공
+                case "jetpack":
+                    networkItemId = (int)ProjectJNetworkItemId.Jetpack;
+                    return true;
 
-                case "hammer": // 망치 문자열 ID
-                    networkItemId = (int)ProjectJNetworkItemId.Hammer; // 망치 네트워크 ID 저장
-                    return true; // 문자열 변환 성공
+                case "hammer":
+                    networkItemId = (int)ProjectJNetworkItemId.Hammer;
+                    return true;
 
-                case "bomb": // 폭탄 문자열 ID
-                    networkItemId = (int)ProjectJNetworkItemId.Bomb; // 폭탄 네트워크 ID 저장
-                    return true; // 문자열 변환 성공
+                case "bomb":
+                    networkItemId = (int)ProjectJNetworkItemId.Bomb;
+                    return true;
 
-                case "puffer_balloon_suit": // 복어 풍선옷 문자열 ID
-                    networkItemId = (int)ProjectJNetworkItemId.PufferBalloonSuit; // 네트워크 ID 저장
-                    return true; // 문자열 변환 성공
+                case "puffer_balloon_suit":
+                    networkItemId = (int)ProjectJNetworkItemId.PufferBalloonSuit;
+                    return true;
+
+                case "ink_octopus":
+                    networkItemId = (int)ProjectJNetworkItemId.InkOctopus;
+                    return true;
 
                 default:
                     return false;
@@ -142,23 +147,26 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.Snowball:
                     return "snowball";
 
-                case ProjectJNetworkItemId.Mine: // 지뢰 네트워크 ID
-                    return "mine"; // 지뢰 문자열 Key 반환
+                case ProjectJNetworkItemId.Mine:
+                    return "mine";
 
-                case ProjectJNetworkItemId.PoolBall: // 풀 공 네트워크 ID
-                    return "pool_ball"; // 풀 공 문자열 Key 반환
+                case ProjectJNetworkItemId.PoolBall:
+                    return "pool_ball";
 
-                case ProjectJNetworkItemId.Jetpack: // 제트팩 네트워크 ID
-                    return "jetpack"; // 제트팩 문자열 Key 반환
+                case ProjectJNetworkItemId.Jetpack:
+                    return "jetpack";
 
-                case ProjectJNetworkItemId.Hammer: // 망치 네트워크 ID
-                    return "hammer"; // 망치 문자열 Key 반환
+                case ProjectJNetworkItemId.Hammer:
+                    return "hammer";
 
-                case ProjectJNetworkItemId.Bomb: // 폭탄 네트워크 ID
-                    return "bomb"; // 폭탄 문자열 Key 반환
+                case ProjectJNetworkItemId.Bomb:
+                    return "bomb";
 
-                case ProjectJNetworkItemId.PufferBalloonSuit: // 복어 풍선옷 네트워크 ID
-                    return "puffer_balloon_suit"; // 문자열 Key 반환
+                case ProjectJNetworkItemId.PufferBalloonSuit:
+                    return "puffer_balloon_suit";
+
+                case ProjectJNetworkItemId.InkOctopus:
+                    return "ink_octopus";
 
                 default:
                     return "empty";
@@ -193,23 +201,26 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.Snowball:
                     return "눈덩이";
 
-                case ProjectJNetworkItemId.Mine: // 지뢰 네트워크 ID
-                    return "지뢰"; // 지뢰 표시 이름 반환
+                case ProjectJNetworkItemId.Mine:
+                    return "지뢰";
 
-                case ProjectJNetworkItemId.PoolBall: // 풀 공 네트워크 ID
-                    return "풀 공"; // 풀 공 표시 이름 반환
+                case ProjectJNetworkItemId.PoolBall:
+                    return "풀 공";
 
-                case ProjectJNetworkItemId.Jetpack: // 제트팩 네트워크 ID
-                    return "제트팩"; // 제트팩 표시 이름 반환
+                case ProjectJNetworkItemId.Jetpack:
+                    return "제트팩";
 
-                case ProjectJNetworkItemId.Hammer: // 망치 네트워크 ID
-                    return "망치"; // 망치 표시 이름 반환
+                case ProjectJNetworkItemId.Hammer:
+                    return "망치";
 
-                case ProjectJNetworkItemId.Bomb: // 폭탄 네트워크 ID
-                    return "폭탄"; // 폭탄 표시 이름 반환
+                case ProjectJNetworkItemId.Bomb:
+                    return "폭탄";
 
-                case ProjectJNetworkItemId.PufferBalloonSuit: // 복어 풍선옷 네트워크 ID
-                    return "복어 풍선옷"; // 표시 이름 반환
+                case ProjectJNetworkItemId.PufferBalloonSuit:
+                    return "복어 풍선옷";
+
+                case ProjectJNetworkItemId.InkOctopus:
+                    return "먹물 문어";
 
                 default:
                     return "Empty";

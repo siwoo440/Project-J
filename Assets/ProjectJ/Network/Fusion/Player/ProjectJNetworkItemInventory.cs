@@ -241,6 +241,7 @@ namespace ProjectJ.Networking.Fusion
             InitializeJetpackAuthority(); // 제트팩 연료 상태 초기화
             InitializeHammerAuthority(); // 망치 강화 상태 초기화
             InitializePufferBalloonSuitAuthority(); // 복어 풍선옷 효과 초기화
+            InitializeInkOctopusAuthority(); // 먹물 문어 상태 초기화
             InitializeSnowballAuthority(); // 눈덩이 감속 상태 초기화
         }
 
@@ -407,6 +408,7 @@ namespace ProjectJ.Networking.Fusion
             ClearJetpackAuthority(); // 제트팩 효과 제거
             ClearHammerAuthority(); // 망치 효과 제거
             ClearPufferBalloonSuitAuthority(); // 복어 풍선옷 효과 제거
+            ClearInkOctopusAuthority(); // 먹물 문어 효과 제거
             ClearSnowballSlowAuthority(); // 눈덩이 감속 효과 제거
         }
 
@@ -417,6 +419,7 @@ namespace ProjectJ.Networking.Fusion
             ClearJetpackAuthority(); // 부활 시 제트팩 효과 즉시 제거
             ClearHammerAuthority(); // 부활 시 망치 효과 즉시 제거
             ClearPufferBalloonSuitAuthority(); // 부활 시 복어 풍선옷 효과 즉시 제거
+            ClearInkOctopusAuthority(); // 부활 시 먹물 문어 효과 즉시 제거
             ClearSnowballSlowAuthority(); // 부활 시 눈덩이 감속 제거
         }
 
@@ -495,6 +498,10 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.PufferBalloonSuit: // 복어 풍선옷 선택 상태
                     success = UsePufferBalloonSuitAuthority(); // 서버 권한 5초 근접 자동 밀치기 활성화
                     break; // 복어 풍선옷 분기 종료
+
+                case ProjectJNetworkItemId.InkOctopus: // 먹물 문어 선택 상태
+                    success = UseInkOctopusAuthority(); // 서버 권한 먹물 투사체 발사
+                    break; // 먹물 문어 분기 종료
 
                 case ProjectJNetworkItemId.Snowball:
                     success = UseSnowballAuthority();

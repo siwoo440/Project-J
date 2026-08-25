@@ -593,6 +593,10 @@ namespace ProjectJ.Networking.Fusion
                     success = UseSpikedArmorAuthority(); // 서버 권한 5초 접촉 반격 활성화
                     break; // 가시 갑옷 분기 종료
 
+                case ProjectJNetworkItemId.Drone: // 드론 선택 상태
+                    success = UseDroneAuthority(); // 서버 권한 현재 1위 추적 드론 생성
+                    break; // 드론 분기 종료
+
                 case ProjectJNetworkItemId.Snowball:
                     success = UseSnowballAuthority();
                     break;

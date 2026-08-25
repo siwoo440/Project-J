@@ -30,7 +30,8 @@ namespace ProjectJ.Networking.Fusion
         RewindClock = 23, // rewind_clock
         HomingMissile = 24, // homing_missile
         ShrinkPotion = 25, // shrink_potion
-        SpikedArmor = 26 // spiked_armor
+        SpikedArmor = 26, // spiked_armor
+        Drone = 27 // drone
     }
 
     public static class ProjectJNetworkItemCatalog
@@ -169,6 +170,10 @@ namespace ProjectJ.Networking.Fusion
                     networkItemId = (int)ProjectJNetworkItemId.SpikedArmor;
                     return true;
 
+                case "drone":
+                    networkItemId = (int)ProjectJNetworkItemId.Drone;
+                    return true;
+
                 default:
                     return false;
             }
@@ -256,6 +261,9 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.SpikedArmor:
                     return "spiked_armor";
 
+                case ProjectJNetworkItemId.Drone:
+                    return "drone";
+
                 default:
                     return "empty";
             }
@@ -342,6 +350,9 @@ namespace ProjectJ.Networking.Fusion
 
                 case ProjectJNetworkItemId.SpikedArmor:
                     return "가시 갑옷";
+
+                case ProjectJNetworkItemId.Drone:
+                    return "드론";
 
                 default:
                     return "Empty";

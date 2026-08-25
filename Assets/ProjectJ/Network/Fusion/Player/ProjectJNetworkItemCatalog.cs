@@ -29,7 +29,8 @@ namespace ProjectJ.Networking.Fusion
         Cart = 22, // cart
         RewindClock = 23, // rewind_clock
         HomingMissile = 24, // homing_missile
-        ShrinkPotion = 25 // shrink_potion
+        ShrinkPotion = 25, // shrink_potion
+        SpikedArmor = 26 // spiked_armor
     }
 
     public static class ProjectJNetworkItemCatalog
@@ -164,6 +165,10 @@ namespace ProjectJ.Networking.Fusion
                     networkItemId = (int)ProjectJNetworkItemId.ShrinkPotion;
                     return true;
 
+                case "spiked_armor":
+                    networkItemId = (int)ProjectJNetworkItemId.SpikedArmor;
+                    return true;
+
                 default:
                     return false;
             }
@@ -248,6 +253,9 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.ShrinkPotion:
                     return "shrink_potion";
 
+                case ProjectJNetworkItemId.SpikedArmor:
+                    return "spiked_armor";
+
                 default:
                     return "empty";
             }
@@ -331,6 +339,9 @@ namespace ProjectJ.Networking.Fusion
 
                 case ProjectJNetworkItemId.ShrinkPotion:
                     return "소형화 물약";
+
+                case ProjectJNetworkItemId.SpikedArmor:
+                    return "가시 갑옷";
 
                 default:
                     return "Empty";

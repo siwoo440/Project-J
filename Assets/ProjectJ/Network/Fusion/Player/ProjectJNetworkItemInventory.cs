@@ -249,6 +249,7 @@ namespace ProjectJ.Networking.Fusion
             InitializeSoapBubbleAuthority(); // 비눗방울 이동 제한 상태 초기화
             InitializeSnowballAuthority(); // 눈덩이 감속 상태 초기화
             InitializeRewindClockAuthority(); // 되감기 위치 기록 상태 초기화
+            InitializeSpikedArmorAuthority(); // 가시 갑옷 상태 초기화
         }
 
         public override void Despawned(NetworkRunner runner, bool hasState)
@@ -276,6 +277,7 @@ namespace ProjectJ.Networking.Fusion
             UpdateBananaAuthority(); // 설치 바나나 수명·접촉 판정
             UpdateFireworkAuthority(); // 폭죽 준비·취소·발동 판정
             UpdatePufferBalloonSuitAuthority(); // 복어 풍선옷 근접 자동 밀치기 판정
+            UpdateSpikedArmorAuthority(); // 가시 갑옷 근접 접촉 반격 판정
             UpdateFishingRodAuthority(); // 낚시대 연결·당김 상태 판정
             UpdateGrapplingHookAuthority(); // 갈고리 자기 이동 상태 판정
             UpdateSoapBubbleLifetimeAuthority(); // 비눗방울 시간·경기 상태 판정
@@ -445,6 +447,7 @@ namespace ProjectJ.Networking.Fusion
             ClearSnowballSlowAuthority(); // 눈덩이 감속 효과 제거
             ClearRewindClockAuthority(true); // 전체 초기화 시 되감기와 과거 기록 제거
             ClearShrinkPotionAuthority(); // 전체 초기화 시 소형화 상태 제거
+            ClearSpikedArmorAuthority(); // 전체 초기화 시 가시 갑옷 상태 제거
         }
 
         internal void HandleRespawnAuthority()
@@ -463,6 +466,7 @@ namespace ProjectJ.Networking.Fusion
             ClearSnowballSlowAuthority(); // 부활 시 눈덩이 감속 제거
             ClearRewindClockAuthority(true); // 부활 시 이전 생명의 위치 기록 제거
             ClearShrinkPotionAuthority(); // 부활 시 소형화 상태 즉시 제거
+            ClearSpikedArmorAuthority(); // 부활 시 가시 갑옷 상태 즉시 제거
         }
 
         private bool TryUseSelectedItemAuthority()
@@ -584,6 +588,10 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.ShrinkPotion: // 소형화 물약 선택 상태
                     success = UseShrinkPotionAuthority(); // 서버 권한 6초 80% 축소 시작
                     break; // 소형화 물약 분기 종료
+
+                case ProjectJNetworkItemId.SpikedArmor: // 가시 갑옷 선택 상태
+                    success = UseSpikedArmorAuthority(); // 서버 권한 5초 접촉 반격 활성화
+                    break; // 가시 갑옷 분기 종료
 
                 case ProjectJNetworkItemId.Snowball:
                     success = UseSnowballAuthority();

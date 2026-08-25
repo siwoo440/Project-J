@@ -21,6 +21,7 @@ namespace ProjectJ.Tests.EditMode // EditMode 테스트 네임스페이스
         [TestCase("HomingMissile", "homing_missile", "유도탄", ItemCategory.Offensive, ItemUseMode.Instant, ItemTargetType.OtherPlayer, 10f, false)] // 유도탄 기준
         [TestCase("FeatherShoes", "feather_shoes", "깃털 신발", ItemCategory.Mobility, ItemUseMode.Instant, ItemTargetType.Self, 7f, false)] // 깃털 신발 기준
         [TestCase("ShrinkPotion", "shrink_potion", "소형화 물약", ItemCategory.Defense, ItemUseMode.Instant, ItemTargetType.Self, 6f, false)] // 소형화 물약 기준
+        [TestCase("SpikedArmor", "spiked_armor", "가시 갑옷", ItemCategory.Defense, ItemUseMode.Instant, ItemTargetType.Self, 5f, false)] // 가시 갑옷 기준
         [TestCase("Bomb", "bomb", "폭탄", ItemCategory.Offensive, ItemUseMode.Instant, ItemTargetType.Area, 2.5f, false)] // 폭탄 기준
         [TestCase("PufferBalloonSuit", "puffer_balloon_suit", "복어 풍선옷", ItemCategory.Defense, ItemUseMode.Instant, ItemTargetType.Self, 5f, false)] // 복어 풍선옷 기준
         [TestCase("InkOctopus", "ink_octopus", "먹물 문어", ItemCategory.Offensive, ItemUseMode.Instant, ItemTargetType.OtherPlayer, 3.5f, false)] // 먹물 문어 기준
@@ -65,7 +66,7 @@ namespace ProjectJ.Tests.EditMode // EditMode 테스트 네임스페이스
         }
 
         [Test] // 전체 목록 검증
-        public void InitialReleaseCatalog_HasTwentyNineUniqueValidItems() // 누락·중복 데이터 방지
+        public void InitialReleaseCatalog_HasThirtyUniqueValidItems() // 누락·중복 데이터 방지
         {
             string[] itemGuids = AssetDatabase.FindAssets("t:ItemDefinition", new[] { ItemDirectory }); // Definition GUID 조회
             List<ItemDefinition> definitions = new List<ItemDefinition>(); // 전체 Definition 목록 생성
@@ -79,7 +80,7 @@ namespace ProjectJ.Tests.EditMode // EditMode 테스트 네임스페이스
 
             List<string> errors = ItemDefinitionValidator.ValidateCatalog(definitions); // 공통 유효성 검사
 
-            Assert.AreEqual(29, definitions.Count); // 초기 출시 29종 확인
+            Assert.AreEqual(30, definitions.Count); // 현재 초기 출시 데이터 30종 확인
             Assert.IsEmpty(errors, string.Join("\n", errors)); // 누락·중복 오류 확인
         }
 

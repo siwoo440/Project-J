@@ -29,6 +29,8 @@ namespace ProjectJ.Networking.Fusion
         private const float StandingVisualScaleY = 1f;
         private const float CrouchVisualScaleY = 0.5f;
         private const float StandClearanceRadiusScale = 0.95f;
+        private const float BodyTurnSpeedDegreesPerSecond =
+            720f; // 이동 방향 몸 회전 속도
 
         private Renderer visualRenderer;
         private Transform visualTransform;
@@ -626,12 +628,32 @@ namespace ProjectJ.Networking.Fusion
             }
 
             float horizontalMoveSpeed = CurrentMoveSpeed;
+            Vector3 moveDirection =
+                ProjectJCameraRelativeMovementPolicy.ResolveMoveDirection(
+                    moveInput,
+                    input.AimDirection,
+                    transform.forward
+                ); // 카메라 기준 수평 이동 방향 계산
+
             Vector3 currentPosition = transform.position;
             Vector3 nextPosition = currentPosition;
 
-            nextPosition.x += moveInput.x * horizontalMoveSpeed * deltaTime;
-            nextPosition.z += moveInput.y * horizontalMoveSpeed * deltaTime;
+            nextPosition +=
+                moveDirection *
+                horizontalMoveSpeed *
+                deltaTime; // 카메라 기준 수평 이동 적용
+
             nextPosition.y += NetworkVerticalVelocity * deltaTime;
+
+            if (moveDirection.sqrMagnitude > 0.0001f)
+            {
+                transform.rotation =
+                    ProjectJCameraRelativeMovementPolicy.ResolveBodyRotation(
+                        transform.rotation,
+                        moveDirection,
+                        BodyTurnSpeedDegreesPerSecond * deltaTime
+                    ); // 실제 이동 방향으로 몸 회전 적용
+            }
 
             if (
                 NetworkVerticalVelocity <= 0f &&

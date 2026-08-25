@@ -39,7 +39,7 @@ namespace ProjectJ.Networking.Fusion
         private const float WaterGunForcePerTick = 0.55f; // 기존 물총 Tick 힘
 
         private static readonly Vector3 BananaPlacementSize =
-            new Vector3(1.3f, 0.3f, 1.3f); // 기존 바나나 설치 공간
+            new Vector3(1.3f, 0.3f, 1.3f); // 기존 설치 공간
 
         private readonly Collider[] bananaOverlapBuffer =
             new Collider[24]; // 바나나 접촉 후보 버퍼
@@ -239,6 +239,7 @@ namespace ProjectJ.Networking.Fusion
             InitializeFireworkAuthority(); // 폭죽 준비 상태 초기화
             InitializeFeatherShoesAuthority(); // 깃털 신발 효과 초기화
             InitializeJetpackAuthority(); // 제트팩 연료 상태 초기화
+            InitializeHammerAuthority(); // 망치 강화 상태 초기화
             InitializeSnowballAuthority(); // 눈덩이 감속 상태 초기화
         }
 
@@ -402,6 +403,7 @@ namespace ProjectJ.Networking.Fusion
             CancelFireworkPreparationAuthority(false); // 폭죽 준비 상태 제거
             ClearFeatherShoesAuthority(); // 깃털 신발 효과 제거
             ClearJetpackAuthority(); // 제트팩 효과 제거
+            ClearHammerAuthority(); // 망치 효과 제거
             ClearSnowballSlowAuthority(); // 눈덩이 감속 효과 제거
         }
 
@@ -410,6 +412,7 @@ namespace ProjectJ.Networking.Fusion
             CancelFireworkPreparationAuthority(); // 준비 중인 폭죽 취소
             ClearFeatherShoesAuthority(); // 부활 시 깃털 신발 효과 제거
             ClearJetpackAuthority(); // 부활 시 제트팩 효과 즉시 제거
+            ClearHammerAuthority(); // 부활 시 망치 효과 즉시 제거
             ClearSnowballSlowAuthority(); // 부활 시 눈덩이 감속 제거
         }
 
@@ -476,6 +479,10 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.Jetpack: // 제트팩 선택 상태
                     success = UseJetpackAuthority(); // 서버 권한 5초 연료 활성화
                     break; // 제트팩 분기 종료
+
+                case ProjectJNetworkItemId.Hammer: // 망치 선택 상태
+                    success = UseHammerAuthority(); // 서버 권한 6초 밀치기 강화 활성화
+                    break; // 망치 분기 종료
 
                 case ProjectJNetworkItemId.Snowball:
                     success = UseSnowballAuthority();

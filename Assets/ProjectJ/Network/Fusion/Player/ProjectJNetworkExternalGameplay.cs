@@ -13,7 +13,7 @@ namespace ProjectJ.Networking.Fusion
     [DisallowMultipleComponent] // 동일 컴포넌트 중복 방지
     [RequireComponent(typeof(ProjectJNetworkPlayer))] // Network Player 보장
     [RequireComponent(typeof(NetworkTransform))] // 네트워크 순간이동 보장
-    public sealed class ProjectJNetworkExternalGameplay :
+    public sealed partial class ProjectJNetworkExternalGameplay :
         NetworkBehaviour,
         ICheckpointReceiver,
         IFinishReceiver
@@ -1387,8 +1387,8 @@ namespace ProjectJ.Networking.Fusion
 
             NetworkPushCooldown = TickTimer.CreateFromSeconds(
                 Runner,
-                PushCooldownSeconds
-            ); // 시도 즉시 쿨타임 시작
+                CurrentPushCooldownSeconds
+            ); // 현재 Push 재사용 시간 적용
 
             ProjectJNetworkExternalGameplay target =
                 FindClosestPushTarget(); // 최근접 유효 Target 검색
@@ -1438,7 +1438,7 @@ namespace ProjectJ.Networking.Fusion
             bool applied =
                 target.TryApplyExternalVelocityChange(
                     ProjectJExternalForceSource.Push,
-                    pushDirection.normalized * PushForce
+                    pushDirection.normalized * CurrentPushForce
                 ); // Target 외력 적용
 
             if (!applied)
@@ -1480,7 +1480,7 @@ namespace ProjectJ.Networking.Fusion
                 float distanceSquared =
                     toTarget.sqrMagnitude; // 거리 제곱 계산
 
-                if (distanceSquared > PushSearchRange * PushSearchRange)
+                if (distanceSquared > CurrentPushSearchRange * CurrentPushSearchRange)
                 {
                     continue;
                 }

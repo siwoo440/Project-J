@@ -15,7 +15,8 @@ namespace ProjectJ.Networking.Fusion
         Snowball = 8, // snowball
         Mine = 9, // mine
         PoolBall = 10, // pool_ball
-        Jetpack = 11 // jetpack
+        Jetpack = 11, // jetpack
+        Hammer = 12 // hammer
     }
 
     public static class ProjectJNetworkItemCatalog
@@ -94,6 +95,10 @@ namespace ProjectJ.Networking.Fusion
                     networkItemId = (int)ProjectJNetworkItemId.Jetpack; // 제트팩 네트워크 ID 저장
                     return true; // 문자열 변환 성공
 
+                case "hammer": // 망치 문자열 ID
+                    networkItemId = (int)ProjectJNetworkItemId.Hammer; // 망치 네트워크 ID 저장
+                    return true; // 문자열 변환 성공
+
                 default:
                     return false;
             }
@@ -136,6 +141,9 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.Jetpack: // 제트팩 네트워크 ID
                     return "jetpack"; // 제트팩 문자열 Key 반환
 
+                case ProjectJNetworkItemId.Hammer: // 망치 네트워크 ID
+                    return "hammer"; // 망치 문자열 Key 반환
+
                 default:
                     return "empty";
             }
@@ -177,6 +185,9 @@ namespace ProjectJ.Networking.Fusion
 
                 case ProjectJNetworkItemId.Jetpack: // 제트팩 네트워크 ID
                     return "제트팩"; // 제트팩 표시 이름 반환
+
+                case ProjectJNetworkItemId.Hammer: // 망치 네트워크 ID
+                    return "망치"; // 망치 표시 이름 반환
 
                 default:
                     return "Empty";

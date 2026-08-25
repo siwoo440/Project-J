@@ -484,6 +484,10 @@ namespace ProjectJ.Networking.Fusion
                     success = UseHammerAuthority(); // 서버 권한 6초 밀치기 강화 활성화
                     break; // 망치 분기 종료
 
+                case ProjectJNetworkItemId.Bomb: // 폭탄 선택 상태
+                    success = UseBombAuthority(); // 서버 권한 폭탄 투척
+                    break; // 폭탄 분기 종료
+
                 case ProjectJNetworkItemId.Snowball:
                     success = UseSnowballAuthority();
                     break;

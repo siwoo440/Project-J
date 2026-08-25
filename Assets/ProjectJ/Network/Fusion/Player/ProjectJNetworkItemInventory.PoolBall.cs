@@ -219,6 +219,7 @@ namespace ProjectJ.Networking.Fusion // Fusion 네트워크 네임스페이스
                 return false; // 수량 소비 없이 실패
             }
 
+            BreakInvisibilityCloakForSuccessfulItemUseAuthority((int)ProjectJNetworkItemId.PoolBall); // Stack 아이템 성공 사용 시 은신 해제
             int remainingCount = ProjectJPoolBallPolicy.ConsumeOne(currentCount); // 투척 후 남은 수량 계산
             SetPoolBallStackCountAuthority(slotIndex, remainingCount); // 남은 Networked 수량 저장
 

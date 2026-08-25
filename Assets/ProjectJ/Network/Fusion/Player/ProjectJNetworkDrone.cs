@@ -659,7 +659,7 @@ namespace ProjectJ.Networking.Fusion
                 return false;
             }
 
-            return true; // 129일차 투명 망토에서 추적 제외 상태 연결
+            return candidate.IsAutoTargetTrackable; // 투명 망토 은신 Target 제외
         }
 
         private void AttackAndDespawnAuthority(

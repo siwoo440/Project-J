@@ -1378,6 +1378,11 @@ namespace ProjectJ.Networking.Fusion
                 return;
             }
 
+            if (itemInventory != null)
+            {
+                itemInventory.BreakInvisibilityCloakForPushAuthority(); // Push 입력 순간 투명 망토 해제
+            }
+
             if (
                 NetworkResultLocked ||
                 MatchState != ProjectJNetworkMatchState.Playing

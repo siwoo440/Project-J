@@ -212,6 +212,7 @@ namespace ProjectJ.Networking.Fusion
         public override void Spawned()
         {
             ResolveReferences(); // 필수 참조 준비
+            EnsureInvisibilityPresentation(); // 모든 Peer에 은신 표시 컴포넌트 준비
 
             if (!Object.HasStateAuthority)
             {
@@ -250,6 +251,7 @@ namespace ProjectJ.Networking.Fusion
             InitializeSnowballAuthority(); // 눈덩이 감속 상태 초기화
             InitializeRewindClockAuthority(); // 되감기 위치 기록 상태 초기화
             InitializeSpikedArmorAuthority(); // 가시 갑옷 상태 초기화
+            InitializeInvisibilityCloakAuthority(); // 투명 망토 상태 초기화
         }
 
         public override void Despawned(NetworkRunner runner, bool hasState)
@@ -274,6 +276,7 @@ namespace ProjectJ.Networking.Fusion
 
             UpdateTimedEffectsAuthority(); // 지속 효과 상태 보정
             UpdateShrinkPotionAuthority(); // 소형화 6초 종료·안전 복귀 대기 처리
+            UpdateInvisibilityCloakAuthority(); // 투명 망토 5초·경기 종료 해제 처리
             UpdateBananaAuthority(); // 설치 바나나 수명·접촉 판정
             UpdateFireworkAuthority(); // 폭죽 준비·취소·발동 판정
             UpdatePufferBalloonSuitAuthority(); // 복어 풍선옷 근접 자동 밀치기 판정
@@ -448,6 +451,7 @@ namespace ProjectJ.Networking.Fusion
             ClearRewindClockAuthority(true); // 전체 초기화 시 되감기와 과거 기록 제거
             ClearShrinkPotionAuthority(); // 전체 초기화 시 소형화 상태 제거
             ClearSpikedArmorAuthority(); // 전체 초기화 시 가시 갑옷 상태 제거
+            ClearInvisibilityCloakAuthority(); // 전체 초기화 시 투명 망토 제거
         }
 
         internal void HandleRespawnAuthority()
@@ -467,6 +471,7 @@ namespace ProjectJ.Networking.Fusion
             ClearRewindClockAuthority(true); // 부활 시 이전 생명의 위치 기록 제거
             ClearShrinkPotionAuthority(); // 부활 시 소형화 상태 즉시 제거
             ClearSpikedArmorAuthority(); // 부활 시 가시 갑옷 상태 즉시 제거
+            ClearInvisibilityCloakAuthority(); // 부활 시 투명 망토 즉시 제거
         }
 
         private bool TryUseSelectedItemAuthority()
@@ -597,6 +602,10 @@ namespace ProjectJ.Networking.Fusion
                     success = UseDroneAuthority(); // 서버 권한 현재 1위 추적 드론 생성
                     break; // 드론 분기 종료
 
+                case ProjectJNetworkItemId.InvisibilityCloak: // 투명 망토 선택 상태
+                    success = UseInvisibilityCloakAuthority(); // 서버 권한 5초 은신 시작
+                    break; // 투명 망토 분기 종료
+
                 case ProjectJNetworkItemId.Snowball:
                     success = UseSnowballAuthority();
                     break;
@@ -616,6 +625,7 @@ namespace ProjectJ.Networking.Fusion
                 return false;
             }
 
+            BreakInvisibilityCloakForSuccessfulItemUseAuthority(itemId); // 다른 아이템 성공 사용 시 은신 해제
             SetSlotItemIdAuthority(slotIndex, EmptyItemId); // 성공한 슬롯만 소비
             NetworkInventoryRevision++; // 소비 Revision 증가
             NetworkLastUsedItemId = itemId; // 마지막 성공 Item 저장

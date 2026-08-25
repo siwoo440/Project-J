@@ -706,7 +706,7 @@ namespace ProjectJ.Networking.Fusion
                 return false;
             }
 
-            return true; // 129일차 투명 망토에서 은신 Target 제외 조건 연결
+            return candidate.IsAutoTargetTrackable; // 투명 망토 은신 Target 제외
         }
 
         private bool HasClearWorldPath(

@@ -31,7 +31,8 @@ namespace ProjectJ.Networking.Fusion
         HomingMissile = 24, // homing_missile
         ShrinkPotion = 25, // shrink_potion
         SpikedArmor = 26, // spiked_armor
-        Drone = 27 // drone
+        Drone = 27, // drone
+        InvisibilityCloak = 28 // invisibility_cloak
     }
 
     public static class ProjectJNetworkItemCatalog
@@ -174,6 +175,10 @@ namespace ProjectJ.Networking.Fusion
                     networkItemId = (int)ProjectJNetworkItemId.Drone;
                     return true;
 
+                case "invisibility_cloak":
+                    networkItemId = (int)ProjectJNetworkItemId.InvisibilityCloak;
+                    return true;
+
                 default:
                     return false;
             }
@@ -264,6 +269,9 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.Drone:
                     return "drone";
 
+                case ProjectJNetworkItemId.InvisibilityCloak:
+                    return "invisibility_cloak";
+
                 default:
                     return "empty";
             }
@@ -353,6 +361,9 @@ namespace ProjectJ.Networking.Fusion
 
                 case ProjectJNetworkItemId.Drone:
                     return "드론";
+
+                case ProjectJNetworkItemId.InvisibilityCloak:
+                    return "투명 망토";
 
                 default:
                     return "Empty";

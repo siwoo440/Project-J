@@ -25,9 +25,12 @@ namespace ProjectJ.Networking.Fusion // Fusion 네트워크 네임스페이스
 
         private bool UseJetpackAuthority()
         {
-            if (Runner == null)
+            if (
+                Runner == null ||
+                IsGiantBalloonActive
+            )
             {
-                return false; // Runner 없음 처리
+                return false; // Runner 없음 또는 거대 풍선과 상승 효과 중첩 차단
             }
 
             NetworkJetpackTimer = TickTimer.CreateFromSeconds( // 서버 기준 연료 타이머 생성

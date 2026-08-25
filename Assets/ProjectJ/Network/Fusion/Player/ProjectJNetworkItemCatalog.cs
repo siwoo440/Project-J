@@ -24,7 +24,8 @@ namespace ProjectJ.Networking.Fusion
         GrapplingHook = 17, // grappling_hook
         SoapBubble = 18, // soap_bubble
         SmokeGrenade = 19, // smoke_grenade
-        Trampoline = 20 // trampoline
+        Trampoline = 20, // trampoline
+        GiantBalloon = 21 // giant_balloon
     }
 
     public static class ProjectJNetworkItemCatalog
@@ -139,6 +140,10 @@ namespace ProjectJ.Networking.Fusion
                     networkItemId = (int)ProjectJNetworkItemId.Trampoline;
                     return true;
 
+                case "giant_balloon":
+                    networkItemId = (int)ProjectJNetworkItemId.GiantBalloon;
+                    return true;
+
                 default:
                     return false;
             }
@@ -208,6 +213,9 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.Trampoline:
                     return "trampoline";
 
+                case ProjectJNetworkItemId.GiantBalloon:
+                    return "giant_balloon";
+
                 default:
                     return "empty";
             }
@@ -276,6 +284,9 @@ namespace ProjectJ.Networking.Fusion
 
                 case ProjectJNetworkItemId.Trampoline:
                     return "트램폴린";
+
+                case ProjectJNetworkItemId.GiantBalloon:
+                    return "거대 풍선";
 
                 default:
                     return "Empty";

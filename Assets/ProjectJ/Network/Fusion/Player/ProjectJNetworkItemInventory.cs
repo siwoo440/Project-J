@@ -239,6 +239,7 @@ namespace ProjectJ.Networking.Fusion
             InitializeFireworkAuthority(); // 폭죽 준비 상태 초기화
             InitializeFeatherShoesAuthority(); // 깃털 신발 효과 초기화
             InitializeJetpackAuthority(); // 제트팩 연료 상태 초기화
+            InitializeGiantBalloonAuthority(); // 거대 풍선 상승·하강 상태 초기화
             InitializeHammerAuthority(); // 망치 강화 상태 초기화
             InitializePufferBalloonSuitAuthority(); // 복어 풍선옷 효과 초기화
             InitializeInkOctopusAuthority(); // 먹물 문어 상태 초기화
@@ -268,6 +269,7 @@ namespace ProjectJ.Networking.Fusion
             UpdateFishingRodAuthority(); // 낚시대 연결·당김 상태 판정
             UpdateGrapplingHookAuthority(); // 갈고리 자기 이동 상태 판정
             UpdateSoapBubbleLifetimeAuthority(); // 비눗방울 시간·경기 상태 판정
+            UpdateGiantBalloonAuthority(); // 거대 풍선 6초 상승·1.5초 하강 단계 갱신
 
             if (
                 externalGameplay == null ||
@@ -414,6 +416,7 @@ namespace ProjectJ.Networking.Fusion
             CancelFireworkPreparationAuthority(false); // 폭죽 준비 상태 제거
             ClearFeatherShoesAuthority(); // 깃털 신발 효과 제거
             ClearJetpackAuthority(); // 제트팩 효과 제거
+            ClearGiantBalloonAuthority(); // 거대 풍선 상승·하강 상태 제거
             ClearHammerAuthority(); // 망치 효과 제거
             ClearPufferBalloonSuitAuthority(); // 복어 풍선옷 효과 제거
             ClearInkOctopusAuthority(); // 먹물 문어 효과 제거
@@ -428,6 +431,7 @@ namespace ProjectJ.Networking.Fusion
             CancelFireworkPreparationAuthority(); // 준비 중인 폭죽 취소
             ClearFeatherShoesAuthority(); // 부활 시 깃털 신발 효과 제거
             ClearJetpackAuthority(); // 부활 시 제트팩 효과 즉시 제거
+            ClearGiantBalloonAuthority(); // 부활 시 거대 풍선 상태 즉시 제거
             ClearHammerAuthority(); // 부활 시 망치 효과 즉시 제거
             ClearPufferBalloonSuitAuthority(); // 부활 시 복어 풍선옷 효과 즉시 제거
             ClearInkOctopusAuthority(); // 부활 시 먹물 문어 효과 즉시 제거
@@ -536,6 +540,10 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.Trampoline: // 트램폴린 선택 상태
                     success = UseTrampolineAuthority(); // 서버 권한 발밑 설치
                     break; // 트램폴린 분기 종료
+
+                case ProjectJNetworkItemId.GiantBalloon: // 거대 풍선 선택 상태
+                    success = UseGiantBalloonAuthority(); // 서버 권한 6초 상승 상태 시작
+                    break; // 거대 풍선 분기 종료
 
                 case ProjectJNetworkItemId.Snowball:
                     success = UseSnowballAuthority();

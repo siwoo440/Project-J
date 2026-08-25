@@ -218,6 +218,18 @@ namespace ProjectJ.Networking.Fusion
         public bool IsJetpackActive =>
             itemInventory != null && itemInventory.IsJetpackActive; // 제트팩 Networked 연료 활성 여부
 
+        public bool IsGiantBalloonActive =>
+            itemInventory != null &&
+            itemInventory.IsGiantBalloonActive; // 거대 풍선 활성 여부
+
+        public bool IsGiantBalloonRising =>
+            itemInventory != null &&
+            itemInventory.IsGiantBalloonRising; // 거대 풍선 상승 단계 여부
+
+        public bool IsGiantBalloonDescending =>
+            itemInventory != null &&
+            itemInventory.IsGiantBalloonDescending; // 거대 풍선 종료 하강 단계 여부
+
         public bool IsSnowballSlowed =>
             itemInventory != null && itemInventory.IsSnowballSlowed; // 눈덩이 감속 활성 여부
 
@@ -239,10 +251,21 @@ namespace ProjectJ.Networking.Fusion
                     IsSnowballSlowed
                 ); // 눈덩이 감속 배율 적용
 
-                return ProjectJJetpackPolicy.CalculateHorizontalMovementSpeed( // 제트팩 수평 조정 배율 적용
-                    snowballSpeed, // 기존 이동·아이템 보정 속도 유지
-                    IsJetpackActive // 제트팩 활성 상태 전달
-                );
+                float jetpackAdjustedSpeed =
+                    ProjectJJetpackPolicy.CalculateHorizontalMovementSpeed(
+                        snowballSpeed,
+                        IsJetpackActive
+                    ); // 기존 제트팩 수평 보정 먼저 적용
+
+                ProjectJGiantBalloonPhase giantBalloonPhase =
+                    itemInventory != null
+                        ? itemInventory.GiantBalloonPhase
+                        : ProjectJGiantBalloonPhase.Inactive;
+
+                return ProjectJGiantBalloonPolicy.CalculateHorizontalMovementSpeed(
+                    jetpackAdjustedSpeed,
+                    giantBalloonPhase
+                ); // 거대 풍선 상승·하강 중 수평 조작 60% 적용
             }
         }
 
@@ -527,6 +550,57 @@ namespace ProjectJ.Networking.Fusion
             if (jetpackActive && NetworkVerticalVelocity > 0f)
             {
                 NetworkGrounded = false; // 제트팩 상승 중 공중 상태 유지
+            }
+
+            ProjectJGiantBalloonPhase giantBalloonPhase =
+                itemInventory != null
+                    ? itemInventory.GiantBalloonPhase
+                    : ProjectJGiantBalloonPhase.Inactive;
+
+            bool giantBalloonRising =
+                ProjectJGiantBalloonPolicy.IsRising(
+                    giantBalloonPhase
+                );
+
+            bool giantBalloonCeilingBlocked =
+                false;
+
+            if (giantBalloonRising)
+            {
+                float candidateUpwardVelocity =
+                    Mathf.Max(
+                        NetworkVerticalVelocity,
+                        ProjectJGiantBalloonPolicy.RisingSpeed
+                    );
+
+                float upwardProbeDistance =
+                    Mathf.Max(
+                        0f,
+                        candidateUpwardVelocity
+                    ) * deltaTime;
+
+                giantBalloonCeilingBlocked =
+                    IsJetpackCeilingBlocked(
+                        upwardProbeDistance
+                    );
+            }
+
+            NetworkVerticalVelocity =
+                ProjectJGiantBalloonPolicy.ResolveVerticalVelocity(
+                    NetworkVerticalVelocity,
+                    giantBalloonPhase,
+                    true,
+                    giantBalloonCeilingBlocked,
+                    NetworkGrounded
+                );
+
+            if (
+                giantBalloonRising &&
+                NetworkVerticalVelocity > 0f
+            )
+            {
+                NetworkGrounded =
+                    false;
             }
 
             float horizontalMoveSpeed = CurrentMoveSpeed;

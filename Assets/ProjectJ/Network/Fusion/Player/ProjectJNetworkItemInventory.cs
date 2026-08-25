@@ -238,6 +238,7 @@ namespace ProjectJ.Networking.Fusion
             NetworkUseFailCount = 0; // 실패 횟수 초기화
             InitializeFireworkAuthority(); // 폭죽 준비 상태 초기화
             InitializeFeatherShoesAuthority(); // 깃털 신발 효과 초기화
+            InitializeJetpackAuthority(); // 제트팩 연료 상태 초기화
             InitializeSnowballAuthority(); // 눈덩이 감속 상태 초기화
         }
 
@@ -400,6 +401,7 @@ namespace ProjectJ.Networking.Fusion
             DeactivateBananaAuthority(); // 설치 바나나 제거
             CancelFireworkPreparationAuthority(false); // 폭죽 준비 상태 제거
             ClearFeatherShoesAuthority(); // 깃털 신발 효과 제거
+            ClearJetpackAuthority(); // 제트팩 효과 제거
             ClearSnowballSlowAuthority(); // 눈덩이 감속 효과 제거
         }
 
@@ -407,6 +409,7 @@ namespace ProjectJ.Networking.Fusion
         {
             CancelFireworkPreparationAuthority(); // 준비 중인 폭죽 취소
             ClearFeatherShoesAuthority(); // 부활 시 깃털 신발 효과 제거
+            ClearJetpackAuthority(); // 부활 시 제트팩 효과 즉시 제거
             ClearSnowballSlowAuthority(); // 부활 시 눈덩이 감속 제거
         }
 
@@ -469,6 +472,10 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.FeatherShoes:
                     success = UseFeatherShoesAuthority();
                     break;
+
+                case ProjectJNetworkItemId.Jetpack: // 제트팩 선택 상태
+                    success = UseJetpackAuthority(); // 서버 권한 5초 연료 활성화
+                    break; // 제트팩 분기 종료
 
                 case ProjectJNetworkItemId.Snowball:
                     success = UseSnowballAuthority();
@@ -1048,7 +1055,7 @@ namespace ProjectJ.Networking.Fusion
             }
 
             GUILayout.BeginArea(
-                new Rect(12f, 650f, 390f, 250f),
+                new Rect(12f, 650f, 390f, 275f), // 제트팩 상태 포함 진단 영역 높이
                 GUI.skin.box
             ); // 73일차 개발 확인 영역
 
@@ -1082,6 +1089,10 @@ namespace ProjectJ.Networking.Fusion
             GUILayout.Label(
                 "Feather Shoes : " +
                 (IsFeatherShoesActive ? FeatherShoesRemaining.ToString("0.0") + "s" : "OFF")
+            );
+            GUILayout.Label( // 제트팩 Networked 연료 상태 표시
+                "Jetpack : " + // 제트팩 진단 라벨
+                (IsJetpackActive ? JetpackRemaining.ToString("0.0") + "s" : "OFF") // 남은 연료 또는 종료 상태
             );
             GUILayout.Label(
                 "Snowball Slow : " +

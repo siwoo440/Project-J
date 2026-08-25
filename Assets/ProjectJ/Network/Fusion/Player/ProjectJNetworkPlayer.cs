@@ -36,9 +36,10 @@ namespace ProjectJ.Networking.Fusion
         private NetworkTransform networkTransform;
         private CapsuleCollider bodyCollider;
         private ProjectJNetworkExternalGameplay externalGameplay; // 경기 상태 입력 잠금 조회
-        private ProjectJNetworkItemInventory itemInventory; // 깃털 신발 효과 상태 조회
+        private ProjectJNetworkItemInventory itemInventory; // 이동 아이템 효과 상태 조회
 
         private readonly RaycastHit[] groundHitBuffer = new RaycastHit[16];
+        private readonly RaycastHit[] jetpackCeilingHitBuffer = new RaycastHit[16]; // 제트팩 천장 충돌 후보 버퍼
         private readonly Collider[] standOverlapBuffer = new Collider[16];
 
         private Material runtimeMaterial;
@@ -214,6 +215,9 @@ namespace ProjectJ.Networking.Fusion
         public bool IsFeatherShoesActive =>
             itemInventory != null && itemInventory.IsFeatherShoesActive; // 깃털 신발 활성 여부
 
+        public bool IsJetpackActive =>
+            itemInventory != null && itemInventory.IsJetpackActive; // 제트팩 Networked 연료 활성 여부
+
         public bool IsSnowballSlowed =>
             itemInventory != null && itemInventory.IsSnowballSlowed; // 눈덩이 감속 활성 여부
 
@@ -230,10 +234,15 @@ namespace ProjectJ.Networking.Fusion
                     IsFeatherShoesActive
                 ); // 깃털 신발 속도 배율 적용
 
-                return ProjectJSnowballPolicy.CalculateMovementSpeed(
+                float snowballSpeed = ProjectJSnowballPolicy.CalculateMovementSpeed( // 눈덩이 적용 후 속도 계산
                     featherShoesSpeed,
                     IsSnowballSlowed
                 ); // 눈덩이 감속 배율 적용
+
+                return ProjectJJetpackPolicy.CalculateHorizontalMovementSpeed( // 제트팩 수평 조정 배율 적용
+                    snowballSpeed, // 기존 이동·아이템 보정 속도 유지
+                    IsJetpackActive // 제트팩 활성 상태 전달
+                );
             }
         }
 
@@ -475,6 +484,39 @@ namespace ProjectJ.Networking.Fusion
             if (!NetworkGrounded)
             {
                 NetworkVerticalVelocity += Gravity * deltaTime;
+            }
+
+            bool jetpackActive = IsJetpackActive; // Networked 제트팩 연료 상태 조회
+            bool jetpackMovementAllowed = ProjectJJetpackPolicy.CanApplyMovement( // 제트팩 이동 허용 상태 계산
+                jetpackActive, // Networked 활성 상태 전달
+                true // 기존 Gameplay Lock 검사 통과 상태
+            );
+            bool jetpackCeilingBlocked = false; // 기본 천장 차단 상태
+
+            if (jetpackMovementAllowed)
+            {
+                float candidateUpwardVelocity = Mathf.Max( // 이번 Tick 예상 상승 속도 계산
+                    NetworkVerticalVelocity, // 기존 중력 반영 수직 속도
+                    ProjectJJetpackPolicy.PrototypeAscentSpeedMetersPerSecond // 최소 제트팩 상승 속도
+                );
+                float upwardProbeDistance = // 이번 Tick 예상 상승 거리 계산
+                    Mathf.Max(0f, candidateUpwardVelocity) * deltaTime; // 위쪽 이동 거리만 사용
+
+                jetpackCeilingBlocked = IsJetpackCeilingBlocked( // 천장 충돌 여부 검사
+                    upwardProbeDistance // 예상 상승 거리 전달
+                );
+            }
+
+            NetworkVerticalVelocity = ProjectJJetpackPolicy.ResolveVerticalVelocity( // 제트팩 수직 속도 반영
+                NetworkVerticalVelocity, // 기존 중력 계산 결과 전달
+                jetpackActive, // Networked 활성 상태 전달
+                true, // 기존 Gameplay Lock 검사 통과 상태
+                jetpackCeilingBlocked // 천장 차단 상태 전달
+            );
+
+            if (jetpackActive && NetworkVerticalVelocity > 0f)
+            {
+                NetworkGrounded = false; // 제트팩 상승 중 공중 상태 유지
             }
 
             float horizontalMoveSpeed = CurrentMoveSpeed;
@@ -809,6 +851,51 @@ namespace ProjectJ.Networking.Fusion
             return foundGround;
         }
 
+        private bool IsJetpackCeilingBlocked( // 제트팩 위쪽 이동 충돌 검사
+            float upwardTravelDistance // 이번 Tick 예상 상승 거리
+        )
+        {
+            if (upwardTravelDistance <= 0f)
+            {
+                return false; // 위쪽 이동이 없으면 천장 검사 생략
+            }
+
+            float colliderHeight = NetworkIsCrouching // 현재 자세 높이 선택
+                ? CrouchColliderHeight // 앉기 높이 사용
+                : StandingColliderHeight; // 서기 높이 사용
+            float probeRadius = // 몸통 반경보다 약간 작은 천장 검사 반경
+                BodyColliderRadius * StandClearanceRadiusScale; // 기존 여유 배율 재사용
+            Vector3 probeOrigin = // 현재 캡슐 상단 구 중심 계산
+                transform.position + // Player 발 기준 위치 사용
+                Vector3.up * (colliderHeight - probeRadius); // 상단 구 중심 높이 적용
+            float castDistance = // 실제 천장 검사 거리 계산
+                upwardTravelDistance + ProjectJJetpackPolicy.CeilingProbeSkinMeters; // 이동 거리와 5cm 여유 합산
+
+            int hitCount = Physics.SphereCastNonAlloc( // 할당 없는 위쪽 SphereCast 실행
+                probeOrigin, // 캡슐 상단 구 중심 사용
+                probeRadius, // 현재 몸통 기준 반경 사용
+                Vector3.up, // 위쪽 방향 검사
+                jetpackCeilingHitBuffer, // 재사용 충돌 버퍼 사용
+                castDistance, // 이번 Tick 검사 거리 사용
+                Physics.AllLayers, // 기존 Player 충돌 범위와 동일한 전체 레이어 검사
+                QueryTriggerInteraction.Ignore // Trigger는 천장으로 취급하지 않음
+            );
+
+            for (int index = 0; index < hitCount; index++)
+            {
+                Collider hitCollider = jetpackCeilingHitBuffer[index].collider; // 충돌 Collider 조회
+
+                if (hitCollider == null || IsOwnCollider(hitCollider))
+                {
+                    continue; // 빈 결과·자기 Collider 제외
+                }
+
+                return true; // 첫 외부 Collider를 천장 차단으로 판정
+            }
+
+            return false; // 위쪽 외부 Collider 없음
+        }
+
         private bool HasStandingClearance()
         {
             float clearanceRadius = BodyColliderRadius * StandClearanceRadiusScale;
@@ -991,7 +1078,7 @@ namespace ProjectJ.Networking.Fusion
             bodyCollider = GetComponent<CapsuleCollider>();
             networkTransform = GetComponent<NetworkTransform>();
             externalGameplay = GetComponent<ProjectJNetworkExternalGameplay>(); // 경기 상태 컴포넌트 조회
-            itemInventory = GetComponent<ProjectJNetworkItemInventory>(); // 깃털 신발 효과 컴포넌트 조회
+            itemInventory = GetComponent<ProjectJNetworkItemInventory>(); // 이동 아이템 효과 컴포넌트 조회
         }
 
         private void ApplyAuthorityPresentation()

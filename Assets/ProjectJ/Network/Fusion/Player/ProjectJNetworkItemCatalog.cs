@@ -14,7 +14,8 @@ namespace ProjectJ.Networking.Fusion
         FeatherShoes = 7, // feather_shoes
         Snowball = 8, // snowball
         Mine = 9, // mine
-        PoolBall = 10 // pool_ball
+        PoolBall = 10, // pool_ball
+        Jetpack = 11 // jetpack
     }
 
     public static class ProjectJNetworkItemCatalog
@@ -89,6 +90,10 @@ namespace ProjectJ.Networking.Fusion
                     networkItemId = (int)ProjectJNetworkItemId.PoolBall; // 풀 공 네트워크 ID 저장
                     return true; // 문자열 변환 성공
 
+                case "jetpack": // 제트팩 문자열 ID
+                    networkItemId = (int)ProjectJNetworkItemId.Jetpack; // 제트팩 네트워크 ID 저장
+                    return true; // 문자열 변환 성공
+
                 default:
                     return false;
             }
@@ -128,6 +133,9 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.PoolBall: // 풀 공 네트워크 ID
                     return "pool_ball"; // 풀 공 문자열 Key 반환
 
+                case ProjectJNetworkItemId.Jetpack: // 제트팩 네트워크 ID
+                    return "jetpack"; // 제트팩 문자열 Key 반환
+
                 default:
                     return "empty";
             }
@@ -166,6 +174,9 @@ namespace ProjectJ.Networking.Fusion
 
                 case ProjectJNetworkItemId.PoolBall: // 풀 공 네트워크 ID
                     return "풀 공"; // 풀 공 표시 이름 반환
+
+                case ProjectJNetworkItemId.Jetpack: // 제트팩 네트워크 ID
+                    return "제트팩"; // 제트팩 표시 이름 반환
 
                 default:
                     return "Empty";

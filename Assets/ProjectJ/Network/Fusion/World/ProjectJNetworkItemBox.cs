@@ -18,6 +18,8 @@ namespace ProjectJ.Networking.Fusion
         private Renderer[] visualRenderers; // 획득 전 표시 Renderer
         private ProjectJNetworkItemInventory pendingCollector; // 다음 Fusion Tick 처리 대상
 
+        [SerializeField, Min(0.1f)] private float respawnSeconds = 5f; // 테스트용 재생성 대기 시간
+
         [Networked] // 상자 획득 여부 동기화
         private NetworkBool NetworkCollected
         {
@@ -41,6 +43,13 @@ namespace ProjectJ.Networking.Fusion
 
         [Networked] // 저장된 슬롯 번호 동기화
         private int NetworkStoredSlotIndex
+        {
+            get;
+            set;
+        }
+
+        [Networked] // State Authority 재생성 시간 동기화
+        private TickTimer RespawnTimer
         {
             get;
             set;
@@ -89,6 +98,7 @@ namespace ProjectJ.Networking.Fusion
                 NetworkCollectorIndex = -1; // 획득자 없음
                 NetworkAwardedItemId = 0; // 지급 Item 없음
                 NetworkStoredSlotIndex = -1; // 저장 슬롯 없음
+                RespawnTimer = default; // 재생성 Timer 초기화
             }
 
             ApplyCollectedPresentation(); // 현재 네트워크 상태 반영
@@ -96,13 +106,37 @@ namespace ProjectJ.Networking.Fusion
 
         public override void FixedUpdateNetwork()
         {
-            if (
-                !Object.HasStateAuthority ||
-                NetworkCollected ||
-                pendingCollector == null
-            )
+            if (!Object.HasStateAuthority)
             {
-                return; // Host의 대기 중 획득 요청만 처리
+                return; // State Authority만 획득과 재생성 처리
+            }
+
+            if (NetworkCollected)
+            {
+                if (!RespawnTimer.Expired(Runner))
+                {
+                    return; // 재생성 시간 전까지 숨김 유지
+                }
+
+                NetworkCollected = false; // 다시 획득 가능한 상태 복구
+                NetworkCollectorIndex = -1; // 이전 획득자 기록 초기화
+                NetworkAwardedItemId = 0; // 이전 지급 Item 기록 초기화
+                NetworkStoredSlotIndex = -1; // 이전 저장 슬롯 기록 초기화
+                RespawnTimer = default; // 만료 Timer 초기화
+                ApplyCollectedPresentation(); // Host 외형과 Trigger 즉시 복구
+
+                Debug.Log(
+                    "[Project J/Fusion] Day134 Item Box 재생성 / " +
+                    gameObject.name,
+                    this
+                ); // 테스트용 재생성 로그
+
+                return; // 같은 Tick의 즉시 재획득 방지
+            }
+
+            if (pendingCollector == null)
+            {
+                return; // 대기 중 획득 요청이 없으면 종료
             }
 
             ProjectJNetworkItemInventory collector =
@@ -139,23 +173,35 @@ namespace ProjectJ.Networking.Fusion
             NetworkCollectorIndex = collector.OwnerIndex; // 획득자 저장
             NetworkAwardedItemId = collector.GetItemId(storedSlotIndex); // 지급 ID 저장
             NetworkStoredSlotIndex = storedSlotIndex; // 저장 슬롯 저장
+            RespawnTimer = TickTimer.CreateFromSeconds(
+                Runner,
+                Mathf.Max(0.1f, respawnSeconds)
+            ); // 정상 획득 후 서버 재생성 Timer 시작
 
             ApplyCollectedPresentation(); // Host 즉시 외형 제거
 
             Debug.Log(
-                "[Project J/Fusion] 73일차 Item Box 획득 / P" +
+                "[Project J/Fusion] Day134 Item Box 획득 / P" +
                 NetworkCollectorIndex +
                 " / " +
                 ProjectJNetworkItemCatalog.GetKey(NetworkAwardedItemId) +
                 " / Slot " +
-                (NetworkStoredSlotIndex + 1),
+                (NetworkStoredSlotIndex + 1) +
+                " / Respawn " +
+                respawnSeconds.ToString("0.0") +
+                "s",
                 this
-            );
+            ); // 테스트용 획득과 재생성 시간 로그
         }
 
         private void Update()
         {
-            ApplyCollectedPresentation(); // Proxy도 Networked 획득 상태 표현
+            if (Object == null || !Object.IsValid)
+            {
+                return; // Fusion Spawn 전 Networked 값 접근 차단
+            }
+
+            ApplyCollectedPresentation(); // Spawn 완료 후 Proxy 표시 상태 반영
         }
 
         private void OnTriggerEnter(Collider other)

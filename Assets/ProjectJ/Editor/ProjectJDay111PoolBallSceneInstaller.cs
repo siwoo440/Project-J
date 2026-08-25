@@ -17,7 +17,7 @@ namespace ProjectJ.EditorTools
             "Assets/ProjectJ/Data/Items/Item_PoolBall.asset";
 
         private const string ReferencePickupName =
-            "Pickup_09_mine_A";
+            "Pickup_9_mine_A";
 
         private const string SessionConfiguredKey =
             "ProjectJ.Day111.PoolBallSceneInstaller.Configured";

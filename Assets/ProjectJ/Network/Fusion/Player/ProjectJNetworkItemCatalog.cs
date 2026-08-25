@@ -32,7 +32,8 @@ namespace ProjectJ.Networking.Fusion
         ShrinkPotion = 25, // shrink_potion
         SpikedArmor = 26, // spiked_armor
         Drone = 27, // drone
-        InvisibilityCloak = 28 // invisibility_cloak
+        InvisibilityCloak = 28, // invisibility_cloak
+        SniperWaterGun = 29 // sniper_water_gun
     }
 
     public static class ProjectJNetworkItemCatalog
@@ -179,6 +180,10 @@ namespace ProjectJ.Networking.Fusion
                     networkItemId = (int)ProjectJNetworkItemId.InvisibilityCloak;
                     return true;
 
+                case "sniper_water_gun":
+                    networkItemId = (int)ProjectJNetworkItemId.SniperWaterGun;
+                    return true;
+
                 default:
                     return false;
             }
@@ -272,6 +277,9 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.InvisibilityCloak:
                     return "invisibility_cloak";
 
+                case ProjectJNetworkItemId.SniperWaterGun:
+                    return "sniper_water_gun";
+
                 default:
                     return "empty";
             }
@@ -364,6 +372,9 @@ namespace ProjectJ.Networking.Fusion
 
                 case ProjectJNetworkItemId.InvisibilityCloak:
                     return "투명 망토";
+
+                case ProjectJNetworkItemId.SniperWaterGun:
+                    return "저격 물총";
 
                 default:
                     return "Empty";

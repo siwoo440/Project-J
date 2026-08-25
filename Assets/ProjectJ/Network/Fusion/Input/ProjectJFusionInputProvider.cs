@@ -186,6 +186,8 @@ namespace ProjectJ.Networking.Fusion
             }
 
             cachedInput.Move = move; // 이동 입력 저장
+            cachedInput.AimDirection = // 저격 물총 서버 판정용 카메라 방향 저장
+                ProjectJSniperWaterGunLocalPresentation.ResolveLocalAimDirection();
         }
 
         public void OnInput( // Fusion Tick 입력 제출

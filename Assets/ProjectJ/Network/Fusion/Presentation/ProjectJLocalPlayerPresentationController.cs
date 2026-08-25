@@ -584,6 +584,15 @@ namespace ProjectJ.Networking.Fusion
 
         private void UpdateZoom()
         {
+            if (
+                ProjectJSniperWaterGunLocalPresentation.ShouldReserveScrollForSniper(
+                    boundPlayer
+                )
+            )
+            {
+                return; // 저격 조준 중 휠은 2x/4x 확대에 예약
+            }
+
             if (Mouse.current == null)
             {
                 return;

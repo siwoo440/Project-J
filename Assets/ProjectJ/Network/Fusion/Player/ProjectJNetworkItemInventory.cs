@@ -213,6 +213,7 @@ namespace ProjectJ.Networking.Fusion
         {
             ResolveReferences(); // 필수 참조 준비
             EnsureInvisibilityPresentation(); // 모든 Peer에 은신 표시 컴포넌트 준비
+            EnsureSniperWaterGunPresentation(); // 로컬 저격 조준 표시 컴포넌트 준비
 
             if (!Object.HasStateAuthority)
             {
@@ -252,6 +253,7 @@ namespace ProjectJ.Networking.Fusion
             InitializeRewindClockAuthority(); // 되감기 위치 기록 상태 초기화
             InitializeSpikedArmorAuthority(); // 가시 갑옷 상태 초기화
             InitializeInvisibilityCloakAuthority(); // 투명 망토 상태 초기화
+            InitializeSniperWaterGunAuthority(); // 저격 물총 조준 상태 초기화
         }
 
         public override void Despawned(NetworkRunner runner, bool hasState)
@@ -277,6 +279,7 @@ namespace ProjectJ.Networking.Fusion
             UpdateTimedEffectsAuthority(); // 지속 효과 상태 보정
             UpdateShrinkPotionAuthority(); // 소형화 6초 종료·안전 복귀 대기 처리
             UpdateInvisibilityCloakAuthority(); // 투명 망토 5초·경기 종료 해제 처리
+            UpdateSniperWaterGunLifecycleAuthority(); // 조준 중 경기·부활·아이템 상태 검증
             UpdateBananaAuthority(); // 설치 바나나 수명·접촉 판정
             UpdateFireworkAuthority(); // 폭죽 준비·취소·발동 판정
             UpdatePufferBalloonSuitAuthority(); // 복어 풍선옷 근접 자동 밀치기 판정
@@ -313,10 +316,14 @@ namespace ProjectJ.Networking.Fusion
             }
 
             UpdateSpringShoesJumpAuthority(input); // 추가 점프 입력 판정
+            UpdateSniperWaterGunInputAuthority(input); // 저격 Hold·취소·0.8초 발사 판정
 
             if (input.Buttons.IsSet(ProjectJNetworkButton.ItemUse))
             {
-                TryUseSelectedItemWithStackAuthority(); // Stack 포함 선택 아이템 사용
+                if (!TryHandleSniperWaterGunUseInputAuthority()) // 저격 물총은 조준 시작만 처리
+                {
+                    TryUseSelectedItemWithStackAuthority(); // 나머지 Stack 포함 선택 아이템 사용
+                }
             }
 
             UpdateWaterGunAuthority(
@@ -452,6 +459,7 @@ namespace ProjectJ.Networking.Fusion
             ClearShrinkPotionAuthority(); // 전체 초기화 시 소형화 상태 제거
             ClearSpikedArmorAuthority(); // 전체 초기화 시 가시 갑옷 상태 제거
             ClearInvisibilityCloakAuthority(); // 전체 초기화 시 투명 망토 제거
+            ClearSniperWaterGunAuthority(); // 전체 초기화 시 저격 조준 제거
         }
 
         internal void HandleRespawnAuthority()
@@ -472,6 +480,7 @@ namespace ProjectJ.Networking.Fusion
             ClearShrinkPotionAuthority(); // 부활 시 소형화 상태 즉시 제거
             ClearSpikedArmorAuthority(); // 부활 시 가시 갑옷 상태 즉시 제거
             ClearInvisibilityCloakAuthority(); // 부활 시 투명 망토 즉시 제거
+            CancelSniperWaterGunAimAuthority(false); // 부활 시 저격 조준 취소
         }
 
         private bool TryUseSelectedItemAuthority()

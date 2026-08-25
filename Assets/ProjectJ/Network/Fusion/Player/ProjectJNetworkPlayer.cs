@@ -482,6 +482,22 @@ namespace ProjectJ.Networking.Fusion
                 LastReceivedSprint = false;
                 LastReceivedCrouch = false;
             }
+
+            if (
+                itemInventory != null &&
+                itemInventory.IsCartRiding
+            )
+            {
+                moveInput = Vector2.zero;
+                LastReceivedSprint = false;
+                LastReceivedCrouch = false;
+                NetworkVerticalVelocity = 0f;
+                NetworkGrounded = false;
+                NetworkIsSprinting = false;
+                LastSimulationPosition = transform.position;
+                return;
+            }
+
             float deltaTime = Runner.DeltaTime;
             bool hasMoveInput = moveInput.sqrMagnitude > 0.0001f;
 

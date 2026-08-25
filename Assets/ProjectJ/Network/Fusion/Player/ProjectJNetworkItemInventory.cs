@@ -240,6 +240,7 @@ namespace ProjectJ.Networking.Fusion
             InitializeFeatherShoesAuthority(); // 깃털 신발 효과 초기화
             InitializeJetpackAuthority(); // 제트팩 연료 상태 초기화
             InitializeGiantBalloonAuthority(); // 거대 풍선 상승·하강 상태 초기화
+            InitializeCartAuthority(); // 카트 탑승 상태 초기화
             InitializeHammerAuthority(); // 망치 강화 상태 초기화
             InitializePufferBalloonSuitAuthority(); // 복어 풍선옷 효과 초기화
             InitializeInkOctopusAuthority(); // 먹물 문어 상태 초기화
@@ -417,6 +418,7 @@ namespace ProjectJ.Networking.Fusion
             ClearFeatherShoesAuthority(); // 깃털 신발 효과 제거
             ClearJetpackAuthority(); // 제트팩 효과 제거
             ClearGiantBalloonAuthority(); // 거대 풍선 상승·하강 상태 제거
+            ClearCartAuthority(); // 카트 탑승 및 소유 카트 제거
             ClearHammerAuthority(); // 망치 효과 제거
             ClearPufferBalloonSuitAuthority(); // 복어 풍선옷 효과 제거
             ClearInkOctopusAuthority(); // 먹물 문어 효과 제거
@@ -432,6 +434,7 @@ namespace ProjectJ.Networking.Fusion
             ClearFeatherShoesAuthority(); // 부활 시 깃털 신발 효과 제거
             ClearJetpackAuthority(); // 부활 시 제트팩 효과 즉시 제거
             ClearGiantBalloonAuthority(); // 부활 시 거대 풍선 상태 즉시 제거
+            ClearCartAuthority(); // 부활 시 카트 탑승 및 소유 카트 제거
             ClearHammerAuthority(); // 부활 시 망치 효과 즉시 제거
             ClearPufferBalloonSuitAuthority(); // 부활 시 복어 풍선옷 효과 즉시 제거
             ClearInkOctopusAuthority(); // 부활 시 먹물 문어 효과 즉시 제거
@@ -544,6 +547,10 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.GiantBalloon: // 거대 풍선 선택 상태
                     success = UseGiantBalloonAuthority(); // 서버 권한 6초 상승 상태 시작
                     break; // 거대 풍선 분기 종료
+
+                case ProjectJNetworkItemId.Cart: // 카트 선택 상태
+                    success = UseCartAuthority(); // 서버 권한 Route Node 자동 이동 시작
+                    break; // 카트 분기 종료
 
                 case ProjectJNetworkItemId.Snowball:
                     success = UseSnowballAuthority();

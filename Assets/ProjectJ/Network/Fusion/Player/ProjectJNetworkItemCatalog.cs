@@ -25,7 +25,8 @@ namespace ProjectJ.Networking.Fusion
         SoapBubble = 18, // soap_bubble
         SmokeGrenade = 19, // smoke_grenade
         Trampoline = 20, // trampoline
-        GiantBalloon = 21 // giant_balloon
+        GiantBalloon = 21, // giant_balloon
+        Cart = 22 // cart
     }
 
     public static class ProjectJNetworkItemCatalog
@@ -144,6 +145,10 @@ namespace ProjectJ.Networking.Fusion
                     networkItemId = (int)ProjectJNetworkItemId.GiantBalloon;
                     return true;
 
+                case "cart":
+                    networkItemId = (int)ProjectJNetworkItemId.Cart;
+                    return true;
+
                 default:
                     return false;
             }
@@ -216,6 +221,9 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.GiantBalloon:
                     return "giant_balloon";
 
+                case ProjectJNetworkItemId.Cart:
+                    return "cart";
+
                 default:
                     return "empty";
             }
@@ -287,6 +295,9 @@ namespace ProjectJ.Networking.Fusion
 
                 case ProjectJNetworkItemId.GiantBalloon:
                     return "거대 풍선";
+
+                case ProjectJNetworkItemId.Cart:
+                    return "카트";
 
                 default:
                     return "Empty";

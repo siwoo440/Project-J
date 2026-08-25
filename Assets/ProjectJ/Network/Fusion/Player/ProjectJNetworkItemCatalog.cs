@@ -19,7 +19,8 @@ namespace ProjectJ.Networking.Fusion
         Hammer = 12, // hammer
         Bomb = 13, // bomb
         PufferBalloonSuit = 14, // puffer_balloon_suit
-        InkOctopus = 15 // ink_octopus
+        InkOctopus = 15, // ink_octopus
+        FishingRod = 16 // fishing_rod
     }
 
     public static class ProjectJNetworkItemCatalog
@@ -114,6 +115,10 @@ namespace ProjectJ.Networking.Fusion
                     networkItemId = (int)ProjectJNetworkItemId.InkOctopus;
                     return true;
 
+                case "fishing_rod":
+                    networkItemId = (int)ProjectJNetworkItemId.FishingRod;
+                    return true;
+
                 default:
                     return false;
             }
@@ -168,6 +173,9 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.InkOctopus:
                     return "ink_octopus";
 
+                case ProjectJNetworkItemId.FishingRod:
+                    return "fishing_rod";
+
                 default:
                     return "empty";
             }
@@ -221,6 +229,9 @@ namespace ProjectJ.Networking.Fusion
 
                 case ProjectJNetworkItemId.InkOctopus:
                     return "먹물 문어";
+
+                case ProjectJNetworkItemId.FishingRod:
+                    return "낚시대";
 
                 default:
                     return "Empty";

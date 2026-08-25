@@ -240,6 +240,7 @@ namespace ProjectJ.Networking.Fusion
             InitializeFeatherShoesAuthority(); // 깃털 신발 효과 초기화
             InitializeJetpackAuthority(); // 제트팩 연료 상태 초기화
             InitializeHammerAuthority(); // 망치 강화 상태 초기화
+            InitializePufferBalloonSuitAuthority(); // 복어 풍선옷 효과 초기화
             InitializeSnowballAuthority(); // 눈덩이 감속 상태 초기화
         }
 
@@ -259,6 +260,7 @@ namespace ProjectJ.Networking.Fusion
             UpdateTimedEffectsAuthority(); // 지속 효과 상태 보정
             UpdateBananaAuthority(); // 설치 바나나 수명·접촉 판정
             UpdateFireworkAuthority(); // 폭죽 준비·취소·발동 판정
+            UpdatePufferBalloonSuitAuthority(); // 복어 풍선옷 근접 자동 밀치기 판정
 
             if (
                 externalGameplay == null ||
@@ -404,6 +406,7 @@ namespace ProjectJ.Networking.Fusion
             ClearFeatherShoesAuthority(); // 깃털 신발 효과 제거
             ClearJetpackAuthority(); // 제트팩 효과 제거
             ClearHammerAuthority(); // 망치 효과 제거
+            ClearPufferBalloonSuitAuthority(); // 복어 풍선옷 효과 제거
             ClearSnowballSlowAuthority(); // 눈덩이 감속 효과 제거
         }
 
@@ -413,6 +416,7 @@ namespace ProjectJ.Networking.Fusion
             ClearFeatherShoesAuthority(); // 부활 시 깃털 신발 효과 제거
             ClearJetpackAuthority(); // 부활 시 제트팩 효과 즉시 제거
             ClearHammerAuthority(); // 부활 시 망치 효과 즉시 제거
+            ClearPufferBalloonSuitAuthority(); // 부활 시 복어 풍선옷 효과 즉시 제거
             ClearSnowballSlowAuthority(); // 부활 시 눈덩이 감속 제거
         }
 
@@ -487,6 +491,10 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.Bomb: // 폭탄 선택 상태
                     success = UseBombAuthority(); // 서버 권한 폭탄 투척
                     break; // 폭탄 분기 종료
+
+                case ProjectJNetworkItemId.PufferBalloonSuit: // 복어 풍선옷 선택 상태
+                    success = UsePufferBalloonSuitAuthority(); // 서버 권한 5초 근접 자동 밀치기 활성화
+                    break; // 복어 풍선옷 분기 종료
 
                 case ProjectJNetworkItemId.Snowball:
                     success = UseSnowballAuthority();

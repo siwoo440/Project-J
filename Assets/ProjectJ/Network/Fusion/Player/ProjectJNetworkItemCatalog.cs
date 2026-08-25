@@ -2,7 +2,7 @@ using ProjectJ.Items; // 기존 ItemDefinition 사용
 
 namespace ProjectJ.Networking.Fusion
 {
-    public enum ProjectJNetworkItemId // 73일차 대표 아이템 네트워크 ID
+    public enum ProjectJNetworkItemId // 대표 아이템 네트워크 ID
     {
         None = 0, // 빈 슬롯
         SpringShoes = 1, // spring_shoes
@@ -17,7 +17,8 @@ namespace ProjectJ.Networking.Fusion
         PoolBall = 10, // pool_ball
         Jetpack = 11, // jetpack
         Hammer = 12, // hammer
-        Bomb = 13 // bomb
+        Bomb = 13, // bomb
+        PufferBalloonSuit = 14 // puffer_balloon_suit
     }
 
     public static class ProjectJNetworkItemCatalog
@@ -104,6 +105,10 @@ namespace ProjectJ.Networking.Fusion
                     networkItemId = (int)ProjectJNetworkItemId.Bomb; // 폭탄 네트워크 ID 저장
                     return true; // 문자열 변환 성공
 
+                case "puffer_balloon_suit": // 복어 풍선옷 문자열 ID
+                    networkItemId = (int)ProjectJNetworkItemId.PufferBalloonSuit; // 네트워크 ID 저장
+                    return true; // 문자열 변환 성공
+
                 default:
                     return false;
             }
@@ -152,6 +157,9 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.Bomb: // 폭탄 네트워크 ID
                     return "bomb"; // 폭탄 문자열 Key 반환
 
+                case ProjectJNetworkItemId.PufferBalloonSuit: // 복어 풍선옷 네트워크 ID
+                    return "puffer_balloon_suit"; // 문자열 Key 반환
+
                 default:
                     return "empty";
             }
@@ -199,6 +207,9 @@ namespace ProjectJ.Networking.Fusion
 
                 case ProjectJNetworkItemId.Bomb: // 폭탄 네트워크 ID
                     return "폭탄"; // 폭탄 표시 이름 반환
+
+                case ProjectJNetworkItemId.PufferBalloonSuit: // 복어 풍선옷 네트워크 ID
+                    return "복어 풍선옷"; // 표시 이름 반환
 
                 default:
                     return "Empty";

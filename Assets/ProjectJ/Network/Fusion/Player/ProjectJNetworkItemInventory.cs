@@ -272,6 +272,7 @@ namespace ProjectJ.Networking.Fusion
             }
 
             UpdateTimedEffectsAuthority(); // 지속 효과 상태 보정
+            UpdateShrinkPotionAuthority(); // 소형화 6초 종료·안전 복귀 대기 처리
             UpdateBananaAuthority(); // 설치 바나나 수명·접촉 판정
             UpdateFireworkAuthority(); // 폭죽 준비·취소·발동 판정
             UpdatePufferBalloonSuitAuthority(); // 복어 풍선옷 근접 자동 밀치기 판정
@@ -443,6 +444,7 @@ namespace ProjectJ.Networking.Fusion
             ClearSoapBubbleAuthority(); // 비눗방울 이동 제한 상태 제거
             ClearSnowballSlowAuthority(); // 눈덩이 감속 효과 제거
             ClearRewindClockAuthority(true); // 전체 초기화 시 되감기와 과거 기록 제거
+            ClearShrinkPotionAuthority(); // 전체 초기화 시 소형화 상태 제거
         }
 
         internal void HandleRespawnAuthority()
@@ -460,6 +462,7 @@ namespace ProjectJ.Networking.Fusion
             ClearSoapBubbleAuthority(); // 부활 시 비눗방울 이동 제한 즉시 제거
             ClearSnowballSlowAuthority(); // 부활 시 눈덩이 감속 제거
             ClearRewindClockAuthority(true); // 부활 시 이전 생명의 위치 기록 제거
+            ClearShrinkPotionAuthority(); // 부활 시 소형화 상태 즉시 제거
         }
 
         private bool TryUseSelectedItemAuthority()
@@ -577,6 +580,10 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.HomingMissile: // 유도탄 선택 상태
                     success = UseHomingMissileAuthority(); // 서버 권한 자동 목표 유도탄 생성
                     break; // 유도탄 분기 종료
+
+                case ProjectJNetworkItemId.ShrinkPotion: // 소형화 물약 선택 상태
+                    success = UseShrinkPotionAuthority(); // 서버 권한 6초 80% 축소 시작
+                    break; // 소형화 물약 분기 종료
 
                 case ProjectJNetworkItemId.Snowball:
                     success = UseSnowballAuthority();

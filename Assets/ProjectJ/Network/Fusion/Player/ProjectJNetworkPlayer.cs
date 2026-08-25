@@ -44,6 +44,9 @@ namespace ProjectJ.Networking.Fusion
 
         private Material runtimeMaterial;
         private float inputPulseUntil;
+        private bool shrinkPresentationDefaultsCached; // 소형화 전 외형·카메라 기준값 캐시 여부
+        private Vector3 shrinkBaseVisualScale; // 소형화 전 Visual 원본 Scale
+        private float shrinkBaseAuthorityCameraY; // 소형화 전 Camera Marker 높이
         private bool hasForwardPosition;
         private Vector3 lastForwardPosition;
         private Vector3 predictedPositionBeforeResimulation;
@@ -1050,10 +1053,29 @@ namespace ProjectJ.Networking.Fusion
             }
 
             bool crouching = NetworkIsCrouching;
-            float height = crouching ? CrouchColliderHeight : StandingColliderHeight;
+            bool shrinkApplied =
+                itemInventory != null &&
+                itemInventory.IsShrinkApplied;
+
+            float baseHeight =
+                crouching
+                    ? CrouchColliderHeight
+                    : StandingColliderHeight;
+
+            float height =
+                ProjectJShrinkPotionPolicy.CalculateColliderHeight(
+                    baseHeight,
+                    shrinkApplied
+                );
+
+            float radius =
+                ProjectJShrinkPotionPolicy.CalculateColliderRadius(
+                    BodyColliderRadius,
+                    shrinkApplied
+                );
 
             bodyCollider.height = height;
-            bodyCollider.radius = BodyColliderRadius;
+            bodyCollider.radius = radius;
             bodyCollider.center = new Vector3(0f, height * 0.5f, 0f);
         }
 
@@ -1064,14 +1086,70 @@ namespace ProjectJ.Networking.Fusion
                 return;
             }
 
+            CacheShrinkPresentationDefaults();
+
             bool crouching = NetworkIsCrouching;
+            bool shrinkApplied =
+                itemInventory != null &&
+                itemInventory.IsShrinkApplied;
+
+            float presentationScale =
+                shrinkApplied
+                    ? ProjectJShrinkPotionPolicy.ScaleMultiplier
+                    : 1f;
+
             Vector3 localPosition = visualTransform.localPosition;
-            localPosition.y = crouching ? CrouchVisualY : StandingVisualY;
+            localPosition.y =
+                ProjectJShrinkPotionPolicy.CalculatePresentationValue(
+                    crouching ? CrouchVisualY : StandingVisualY,
+                    shrinkApplied
+                );
             visualTransform.localPosition = localPosition;
 
-            Vector3 localScale = visualTransform.localScale;
-            localScale.y = crouching ? CrouchVisualScaleY : StandingVisualScaleY;
+            Vector3 localScale = shrinkBaseVisualScale;
+            localScale.x = shrinkBaseVisualScale.x * presentationScale;
+            localScale.y =
+                ProjectJShrinkPotionPolicy.CalculatePresentationValue(
+                    crouching ? CrouchVisualScaleY : StandingVisualScaleY,
+                    shrinkApplied
+                );
+            localScale.z = shrinkBaseVisualScale.z * presentationScale;
             visualTransform.localScale = localScale;
+
+            if (authorityCamera != null)
+            {
+                Vector3 cameraPosition = authorityCamera.transform.localPosition;
+                cameraPosition.y =
+                    ProjectJShrinkPotionPolicy.CalculatePresentationValue(
+                        shrinkBaseAuthorityCameraY,
+                        shrinkApplied
+                    );
+                authorityCamera.transform.localPosition = cameraPosition;
+            }
+        }
+
+        private void CacheShrinkPresentationDefaults()
+        {
+            if (shrinkPresentationDefaultsCached)
+            {
+                return;
+            }
+
+            if (visualTransform == null)
+            {
+                return;
+            }
+
+            shrinkBaseVisualScale =
+                visualTransform.localScale;
+
+            shrinkBaseAuthorityCameraY =
+                authorityCamera != null
+                    ? authorityCamera.transform.localPosition.y
+                    : 1.6f;
+
+            shrinkPresentationDefaultsCached =
+                true;
         }
 
         private void LateUpdate()

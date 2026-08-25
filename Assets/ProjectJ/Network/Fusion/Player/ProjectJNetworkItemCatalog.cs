@@ -28,7 +28,8 @@ namespace ProjectJ.Networking.Fusion
         GiantBalloon = 21, // giant_balloon
         Cart = 22, // cart
         RewindClock = 23, // rewind_clock
-        HomingMissile = 24 // homing_missile
+        HomingMissile = 24, // homing_missile
+        ShrinkPotion = 25 // shrink_potion
     }
 
     public static class ProjectJNetworkItemCatalog
@@ -159,6 +160,10 @@ namespace ProjectJ.Networking.Fusion
                     networkItemId = (int)ProjectJNetworkItemId.HomingMissile;
                     return true;
 
+                case "shrink_potion":
+                    networkItemId = (int)ProjectJNetworkItemId.ShrinkPotion;
+                    return true;
+
                 default:
                     return false;
             }
@@ -240,6 +245,9 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.HomingMissile:
                     return "homing_missile";
 
+                case ProjectJNetworkItemId.ShrinkPotion:
+                    return "shrink_potion";
+
                 default:
                     return "empty";
             }
@@ -320,6 +328,9 @@ namespace ProjectJ.Networking.Fusion
 
                 case ProjectJNetworkItemId.HomingMissile:
                     return "유도탄";
+
+                case ProjectJNetworkItemId.ShrinkPotion:
+                    return "소형화 물약";
 
                 default:
                     return "Empty";

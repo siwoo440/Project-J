@@ -574,6 +574,10 @@ namespace ProjectJ.Networking.Fusion
                     success = UseRewindClockAuthority(); // 서버 권한 5초 위치 역재생 시작
                     break; // 되감기 시계 분기 종료
 
+                case ProjectJNetworkItemId.HomingMissile: // 유도탄 선택 상태
+                    success = UseHomingMissileAuthority(); // 서버 권한 자동 목표 유도탄 생성
+                    break; // 유도탄 분기 종료
+
                 case ProjectJNetworkItemId.Snowball:
                     success = UseSnowballAuthority();
                     break;

@@ -533,6 +533,10 @@ namespace ProjectJ.Networking.Fusion
                     success = UseSmokeGrenadeAuthority(); // 서버 권한 포물선 투척
                     break; // 연막탄 분기 종료
 
+                case ProjectJNetworkItemId.Trampoline: // 트램폴린 선택 상태
+                    success = UseTrampolineAuthority(); // 서버 권한 발밑 설치
+                    break; // 트램폴린 분기 종료
+
                 case ProjectJNetworkItemId.Snowball:
                     success = UseSnowballAuthority();
                     break;

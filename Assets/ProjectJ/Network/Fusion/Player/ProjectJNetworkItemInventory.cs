@@ -244,6 +244,7 @@ namespace ProjectJ.Networking.Fusion
             InitializeInkOctopusAuthority(); // 먹물 문어 상태 초기화
             InitializeFishingRodAuthority(); // 낚시대 연결 상태 초기화
             InitializeGrapplingHookAuthority(); // 갈고리 연결 상태 초기화
+            InitializeSoapBubbleAuthority(); // 비눗방울 이동 제한 상태 초기화
             InitializeSnowballAuthority(); // 눈덩이 감속 상태 초기화
         }
 
@@ -266,6 +267,7 @@ namespace ProjectJ.Networking.Fusion
             UpdatePufferBalloonSuitAuthority(); // 복어 풍선옷 근접 자동 밀치기 판정
             UpdateFishingRodAuthority(); // 낚시대 연결·당김 상태 판정
             UpdateGrapplingHookAuthority(); // 갈고리 자기 이동 상태 판정
+            UpdateSoapBubbleLifetimeAuthority(); // 비눗방울 시간·경기 상태 판정
 
             if (
                 externalGameplay == null ||
@@ -280,6 +282,8 @@ namespace ProjectJ.Networking.Fusion
             {
                 return; // 입력 없음 처리
             }
+
+            UpdateSoapBubbleJumpInputAuthority(input); // 점프 눌림 시작 6회 조기 탈출 판정
 
             if (input.Buttons.IsSet(ProjectJNetworkButton.ItemSlotLeft))
             {
@@ -415,6 +419,7 @@ namespace ProjectJ.Networking.Fusion
             ClearInkOctopusAuthority(); // 먹물 문어 효과 제거
             ClearFishingRodAuthority(); // 낚시대 연결 상태 제거
             ClearGrapplingHookAuthority(); // 갈고리 연결 상태 제거
+            ClearSoapBubbleAuthority(); // 비눗방울 이동 제한 상태 제거
             ClearSnowballSlowAuthority(); // 눈덩이 감속 효과 제거
         }
 
@@ -428,6 +433,7 @@ namespace ProjectJ.Networking.Fusion
             ClearInkOctopusAuthority(); // 부활 시 먹물 문어 효과 즉시 제거
             ClearFishingRodAuthority(); // 부활 시 낚시대 연결 즉시 제거
             ClearGrapplingHookAuthority(); // 부활 시 갈고리 연결 즉시 제거
+            ClearSoapBubbleAuthority(); // 부활 시 비눗방울 이동 제한 즉시 제거
             ClearSnowballSlowAuthority(); // 부활 시 눈덩이 감속 제거
         }
 
@@ -518,6 +524,10 @@ namespace ProjectJ.Networking.Fusion
                 case ProjectJNetworkItemId.GrapplingHook: // 갈고리 선택 상태
                     success = UseGrapplingHookAuthority(); // 서버 권한 구조물 부착·자기 이동
                     break; // 갈고리 분기 종료
+
+                case ProjectJNetworkItemId.SoapBubble: // 비눗방울 선택 상태
+                    success = UseSoapBubbleAuthority(); // 서버 권한 직선 투사체 발사
+                    break; // 비눗방울 분기 종료
 
                 case ProjectJNetworkItemId.Snowball:
                     success = UseSnowballAuthority();

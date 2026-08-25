@@ -448,7 +448,17 @@ namespace ProjectJ.Networking.Fusion
                 LastSimulationPosition = transform.position; // 현재 위치를 Simulation 기준으로 유지
                 return; // 이동·점프·달리기·앉기 입력 처리 차단
             }
-
+            if (
+            ProjectJSoapBubblePolicy.ShouldRestrictLocomotion(
+            itemInventory != null &&
+            itemInventory.IsSoapBubbleActive
+                    )
+                )
+            {
+                moveInput = Vector2.zero;
+                LastReceivedSprint = false;
+                LastReceivedCrouch = false;
+            }
             float deltaTime = Runner.DeltaTime;
             bool hasMoveInput = moveInput.sqrMagnitude > 0.0001f;
 

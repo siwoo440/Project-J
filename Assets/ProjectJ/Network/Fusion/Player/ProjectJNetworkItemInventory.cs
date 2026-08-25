@@ -529,6 +529,10 @@ namespace ProjectJ.Networking.Fusion
                     success = UseSoapBubbleAuthority(); // 서버 권한 직선 투사체 발사
                     break; // 비눗방울 분기 종료
 
+                case ProjectJNetworkItemId.SmokeGrenade: // 연막탄 선택 상태
+                    success = UseSmokeGrenadeAuthority(); // 서버 권한 포물선 투척
+                    break; // 연막탄 분기 종료
+
                 case ProjectJNetworkItemId.Snowball:
                     success = UseSnowballAuthority();
                     break;

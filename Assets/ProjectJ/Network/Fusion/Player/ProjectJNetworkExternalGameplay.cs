@@ -1701,9 +1701,12 @@ namespace ProjectJ.Networking.Fusion
 
             foreach (ProjectJNetworkExternalGameplay candidate in ActivePlayers)
             {
-                if (!IsValidPlayer(candidate))
+                if (
+                    !IsValidPlayer(candidate) ||
+                    candidate.GetComponent<ProjectJNetworkBotMarker>() != null
+                )
                 {
-                    continue;
+                    continue; // InputAuthority 없는 Bot은 Match Coordinator 후보에서 제외
                 }
 
                 if (

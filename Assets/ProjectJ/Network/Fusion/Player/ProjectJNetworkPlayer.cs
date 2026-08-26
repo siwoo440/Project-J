@@ -39,6 +39,7 @@ namespace ProjectJ.Networking.Fusion
         private CapsuleCollider bodyCollider;
         private ProjectJNetworkExternalGameplay externalGameplay; // 경기 상태 입력 잠금 조회
         private ProjectJNetworkItemInventory itemInventory; // 이동 아이템 효과 상태 조회
+        private ProjectJNetworkBotController botController; // State Authority AI Bot 입력 공급자
 
         private readonly RaycastHit[] groundHitBuffer = new RaycastHit[16];
         private readonly RaycastHit[] jetpackCeilingHitBuffer = new RaycastHit[16]; // 제트팩 천장 충돌 후보 버퍼
@@ -410,9 +411,19 @@ namespace ProjectJ.Networking.Fusion
                 default;
 
             bool hasInput =
-                GetInput<ProjectJNetworkInput>(
+                botController != null &&
+                botController.TryBuildInput(
+                    this,
                     out input
-                );
+                ); // AI Bot State Authority 입력 생성
+
+            if (!hasInput)
+            {
+                hasInput =
+                    GetInput<ProjectJNetworkInput>(
+                        out input
+                    ); // 실제 Player Fusion 입력 조회
+            }
 
             Vector2 moveInput =
                 Vector2.zero;
@@ -1282,6 +1293,7 @@ namespace ProjectJ.Networking.Fusion
             networkTransform = GetComponent<NetworkTransform>();
             externalGameplay = GetComponent<ProjectJNetworkExternalGameplay>(); // 경기 상태 컴포넌트 조회
             itemInventory = GetComponent<ProjectJNetworkItemInventory>(); // 이동 아이템 효과 컴포넌트 조회
+            botController = GetComponent<ProjectJNetworkBotController>(); // Bot Prefab Controller 조회
         }
 
         private void ApplyAuthorityPresentation()

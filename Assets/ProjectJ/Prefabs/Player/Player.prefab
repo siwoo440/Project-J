@@ -684,6 +684,9 @@ MonoBehaviour:
   modelLocalEulerAngles: {x: 0, y: 0, z: 0}
   modelLocalScale: {x: 1, y: 1, z: 1}
   disableVisualColliders: 1
+  moveSpeedThreshold: 0.1
+  upwardSpeedThreshold: 0.05
+  pushReleaseNormalizedTime: 0.9
 --- !u!1 &6255624159156887663
 GameObject:
   m_ObjectHideFlags: 0

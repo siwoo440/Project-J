@@ -11,17 +11,29 @@ namespace ProjectJ.Networking.Fusion
     public sealed class ProjectJNetworkBotController :
         MonoBehaviour
     {
+        private const float MinimumProgressDistance =
+            0.25f; // Stuck 해제에 필요한 최소 이동 거리
+
+        private const float StuckTimeoutSeconds =
+            2.5f; // Route 정체 복구 제한 시간
+
         private readonly List<ProjectJBotRouteNode> routeNodes =
             new List<ProjectJBotRouteNode>(); // 정렬된 Route Node 목록
 
         private readonly List<Vector3> routePositions =
             new List<Vector3>(); // Respawn 최근접 Route 위치 목록
 
+        private readonly List<int> routeOrders =
+            new List<int>(); // Checkpoint 최소 Route 계산용 순서 목록
+
         private ProjectJNetworkExternalGameplay externalGameplay; // Respawn 상태 조회 대상
         private bool initialized; // Bot 내부 초기화 여부
         private int currentRouteIndex; // 현재 목표 Route Index
         private int observedRespawnCount; // 마지막 확인 Respawn 횟수
         private bool jumpConsumedForCurrentNode; // 현재 Node 점프 입력 소비 여부
+        private Vector3 progressAnchorPosition; // Stuck 이동량 측정 기준 위치
+        private float stalledSeconds; // 누적 정체 시간
+        private bool progressTrackingInitialized; // Stuck 위치 측정 초기화 여부
 
         public int CurrentRouteIndex =>
             currentRouteIndex; // 현재 Route Index 조회
@@ -31,6 +43,9 @@ namespace ProjectJ.Networking.Fusion
 
         public bool HasRoute =>
             routeNodes.Count > 0; // Route 존재 여부 조회
+
+        public float StalledSeconds =>
+            stalledSeconds; // 현재 정체 누적 시간 조회
 
         public bool TryBuildInput(
             ProjectJNetworkPlayer player,
@@ -59,6 +74,10 @@ namespace ProjectJ.Networking.Fusion
             AdvanceReachedNodes(
                 player.CurrentPosition
             ); // 이미 도달한 Node 진행
+
+            ObserveStuck(
+                player
+            ); // 정체 상태 확인 및 Route 복구
 
             if (
                 currentRouteIndex < 0 ||
@@ -147,6 +166,7 @@ namespace ProjectJ.Networking.Fusion
         {
             routeNodes.Clear(); // 이전 Route Node 제거
             routePositions.Clear(); // 이전 Route 위치 제거
+            routeOrders.Clear(); // 이전 Route Order 제거
 
             ProjectJBotRouteNode[] foundNodes =
                 Object.FindObjectsByType<ProjectJBotRouteNode>(
@@ -171,7 +191,14 @@ namespace ProjectJ.Networking.Fusion
                 routePositions.Add(
                     routeNodes[index].transform.position
                 ); // Respawn 검색용 위치 저장
+
+                routeOrders.Add(
+                    routeNodes[index].RouteOrder
+                ); // Checkpoint 복구용 Route Order 저장
             }
+
+            int minimumRouteIndex =
+                ResolveCheckpointMinimumRouteIndex(); // 현재 Checkpoint 최소 Route Index 계산
 
             currentRouteIndex =
                 ProjectJBotNavigationPolicy.FindNearestRouteIndex(
@@ -179,11 +206,17 @@ namespace ProjectJ.Networking.Fusion
                         ? player.CurrentPosition
                         : transform.position,
                     routePositions,
-                    0
-                ); // 현재 위치에서 최근접 Route 선택
+                    minimumRouteIndex
+                ); // 허용 Route 범위에서 최근접 Route 선택
 
             jumpConsumedForCurrentNode =
                 false; // 새 Route 점프 상태 초기화
+
+            ResetProgressTracking(
+                player != null
+                    ? player.CurrentPosition
+                    : transform.position
+            ); // Route 갱신 후 Stuck 측정 초기화
         }
 
         private void EnsureInitialized(
@@ -234,15 +267,194 @@ namespace ProjectJ.Networking.Fusion
             observedRespawnCount =
                 currentRespawnCount; // Respawn 횟수 갱신
 
+            int minimumRouteIndex =
+                ResolveCheckpointMinimumRouteIndex(); // 부활 Checkpoint 최소 Route Index 계산
+
             currentRouteIndex =
                 ProjectJBotNavigationPolicy.FindNearestRouteIndex(
                     player.CurrentPosition,
                     routePositions,
-                    0
-                ); // 부활 위치 최근접 Route 재선정
+                    minimumRouteIndex
+                ); // 이전 Checkpoint Route를 제외하고 최근접 Route 재선정
 
             jumpConsumedForCurrentNode =
                 false; // 부활 후 점프 상태 초기화
+
+            ResetProgressTracking(
+                player.CurrentPosition
+            ); // 부활 후 Stuck 측정 초기화
+        }
+
+        private void ObserveStuck(
+            ProjectJNetworkPlayer player
+        )
+        {
+            if (
+                currentRouteIndex < 0 ||
+                currentRouteIndex >= routeNodes.Count
+            )
+            {
+                ResetProgressTracking(
+                    player.CurrentPosition
+                ); // Route 종료 상태 측정 초기화
+
+                return;
+            }
+
+            if (
+                externalGameplay != null &&
+                !externalGameplay.GameplayInputAllowed
+            )
+            {
+                ResetProgressTracking(
+                    player.CurrentPosition
+                ); // 경기 잠금 중 Stuck 누적 방지
+
+                return;
+            }
+
+            if (!progressTrackingInitialized)
+            {
+                ResetProgressTracking(
+                    player.CurrentPosition
+                ); // 최초 Stuck 기준 위치 설정
+
+                return;
+            }
+
+            Vector3 currentPosition =
+                player.CurrentPosition; // 현재 Bot 위치 조회
+
+            Vector3 progressDelta =
+                currentPosition -
+                progressAnchorPosition; // 기준 위치 이후 이동량 계산
+
+            progressDelta.y =
+                0f; // 수직 점프·낙하 이동을 진행 거리에서 제외
+
+            float progressDistanceSquared =
+                progressDelta.sqrMagnitude; // 수평 진행 거리 계산
+
+            if (
+                progressDistanceSquared >=
+                MinimumProgressDistance *
+                MinimumProgressDistance
+            )
+            {
+                ResetProgressTracking(
+                    currentPosition
+                ); // 충분한 이동 시 정체 시간 초기화
+
+                return;
+            }
+
+            float deltaTime =
+                player.Runner != null
+                    ? player.Runner.DeltaTime
+                    : 0f; // Fusion Simulation 시간 조회
+
+            stalledSeconds +=
+                Mathf.Max(
+                    0f,
+                    deltaTime
+                ); // 정체 시간 누적
+
+            if (
+                !ProjectJBotNavigationPolicy.ShouldRecoverFromStuck(
+                    progressAnchorPosition,
+                    currentPosition,
+                    MinimumProgressDistance,
+                    stalledSeconds,
+                    StuckTimeoutSeconds
+                )
+            )
+            {
+                return; // 아직 Stuck 복구 조건 미충족
+            }
+
+            RecoverFromStuck(
+                currentPosition
+            ); // 다음 Route 범위에서 정체 복구
+        }
+
+        private void RecoverFromStuck(
+            Vector3 currentPosition
+        )
+        {
+            int checkpointMinimumIndex =
+                ResolveCheckpointMinimumRouteIndex(); // 현재 Checkpoint 최소 Route Index 계산
+
+            int nextRouteIndex =
+                Mathf.Max(
+                    checkpointMinimumIndex,
+                    currentRouteIndex + 1
+                ); // 현재 막힌 Node와 이전 구간 제외
+
+            if (
+                nextRouteIndex <
+                routePositions.Count
+            )
+            {
+                currentRouteIndex =
+                    ProjectJBotNavigationPolicy.FindNearestRouteIndex(
+                        currentPosition,
+                        routePositions,
+                        nextRouteIndex
+                    ); // 다음 Route 범위에서 최근접 Node 선택
+
+                jumpConsumedForCurrentNode =
+                    false; // 복구 Route 점프 상태 초기화
+            }
+
+            ResetProgressTracking(
+                currentPosition
+            ); // Stuck 복구 후 측정 기준 초기화
+        }
+
+        private int ResolveCheckpointMinimumRouteIndex()
+        {
+            if (routeOrders.Count == 0)
+            {
+                return 0; // Route 없음 처리
+            }
+
+            int checkpointId =
+                externalGameplay != null
+                    ? (int)externalGameplay.CurrentCheckpointId
+                    : 0; // 현재 최고 Checkpoint ID 조회
+
+            int minimumRouteOrder =
+                ProjectJBotNavigationPolicy.ResolveCheckpointMinimumRouteOrder(
+                    checkpointId
+                ); // Checkpoint별 최소 Route Order 계산
+
+            int minimumRouteIndex =
+                ProjectJBotNavigationPolicy.FindFirstRouteIndexAtOrAfterOrder(
+                    routeOrders,
+                    minimumRouteOrder
+                ); // 최소 Route Order 이상 첫 Index 검색
+
+            if (minimumRouteIndex >= 0)
+            {
+                return minimumRouteIndex; // 허용 Route 시작 Index 반환
+            }
+
+            return
+                routeOrders.Count - 1; // Route 부족 시 마지막 Node로 제한
+        }
+
+        private void ResetProgressTracking(
+            Vector3 currentPosition
+        )
+        {
+            progressAnchorPosition =
+                currentPosition; // Stuck 기준 위치 갱신
+
+            stalledSeconds =
+                0f; // 정체 시간 초기화
+
+            progressTrackingInitialized =
+                true; // Stuck 측정 활성화
         }
 
         private void AdvanceReachedNodes(
@@ -272,6 +484,10 @@ namespace ProjectJ.Networking.Fusion
 
                 jumpConsumedForCurrentNode =
                     false; // 다음 Node 점프 상태 초기화
+
+                ResetProgressTracking(
+                    currentPosition
+                ); // Node 진행 후 Stuck 측정 초기화
             }
         }
 

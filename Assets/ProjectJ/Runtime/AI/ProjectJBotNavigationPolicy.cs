@@ -1,4 +1,4 @@
-using System.Collections.Generic; // Route 위치 목록 사용
+using System.Collections.Generic; // Route 위치와 순서 목록 사용
 using UnityEngine; // Vector3와 Mathf 사용
 
 namespace ProjectJ.AI
@@ -78,6 +78,109 @@ namespace ProjectJ.AI
             return
                 planarDistance <=
                 safeTriggerDistance; // 점프 접근 거리 판정
+        }
+
+        public static int ResolveCheckpointMinimumRouteOrder(
+            int checkpointId,
+            int routeOrderPerCheckpoint = 100
+        )
+        {
+            int safeCheckpointId =
+                Mathf.Max(
+                    0,
+                    checkpointId
+                ); // 음수 Checkpoint ID 방지
+
+            int safeOrderStep =
+                Mathf.Max(
+                    1,
+                    routeOrderPerCheckpoint
+                ); // Route Order 간격 최소값 보장
+
+            return
+                safeCheckpointId *
+                safeOrderStep; // Checkpoint 기준 최소 Route Order 계산
+        }
+
+        public static int FindFirstRouteIndexAtOrAfterOrder(
+            IReadOnlyList<int> routeOrders,
+            int minimumRouteOrder
+        )
+        {
+            if (
+                routeOrders == null ||
+                routeOrders.Count == 0
+            )
+            {
+                return -1; // Route Order 없음 처리
+            }
+
+            for (
+                int index = 0;
+                index < routeOrders.Count;
+                index++
+            )
+            {
+                if (
+                    routeOrders[index] >=
+                    minimumRouteOrder
+                )
+                {
+                    return index; // 최소 Route Order 이상 첫 Index 반환
+                }
+            }
+
+            return -1; // 허용 가능한 Route 없음 처리
+        }
+
+        public static bool ShouldRecoverFromStuck(
+            Vector3 progressAnchorPosition,
+            Vector3 currentPosition,
+            float minimumProgressDistance,
+            float stalledSeconds,
+            float stuckTimeoutSeconds
+        )
+        {
+            float safeProgressDistance =
+                Mathf.Max(
+                    0f,
+                    minimumProgressDistance
+                ); // 최소 이동 거리 음수 방지
+
+            float safeStalledSeconds =
+                Mathf.Max(
+                    0f,
+                    stalledSeconds
+                ); // 정체 시간 음수 방지
+
+            float safeTimeoutSeconds =
+                Mathf.Max(
+                    0f,
+                    stuckTimeoutSeconds
+                ); // 정체 제한 시간 음수 방지
+
+            if (
+                safeStalledSeconds <
+                safeTimeoutSeconds
+            )
+            {
+                return false; // 제한 시간 전 복구 차단
+            }
+
+            Vector3 progressDelta =
+                currentPosition -
+                progressAnchorPosition; // 기준 위치 이후 이동량 계산
+
+            progressDelta.y =
+                0f; // 수직 점프·낙하 이동을 진행 거리에서 제외
+
+            float progressDistanceSquared =
+                progressDelta.sqrMagnitude; // 수평 진행 거리 계산
+
+            return
+                progressDistanceSquared <
+                safeProgressDistance *
+                safeProgressDistance; // 실질 수평 이동 부족 시 Stuck 복구 허용
         }
 
         public static int FindNearestRouteIndex(

@@ -1,4 +1,4 @@
-using System.Collections.Generic; // Route 위치 목록 사용
+using System.Collections.Generic; // Route 위치와 순서 목록 사용
 using NUnit.Framework; // EditMode Test 사용
 using ProjectJ.AI; // Bot Navigation 정책 사용
 using UnityEngine; // Vector3 사용
@@ -150,6 +150,135 @@ namespace ProjectJ.Tests.EditMode
                 result,
                 Is.False
             ); // 점프 거리 초과 차단 검증
+        }
+
+        [Test]
+        public void ResolveCheckpointMinimumRouteOrder_UsesHundredStep()
+        {
+            int result =
+                ProjectJBotNavigationPolicy.ResolveCheckpointMinimumRouteOrder(
+                    3
+                ); // CP3 최소 Route Order 계산
+
+            Assert.That(
+                result,
+                Is.EqualTo(
+                    300
+                )
+            ); // CP3 이전 Route 차단 기준 검증
+        }
+
+        [Test]
+        public void FindFirstRouteIndexAtOrAfterOrder_SkipsPreviousCheckpointRoutes()
+        {
+            List<int> routeOrders =
+                new List<int>
+                {
+                    0,
+                    25,
+                    100,
+                    150,
+                    200,
+                    250,
+                    300
+                }; // Checkpoint 포함 Route Order 목록 생성
+
+            int result =
+                ProjectJBotNavigationPolicy.FindFirstRouteIndexAtOrAfterOrder(
+                    routeOrders,
+                    200
+                ); // CP2 이후 첫 Route 검색
+
+            Assert.That(
+                result,
+                Is.EqualTo(
+                    4
+                )
+            ); // CP2 이전 Route 제외 검증
+        }
+
+        [Test]
+        public void ShouldRecoverFromStuck_ReturnsTrueAfterTimeoutWithoutProgress()
+        {
+            bool result =
+                ProjectJBotNavigationPolicy.ShouldRecoverFromStuck(
+                    Vector3.zero,
+                    new Vector3(
+                        0.1f,
+                        0f,
+                        0f
+                    ),
+                    0.25f,
+                    2.5f,
+                    2.5f
+                ); // 제한 시간 동안 최소 거리 미만 이동 상태 판정
+
+            Assert.That(
+                result,
+                Is.True
+            ); // Stuck 복구 허용 검증
+        }
+
+        [Test]
+        public void ShouldRecoverFromStuck_ReturnsFalseWhenProgressIsEnough()
+        {
+            bool result =
+                ProjectJBotNavigationPolicy.ShouldRecoverFromStuck(
+                    Vector3.zero,
+                    new Vector3(
+                        0.25f,
+                        0f,
+                        0f
+                    ),
+                    0.25f,
+                    3f,
+                    2.5f
+                ); // 최소 이동 거리 충족 상태 판정
+
+            Assert.That(
+                result,
+                Is.False
+            ); // 정상 진행 상태 복구 차단 검증
+        }
+
+        [Test]
+        public void ShouldRecoverFromStuck_ReturnsFalseBeforeTimeout()
+        {
+            bool result =
+                ProjectJBotNavigationPolicy.ShouldRecoverFromStuck(
+                    Vector3.zero,
+                    Vector3.zero,
+                    0.25f,
+                    2.49f,
+                    2.5f
+                ); // 제한 시간 직전 정체 상태 판정
+
+            Assert.That(
+                result,
+                Is.False
+            ); // 조기 Stuck 복구 차단 검증
+        }
+
+        [Test]
+        public void ShouldRecoverFromStuck_IgnoresVerticalOnlyMovement()
+        {
+            bool result =
+                ProjectJBotNavigationPolicy.ShouldRecoverFromStuck(
+                    Vector3.zero,
+                    new Vector3(
+                        0f,
+                        2f,
+                        0f
+                    ),
+                    0.25f,
+                    2.5f,
+                    2.5f
+                ); // 제자리 점프와 같은 수직 이동만 존재하는 상태 판정
+
+            Assert.That(
+                result,
+                Is.True
+            ); // 수평 진행 없는 상태 Stuck 복구 검증
         }
 
         [Test]

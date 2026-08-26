@@ -1,5 +1,6 @@
 using Fusion;
 using ProjectJ.Items; // 깃털 신발 수치 정책 사용
+using ProjectJ.Movement; // Player 충돌 이동 정책 사용
 using UnityEngine;
 
 namespace ProjectJ.Networking.Fusion
@@ -29,6 +30,18 @@ namespace ProjectJ.Networking.Fusion
         private const float StandingVisualScaleY = 1f;
         private const float CrouchVisualScaleY = 0.5f;
         private const float StandClearanceRadiusScale = 0.95f;
+        private const float HorizontalCollisionSkin =
+            0.03f; // 수평 충돌 Query 여유 거리
+        private const float MaximumStepHeight =
+            0.35f; // 자동 계단 오르기 최대 높이
+        private const float StepForwardProbeDistance =
+            0.05f; // 계단 상단 확인 전방 여유 거리
+        private const float GroundProbeRadiusScale =
+            0.9f; // Capsule 발바닥 Ground 검사 반경 배율
+        private const float MinimumGroundNormalY =
+            0.5f; // Ground로 허용할 최소 위쪽 법선
+        private const int HorizontalSlideIterationCount =
+            2; // 벽과 모서리 Slide 반복 횟수
         private const float BodyTurnSpeedDegreesPerSecond =
             720f; // 이동 방향 몸 회전 속도
 
@@ -44,6 +57,8 @@ namespace ProjectJ.Networking.Fusion
         private readonly RaycastHit[] groundHitBuffer = new RaycastHit[16];
         private readonly RaycastHit[] jetpackCeilingHitBuffer = new RaycastHit[16]; // 제트팩 천장 충돌 후보 버퍼
         private readonly Collider[] standOverlapBuffer = new Collider[16];
+        private readonly RaycastHit[] movementHitBuffer = new RaycastHit[16]; // 수평 CapsuleCast와 계단 Raycast 버퍼
+        private readonly Collider[] movementOverlapBuffer = new Collider[16]; // 이동 위치 Overlap 검사 버퍼
 
         private Material runtimeMaterial;
         private float inputPulseUntil;
@@ -647,14 +662,28 @@ namespace ProjectJ.Networking.Fusion
                 ); // 카메라 기준 수평 이동 방향 계산
 
             Vector3 currentPosition = transform.position;
-            Vector3 nextPosition = currentPosition;
-
-            nextPosition +=
+            Vector3 horizontalDisplacement =
                 moveDirection *
                 horizontalMoveSpeed *
-                deltaTime; // 카메라 기준 수평 이동 적용
+                deltaTime; // 이번 Tick 수평 이동량 계산
 
-            nextPosition.y += NetworkVerticalVelocity * deltaTime;
+            Vector3 nextPosition =
+                ResolveHorizontalMovement(
+                    currentPosition,
+                    horizontalDisplacement,
+                    NetworkGrounded,
+                    out bool steppedUp
+                ); // CapsuleCast 기반 벽 충돌·Slide·계단 이동 계산
+
+            if (steppedUp)
+            {
+                NetworkVerticalVelocity = 0f; // 계단 상승 중 낙하 속도 제거
+                NetworkGrounded = true; // 계단 상승 직후 Ground 유지
+            }
+
+            nextPosition.y +=
+                NetworkVerticalVelocity *
+                deltaTime; // 수직 이동 적용
 
             if (moveDirection.sqrMagnitude > 0.0001f)
             {
@@ -667,6 +696,7 @@ namespace ProjectJ.Networking.Fusion
             }
 
             if (
+                !steppedUp &&
                 NetworkVerticalVelocity <= 0f &&
                 TryGetLandingGroundHeight(currentPosition, nextPosition, out float landingHeight)
             )
@@ -912,16 +942,457 @@ namespace ProjectJ.Networking.Fusion
             NetworkStamina = stamina;
         }
 
+        private Vector3 ResolveHorizontalMovement(
+            Vector3 startPosition,
+            Vector3 horizontalDisplacement,
+            bool canStep,
+            out bool steppedUp
+        )
+        {
+            steppedUp =
+                false; // Step Up 결과 초기화
+
+            if (
+                horizontalDisplacement.sqrMagnitude <=
+                0.0001f
+            )
+            {
+                return startPosition; // 수평 이동 없음 처리
+            }
+
+            Vector3 position =
+                startPosition; // 충돌 계산 시작 위치
+
+            Vector3 remainingDisplacement =
+                horizontalDisplacement; // 남은 수평 이동량 초기화
+
+            bool stepAttemptAvailable =
+                canStep &&
+                NetworkVerticalVelocity <= 0f; // Ground 상태에서만 Step Up 허용
+
+            for (
+                int iteration = 0;
+                iteration < HorizontalSlideIterationCount;
+                iteration++
+            )
+            {
+                if (
+                    remainingDisplacement.sqrMagnitude <=
+                    0.0001f
+                )
+                {
+                    break; // 남은 이동 없음 처리
+                }
+
+                if (
+                    !TryFindClosestBodyHit(
+                        position,
+                        remainingDisplacement,
+                        out RaycastHit blockingHit
+                    )
+                )
+                {
+                    position +=
+                        remainingDisplacement; // 충돌 없음 전체 이동 적용
+
+                    break; // 수평 이동 종료
+                }
+
+                float requestedDistance =
+                    remainingDisplacement.magnitude; // 현재 이동 요청 거리
+
+                if (
+                    blockingHit.distance >
+                    requestedDistance
+                )
+                {
+                    position +=
+                        remainingDisplacement; // 실제 이동 범위 밖 충돌 무시
+
+                    break; // 수평 이동 종료
+                }
+
+                if (
+                    stepAttemptAvailable &&
+                    TryResolveStepUp(
+                        position,
+                        remainingDisplacement,
+                        blockingHit,
+                        out Vector3 stepPosition
+                    )
+                )
+                {
+                    position =
+                        stepPosition; // 계단 위 위치 적용
+
+                    steppedUp =
+                        true; // Step Up 성공 표시
+
+                    break; // 계단 상승 후 이동 종료
+                }
+
+                Vector3 moveDirection =
+                    remainingDisplacement.normalized; // 현재 이동 방향 계산
+
+                float travelDistance =
+                    ProjectJCharacterCollisionPolicy.ResolveTravelDistance(
+                        requestedDistance,
+                        blockingHit.distance
+                    ); // 벽 앞 허용 이동 거리 계산
+
+                position +=
+                    moveDirection *
+                    travelDistance; // 벽 앞까지 이동
+
+                Vector3 consumedDisplacement =
+                    moveDirection *
+                    travelDistance; // 소비된 이동량 계산
+
+                Vector3 leftoverDisplacement =
+                    remainingDisplacement -
+                    consumedDisplacement; // 충돌 후 남은 이동량 계산
+
+                remainingDisplacement =
+                    ProjectJCharacterCollisionPolicy.ResolveSlideDisplacement(
+                        leftoverDisplacement,
+                        blockingHit.normal
+                    ); // 벽 접선 방향 Slide 계산
+
+                stepAttemptAvailable =
+                    false; // Slide 중 추가 Step Up 차단
+            }
+
+            return position; // 충돌 해결 수평 위치 반환
+        }
+
+        private bool TryResolveStepUp(
+            Vector3 startPosition,
+            Vector3 horizontalDisplacement,
+            RaycastHit blockingHit,
+            out Vector3 stepPosition
+        )
+        {
+            stepPosition =
+                startPosition; // 실패 기본 위치 설정
+
+            if (
+                bodyCollider == null ||
+                horizontalDisplacement.sqrMagnitude <=
+                0.0001f
+            )
+            {
+                return false; // Collider 또는 이동 없음 처리
+            }
+
+            Vector3 moveDirection =
+                horizontalDisplacement.normalized; // 계단 접근 방향 계산
+
+            Vector3 stepProbePosition =
+                blockingHit.point +
+                moveDirection *
+                StepForwardProbeDistance; // 충돌 면 바로 뒤 계단 상단 검사 위치
+
+            Vector3 stepProbeOrigin =
+                new Vector3(
+                    stepProbePosition.x,
+                    startPosition.y +
+                    MaximumStepHeight +
+                    GroundProbeStartHeight,
+                    stepProbePosition.z
+                ); // 최대 Step 높이 위 Raycast 시작점
+
+            float stepProbeDistance =
+                MaximumStepHeight +
+                GroundProbeStartHeight +
+                GroundProbeDistance; // 계단 상단 하향 검사 거리
+
+            if (
+                !TryFindRayGroundHit(
+                    stepProbeOrigin,
+                    stepProbeDistance,
+                    out float stepGroundHeight
+                )
+            )
+            {
+                return false; // 계단 상단 없음 처리
+            }
+
+            if (
+                !ProjectJCharacterCollisionPolicy.IsStepHeightAllowed(
+                    startPosition.y,
+                    stepGroundHeight,
+                    MaximumStepHeight
+                )
+            )
+            {
+                return false; // 너무 높은 발판 자동 오르기 차단
+            }
+
+            float stepHeight =
+                stepGroundHeight -
+                startPosition.y; // 실제 Step 상승 높이 계산
+
+            Vector3 raisedStartPosition =
+                startPosition +
+                Vector3.up *
+                stepHeight; // 계단 상단 높이로 Player 상승
+
+            if (
+                !IsBodyPositionClear(
+                    raisedStartPosition
+                )
+            )
+            {
+                return false; // 상승 위치 몸통 충돌 차단
+            }
+
+            if (
+                TryFindClosestBodyHit(
+                    raisedStartPosition,
+                    horizontalDisplacement,
+                    out RaycastHit raisedHit
+                ) &&
+                raisedHit.distance <=
+                horizontalDisplacement.magnitude
+            )
+            {
+                return false; // 계단 위 이동 경로 추가 장애물 차단
+            }
+
+            Vector3 candidatePosition =
+                raisedStartPosition +
+                horizontalDisplacement; // 계단 상승 후 수평 후보 위치
+
+            if (
+                !IsBodyPositionClear(
+                    candidatePosition
+                )
+            )
+            {
+                return false; // 계단 위 최종 위치 Overlap 차단
+            }
+
+            stepPosition =
+                candidatePosition; // 안전한 Step Up 위치 반환
+
+            return true; // 계단 상승 허용
+        }
+
+        private bool TryFindClosestBodyHit(
+            Vector3 footPosition,
+            Vector3 displacement,
+            out RaycastHit closestHit
+        )
+        {
+            closestHit =
+                default; // 충돌 결과 초기화
+
+            float distance =
+                displacement.magnitude; // 이동 거리 계산
+
+            if (distance <= 0.0001f)
+            {
+                return false; // 이동 없음 처리
+            }
+
+            GetBodyCastCapsule(
+                footPosition,
+                out Vector3 bottomPoint,
+                out Vector3 topPoint,
+                out float queryRadius
+            ); // 현재 몸통 Capsule Query 계산
+
+            Vector3 direction =
+                displacement /
+                distance; // 수평 이동 방향 정규화
+
+            int hitCount =
+                Physics.CapsuleCastNonAlloc(
+                    bottomPoint,
+                    topPoint,
+                    queryRadius,
+                    direction,
+                    movementHitBuffer,
+                    distance +
+                    HorizontalCollisionSkin,
+                    Physics.AllLayers,
+                    QueryTriggerInteraction.Ignore
+                ); // 수평 CapsuleCast 실행
+
+            float closestDistance =
+                float.PositiveInfinity; // 최근접 충돌 거리 초기화
+
+            bool foundHit =
+                false; // 외부 충돌 발견 여부 초기화
+
+            for (
+                int index = 0;
+                index < hitCount;
+                index++
+            )
+            {
+                RaycastHit hit =
+                    movementHitBuffer[index]; // 현재 CapsuleCast 결과 조회
+
+                Collider hitCollider =
+                    hit.collider; // 현재 충돌 Collider 조회
+
+                if (
+                    hitCollider == null ||
+                    IsOwnCollider(
+                        hitCollider
+                    ) ||
+                    hit.distance >=
+                    closestDistance
+                )
+                {
+                    continue; // 자기 Collider와 더 먼 충돌 제외
+                }
+
+                closestDistance =
+                    hit.distance; // 최근접 거리 갱신
+
+                closestHit =
+                    hit; // 최근접 충돌 결과 갱신
+
+                foundHit =
+                    true; // 외부 충돌 발견 표시
+            }
+
+            return foundHit; // 최근접 외부 Collider 충돌 여부 반환
+        }
+
+        private bool IsBodyPositionClear(
+            Vector3 footPosition
+        )
+        {
+            GetBodyCastCapsule(
+                footPosition,
+                out Vector3 bottomPoint,
+                out Vector3 topPoint,
+                out float queryRadius
+            ); // 후보 위치 Capsule Query 계산
+
+            int overlapCount =
+                Physics.OverlapCapsuleNonAlloc(
+                    bottomPoint,
+                    topPoint,
+                    queryRadius,
+                    movementOverlapBuffer,
+                    Physics.AllLayers,
+                    QueryTriggerInteraction.Ignore
+                ); // 후보 위치 몸통 Overlap 검사
+
+            for (
+                int index = 0;
+                index < overlapCount;
+                index++
+            )
+            {
+                Collider candidate =
+                    movementOverlapBuffer[index]; // 현재 Overlap Collider 조회
+
+                if (
+                    candidate == null ||
+                    IsOwnCollider(
+                        candidate
+                    )
+                )
+                {
+                    continue; // 자기 Collider 제외
+                }
+
+                return false; // 외부 Collider Overlap 발견
+            }
+
+            return true; // 후보 위치 몸통 공간 확보
+        }
+
+        private void GetBodyCastCapsule(
+            Vector3 footPosition,
+            out Vector3 bottomPoint,
+            out Vector3 topPoint,
+            out float queryRadius
+        )
+        {
+            float colliderRadius =
+                bodyCollider != null
+                    ? bodyCollider.radius
+                    : BodyColliderRadius; // 현재 몸통 반경 조회
+
+            float colliderHeight =
+                bodyCollider != null
+                    ? bodyCollider.height
+                    : (
+                        NetworkIsCrouching
+                            ? CrouchColliderHeight
+                            : StandingColliderHeight
+                    ); // 현재 몸통 높이 조회
+
+            colliderRadius =
+                Mathf.Max(
+                    0.05f,
+                    colliderRadius
+                ); // 최소 몸통 반경 보정
+
+            colliderHeight =
+                Mathf.Max(
+                    colliderRadius *
+                    2f,
+                    colliderHeight
+                ); // Capsule 최소 높이 보정
+
+            queryRadius =
+                Mathf.Max(
+                    0.02f,
+                    colliderRadius -
+                    HorizontalCollisionSkin
+                ); // Ground 접촉 오검출 방지 Query 반경 축소
+
+            bottomPoint =
+                footPosition +
+                Vector3.up *
+                colliderRadius; // Capsule 하단 구 중심 계산
+
+            topPoint =
+                footPosition +
+                Vector3.up *
+                (
+                    colliderHeight -
+                    colliderRadius
+                ); // Capsule 상단 구 중심 계산
+        }
+
         private bool TryGetGroundHeight(
             Vector3 position,
             float probeDistance,
             out float groundHeight
         )
         {
-            Vector3 origin = position + Vector3.up * GroundProbeStartHeight;
-            float castDistance = GroundProbeStartHeight + probeDistance;
+            float probeRadius =
+                GetGroundProbeRadius(); // 현재 Ground Sphere 반경 계산
 
-            return TryFindGroundHit(origin, castDistance, out groundHeight);
+            Vector3 origin =
+                position +
+                Vector3.up *
+                (
+                    probeRadius +
+                    GroundProbeStartHeight
+                ); // Player 발 위 Ground Sphere 시작점 계산
+
+            float castDistance =
+                GroundProbeStartHeight +
+                Mathf.Max(
+                    0f,
+                    probeDistance
+                ); // Ground 하향 검사 거리 계산
+
+            return TryFindGroundHit(
+                origin,
+                probeRadius,
+                castDistance,
+                out groundHeight
+            ); // Capsule 발바닥 범위 Ground 검사
         }
 
         private bool TryGetLandingGroundHeight(
@@ -930,64 +1401,184 @@ namespace ProjectJ.Networking.Fusion
             out float groundHeight
         )
         {
-            float downwardTravel = Mathf.Max(
-                0f,
-                currentPosition.y - nextPosition.y
-            );
+            float downwardTravel =
+                Mathf.Max(
+                    0f,
+                    currentPosition.y -
+                    nextPosition.y
+                ); // 이번 Tick 하향 이동 거리 계산
 
-            Vector3 origin = new Vector3(
-                nextPosition.x,
-                currentPosition.y + GroundProbeStartHeight,
-                nextPosition.z
-            );
+            float probeRadius =
+                GetGroundProbeRadius(); // 착지 Sphere 반경 계산
+
+            Vector3 origin =
+                new Vector3(
+                    nextPosition.x,
+                    currentPosition.y +
+                    probeRadius +
+                    GroundProbeStartHeight,
+                    nextPosition.z
+                ); // 현재 발 높이 기준 착지 Sphere 시작점
 
             float castDistance =
                 GroundProbeStartHeight +
                 downwardTravel +
-                GroundProbeDistance;
+                GroundProbeDistance; // 낙하 거리 포함 착지 검사 거리
 
-            return TryFindGroundHit(origin, castDistance, out groundHeight);
+            return TryFindGroundHit(
+                origin,
+                probeRadius,
+                castDistance,
+                out groundHeight
+            ); // 이동 후 발바닥 범위 착지 검사
         }
 
         private bool TryFindGroundHit(
+            Vector3 origin,
+            float probeRadius,
+            float castDistance,
+            out float groundHeight
+        )
+        {
+            int hitCount =
+                Physics.SphereCastNonAlloc(
+                    origin,
+                    probeRadius,
+                    Vector3.down,
+                    groundHitBuffer,
+                    castDistance,
+                    Physics.AllLayers,
+                    QueryTriggerInteraction.Ignore
+                ); // 발바닥 SphereCast 실행
+
+            float closestDistance =
+                float.PositiveInfinity; // 최근접 Ground 거리 초기화
+
+            bool foundGround =
+                false; // Ground 발견 여부 초기화
+
+            groundHeight =
+                0f; // Ground 높이 초기화
+
+            for (
+                int index = 0;
+                index < hitCount;
+                index++
+            )
+            {
+                RaycastHit hit =
+                    groundHitBuffer[index]; // 현재 Ground 충돌 결과 조회
+
+                Collider hitCollider =
+                    hit.collider; // 현재 Ground Collider 조회
+
+                if (
+                    hitCollider == null ||
+                    IsOwnCollider(
+                        hitCollider
+                    ) ||
+                    !ProjectJCharacterCollisionPolicy.IsWalkableGroundNormal(
+                        hit.normal,
+                        MinimumGroundNormalY
+                    ) ||
+                    hit.distance >=
+                    closestDistance
+                )
+                {
+                    continue; // 자기 Collider·수직 벽·더 먼 Ground 제외
+                }
+
+                closestDistance =
+                    hit.distance; // 최근접 Ground 거리 갱신
+
+                groundHeight =
+                    hit.point.y; // Ground 표면 높이 저장
+
+                foundGround =
+                    true; // Ground 발견 표시
+            }
+
+            return foundGround; // Ground 존재 여부 반환
+        }
+
+        private bool TryFindRayGroundHit(
             Vector3 origin,
             float castDistance,
             out float groundHeight
         )
         {
-            int hitCount = Physics.RaycastNonAlloc(
-                origin,
-                Vector3.down,
-                groundHitBuffer,
-                castDistance,
-                Physics.AllLayers,
-                QueryTriggerInteraction.Ignore
-            );
+            int hitCount =
+                Physics.RaycastNonAlloc(
+                    origin,
+                    Vector3.down,
+                    movementHitBuffer,
+                    castDistance,
+                    Physics.AllLayers,
+                    QueryTriggerInteraction.Ignore
+                ); // 계단 상단 하향 Raycast 실행
 
-            float closestDistance = float.PositiveInfinity;
-            bool foundGround = false;
-            groundHeight = 0f;
+            float closestDistance =
+                float.PositiveInfinity; // 최근접 계단 상단 거리 초기화
 
-            for (int i = 0; i < hitCount; i++)
+            bool foundGround =
+                false; // 계단 상단 발견 여부 초기화
+
+            groundHeight =
+                0f; // 계단 상단 높이 초기화
+
+            for (
+                int index = 0;
+                index < hitCount;
+                index++
+            )
             {
-                RaycastHit hit = groundHitBuffer[i];
-                Collider hitCollider = hit.collider;
+                RaycastHit hit =
+                    movementHitBuffer[index]; // 현재 계단 Raycast 결과 조회
+
+                Collider hitCollider =
+                    hit.collider; // 현재 계단 Collider 조회
 
                 if (
                     hitCollider == null ||
-                    IsOwnCollider(hitCollider) ||
-                    hit.distance >= closestDistance
+                    IsOwnCollider(
+                        hitCollider
+                    ) ||
+                    !ProjectJCharacterCollisionPolicy.IsWalkableGroundNormal(
+                        hit.normal,
+                        MinimumGroundNormalY
+                    ) ||
+                    hit.distance >=
+                    closestDistance
                 )
                 {
-                    continue;
+                    continue; // 자기 Collider·수직 면·더 먼 상단 제외
                 }
 
-                closestDistance = hit.distance;
-                groundHeight = hit.point.y;
-                foundGround = true;
+                closestDistance =
+                    hit.distance; // 최근접 계단 거리 갱신
+
+                groundHeight =
+                    hit.point.y; // 계단 상단 높이 저장
+
+                foundGround =
+                    true; // 계단 상단 발견 표시
             }
 
-            return foundGround;
+            return foundGround; // 계단 상단 존재 여부 반환
+        }
+
+        private float GetGroundProbeRadius()
+        {
+            float colliderRadius =
+                bodyCollider != null
+                    ? bodyCollider.radius
+                    : BodyColliderRadius; // 현재 발바닥 반경 기준 조회
+
+            return Mathf.Max(
+                0.05f,
+                colliderRadius *
+                GroundProbeRadiusScale
+            ); // Capsule 발바닥 Ground 검사 반경 반환
         }
 
         private bool IsJetpackCeilingBlocked( // 제트팩 위쪽 이동 충돌 검사

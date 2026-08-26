@@ -322,5 +322,126 @@ namespace ProjectJ.Tests.EditMode
                 )
             ); // 최근접 Route Index 검증
         }
+
+        [Test] // 자율 후보 선택 계약 검증
+        public void SelectBestCandidate_RejectsUnsafeDrop() // 체크포인트 아래 후보 차단 검증
+        {
+            List<ProjectJBotTraversalCandidate> candidates = new List<ProjectJBotTraversalCandidate> // 이동 후보 목록 생성
+            {
+                new ProjectJBotTraversalCandidate( // 위험 후보 생성
+                    Vector3.forward, // 전방 이동 방향
+                    new Vector3(0f, -1f, 1f), // 안전 높이 아래 착지 위치
+                    -1f, // 착지 높이 차이
+                    true, // 바닥 존재 상태
+                    true, // 경로 확보 상태
+                    true, // 머리 공간 확보 상태
+                    false // 틈 통과 아님
+                )
+            };
+
+            ProjectJBotTraversalDecision result = ProjectJBotNavigationPolicy.SelectBestCandidate( // 최적 후보 선택
+                candidates, // 이동 후보 목록 전달
+                Vector3.forward, // 목표 방향 전달
+                0f, // 체크포인트 안전 높이 전달
+                0.35f, // 걷기 단차 한계 전달
+                1.5f, // 점프 높이 한계 전달
+                0.6f, // 안전 하강 한계 전달
+                Vector3.zero // 실패 방향 없음
+            );
+
+            Assert.That(result.IsValid, Is.False); // 위험 후보 거부 검증
+        }
+
+        [Test] // 센서 탐색 방향 수 검증
+        public void BuildSampleDirections_IncludesTwelveDirections() // 전후좌우 탐색 범위 검증
+        {
+            Vector3[] directions = ProjectJBotTraversalSensor.BuildSampleDirections(Vector3.forward); // 전방 기준 탐색 방향 생성
+
+            Assert.That(directions.Length, Is.EqualTo(12)); // 열두 방향 생성 검증
+            Assert.That(Vector3.Dot(directions[11], Vector3.back), Is.GreaterThan(0.99f)); // 후방 방향 포함 검증
+        }
+
+        [Test] // 바닥 없는 공간 차단 검증
+        public void TrySelectTraversal_RejectsFieldWithoutGround() // 낭떠러지 진입 차단 검증
+        {
+            GameObject botObject = new GameObject("Bot Sensor Test"); // 센서 시험 객체 생성
+
+            try // 시험 객체 정리 보장
+            {
+                ProjectJBotTraversalSensor sensor = botObject.AddComponent<ProjectJBotTraversalSensor>(); // 이동 센서 추가
+                bool selected = sensor.TrySelectTraversal( // 바닥 없는 공간 탐색
+                    Vector3.zero, // 현재 발 위치 전달
+                    Vector3.forward, // 목표 방향 전달
+                    0f, // 안전 높이 전달
+                    5f, // 걷기 속도 전달
+                    7f, // 점프 속도 전달
+                    -20f, // 중력 전달
+                    0.4f, // 몸 반경 전달
+                    2f, // 몸 높이 전달
+                    Vector3.zero, // 실패 방향 없음
+                    out ProjectJBotTraversalDecision decision // 이동 판단 수신
+                );
+
+                Assert.That(selected, Is.False); // 이동 후보 없음 검증
+                Assert.That(decision.IsValid, Is.False); // 무효 판단 검증
+            }
+            finally // 시험 객체 정리 구간
+            {
+                Object.DestroyImmediate(botObject); // 센서 시험 객체 제거
+            }
+        }
+
+        [Test] // 평지 이동 후보 탐색 검증
+        public void TrySelectTraversal_SelectsSafeFlatGround() // 안전한 평지 전진 검증
+        {
+            GameObject botObject = new GameObject("Bot Sensor Flat Test"); // 센서 시험 객체 생성
+            GameObject floorObject = GameObject.CreatePrimitive(PrimitiveType.Cube); // 시험 바닥 생성
+            floorObject.name = "Bot Sensor Floor"; // 시험 바닥 이름 설정
+            floorObject.transform.position = new Vector3(0f, -0.1f, 0f); // 발 아래 바닥 위치 설정
+            floorObject.transform.localScale = new Vector3(8f, 0.2f, 8f); // 모든 탐색 방향 바닥 크기 설정
+
+            try // 시험 객체 정리 보장
+            {
+                Physics.SyncTransforms(); // 시험 Collider 위치 동기화
+                ProjectJBotTraversalSensor sensor = botObject.AddComponent<ProjectJBotTraversalSensor>(); // 이동 센서 추가
+                bool selected = sensor.TrySelectTraversal( // 안전한 평지 탐색
+                    Vector3.zero, // 현재 발 위치 전달
+                    Vector3.forward, // 목표 방향 전달
+                    0f, // 안전 높이 전달
+                    5f, // 걷기 속도 전달
+                    7f, // 점프 속도 전달
+                    -20f, // 중력 전달
+                    0.4f, // 몸 반경 전달
+                    2f, // 몸 높이 전달
+                    Vector3.zero, // 실패 방향 없음
+                    out ProjectJBotTraversalDecision decision // 이동 판단 수신
+                );
+
+                Assert.That(selected, Is.True); // 안전 이동 후보 존재 검증
+                Assert.That(decision.Action, Is.EqualTo(ProjectJBotTraversalAction.Walk)); // 평지 걷기 판단 검증
+                Assert.That(Vector3.Dot(decision.Direction, Vector3.forward), Is.GreaterThan(0.99f)); // 목표 방향 선택 검증
+            }
+            finally // 시험 객체 정리 구간
+            {
+                Object.DestroyImmediate(botObject); // 센서 시험 객체 제거
+                Object.DestroyImmediate(floorObject); // 시험 바닥 제거
+            }
+        }
+
+        [Test] // 다음 체크포인트 선택 검증
+        public void FindNextCheckpointIndex_SkipsActivatedCheckpoints() // 활성 체크포인트 이전 목표 제외 검증
+        {
+            List<int> checkpointIds = new List<int> // 정렬된 체크포인트 ID 목록 생성
+            {
+                1, // CP1 ID
+                2, // CP2 ID
+                3, // CP3 ID
+                4 // CP4 ID
+            };
+
+            int result = ProjectJBotNavigationPolicy.FindNextCheckpointIndex(2, checkpointIds); // CP2 이후 목표 검색
+
+            Assert.That(result, Is.EqualTo(2)); // CP3 목록 Index 선택 검증
+        }
     }
 }

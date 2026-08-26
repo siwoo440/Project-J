@@ -1,6 +1,7 @@
 using Fusion;
 using ProjectJ.Items; // 깃털 신발 수치 정책 사용
 using ProjectJ.Movement; // Player 충돌 이동 정책 사용
+using ProjectJ.Player; // Player Layer 제외 규칙 사용
 using UnityEngine;
 
 namespace ProjectJ.Networking.Fusion
@@ -1215,7 +1216,7 @@ namespace ProjectJ.Networking.Fusion
                     movementHitBuffer,
                     distance +
                     HorizontalCollisionSkin,
-                    Physics.AllLayers,
+                    PlayerCollisionRules.ExcludePlayerLayer(Physics.AllLayers), // Player 제외 이동 Mask 사용
                     QueryTriggerInteraction.Ignore
                 ); // 수평 CapsuleCast 실행
 
@@ -1238,8 +1239,7 @@ namespace ProjectJ.Networking.Fusion
                     hit.collider; // 현재 충돌 Collider 조회
 
                 if (
-                    hitCollider == null ||
-                    IsOwnCollider(
+                    IsIgnoredMovementCollider(
                         hitCollider
                     ) ||
                     hit.distance >=
@@ -1279,7 +1279,7 @@ namespace ProjectJ.Networking.Fusion
                     topPoint,
                     queryRadius,
                     movementOverlapBuffer,
-                    Physics.AllLayers,
+                    PlayerCollisionRules.ExcludePlayerLayer(Physics.AllLayers), // Player 제외 위치 검사 Mask 사용
                     QueryTriggerInteraction.Ignore
                 ); // 후보 위치 몸통 Overlap 검사
 
@@ -1293,8 +1293,7 @@ namespace ProjectJ.Networking.Fusion
                     movementOverlapBuffer[index]; // 현재 Overlap Collider 조회
 
                 if (
-                    candidate == null ||
-                    IsOwnCollider(
+                    IsIgnoredMovementCollider(
                         candidate
                     )
                 )
@@ -1447,7 +1446,7 @@ namespace ProjectJ.Networking.Fusion
                     Vector3.down,
                     groundHitBuffer,
                     castDistance,
-                    Physics.AllLayers,
+                    PlayerCollisionRules.ExcludePlayerLayer(Physics.AllLayers), // Player 제외 바닥 Mask 사용
                     QueryTriggerInteraction.Ignore
                 ); // 발바닥 SphereCast 실행
 
@@ -1473,8 +1472,7 @@ namespace ProjectJ.Networking.Fusion
                     hit.collider; // 현재 Ground Collider 조회
 
                 if (
-                    hitCollider == null ||
-                    IsOwnCollider(
+                    IsIgnoredMovementCollider(
                         hitCollider
                     ) ||
                     !ProjectJCharacterCollisionPolicy.IsWalkableGroundNormal(
@@ -1513,7 +1511,7 @@ namespace ProjectJ.Networking.Fusion
                     Vector3.down,
                     movementHitBuffer,
                     castDistance,
-                    Physics.AllLayers,
+                    PlayerCollisionRules.ExcludePlayerLayer(Physics.AllLayers), // Player 제외 계단 Mask 사용
                     QueryTriggerInteraction.Ignore
                 ); // 계단 상단 하향 Raycast 실행
 
@@ -1539,8 +1537,7 @@ namespace ProjectJ.Networking.Fusion
                     hit.collider; // 현재 계단 Collider 조회
 
                 if (
-                    hitCollider == null ||
-                    IsOwnCollider(
+                    IsIgnoredMovementCollider(
                         hitCollider
                     ) ||
                     !ProjectJCharacterCollisionPolicy.IsWalkableGroundNormal(
@@ -1607,7 +1604,7 @@ namespace ProjectJ.Networking.Fusion
                 Vector3.up, // 위쪽 방향 검사
                 jetpackCeilingHitBuffer, // 재사용 충돌 버퍼 사용
                 castDistance, // 이번 Tick 검사 거리 사용
-                Physics.AllLayers, // 기존 Player 충돌 범위와 동일한 전체 레이어 검사
+                PlayerCollisionRules.ExcludePlayerLayer(Physics.AllLayers), // 다른 Player를 제외한 천장 레이어 검사
                 QueryTriggerInteraction.Ignore // Trigger는 천장으로 취급하지 않음
             );
 
@@ -1615,7 +1612,7 @@ namespace ProjectJ.Networking.Fusion
             {
                 Collider hitCollider = jetpackCeilingHitBuffer[index].collider; // 충돌 Collider 조회
 
-                if (hitCollider == null || IsOwnCollider(hitCollider))
+                if (IsIgnoredMovementCollider(hitCollider)) // 자기 자신과 다른 Player 제외
                 {
                     continue; // 빈 결과·자기 Collider 제외
                 }
@@ -1641,7 +1638,7 @@ namespace ProjectJ.Networking.Fusion
                 topPoint,
                 clearanceRadius,
                 standOverlapBuffer,
-                Physics.AllLayers,
+                PlayerCollisionRules.ExcludePlayerLayer(Physics.AllLayers), // Player 제외 일어서기 Mask 사용
                 QueryTriggerInteraction.Ignore
             );
 
@@ -1649,7 +1646,7 @@ namespace ProjectJ.Networking.Fusion
             {
                 Collider candidate = standOverlapBuffer[i];
 
-                if (candidate == null || IsOwnCollider(candidate))
+                if (IsIgnoredMovementCollider(candidate)) // 자기 자신과 다른 Player 제외
                 {
                     continue;
                 }
@@ -1667,6 +1664,26 @@ namespace ProjectJ.Networking.Fusion
             return
                 candidateTransform == transform ||
                 candidateTransform.IsChildOf(transform);
+        }
+
+        private bool IsIgnoredMovementCollider( // 이동을 막지 않는 Collider 판정
+            Collider candidate // 검사 대상 Collider
+        )
+        {
+            if (candidate == null) // 빈 Collider 확인
+            {
+                return true; // 빈 결과 제외
+            }
+
+            if (IsOwnCollider(candidate)) // 자기 Collider 확인
+            {
+                return true; // 자기 Collider 제외
+            }
+
+            ProjectJNetworkPlayer otherPlayer = // Collider 소유 Player 조회
+                candidate.GetComponentInParent<ProjectJNetworkPlayer>(); // 부모 Network Player 탐색
+
+            return otherPlayer != null; // 다른 Player Collider 제외
         }
 
         private void ApplyColliderPosture()

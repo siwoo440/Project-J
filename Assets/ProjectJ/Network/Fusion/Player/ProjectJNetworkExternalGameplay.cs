@@ -899,6 +899,16 @@ namespace ProjectJ.Networking.Fusion
             );
         }
 
+        public void RequestBotRecoveryRespawn() // Bot 정체 상태 권한 부활 요청
+        {
+            if (Object == null || !Object.IsValid || !Object.HasStateAuthority || !GameplayInputAllowed) // 유효한 State Authority 경기 상태 확인
+            {
+                return; // 잘못된 Bot 부활 요청 차단
+            }
+
+            PerformRespawn(ProjectJNetworkRespawnReason.Fall); // 현재 체크포인트 기준 Bot 부활 실행
+        }
+
         public void RequestManualRespawn()
         {
             if (

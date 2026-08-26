@@ -25,6 +25,15 @@ namespace ProjectJ.Networking.Fusion
         private const float RosterStableSeconds =
             0.75f; // 전원 충원 후 Countdown 전 안정화 시간
 
+        private const float BotSpawnParticipantClearance =
+            1f; // Bot Spawn 최소 참가자 수평 간격
+
+        private const float BotStartDelayIntervalSeconds =
+            0.25f; // Bot별 경기 시작 출발 간격
+
+        private const float BotStartDelayMaximumSeconds =
+            1.5f; // 마지막 Bot 최대 출발 지연
+
         [SerializeField]
         [Min(1)]
         private int targetParticipantCount =
@@ -404,19 +413,22 @@ namespace ProjectJ.Networking.Fusion
             }
 
             Transform spawnPoint =
-                ResolveBotSpawnPoint(
-                    bots.Count
-                ); // 현재 Bot 수 기준 후방 Spawn Point 선택
+                ResolveBotSpawnPoint(); // 현재 참가자가 점유하지 않은 Spawn Point 선택
+
+            if (spawnPoint == null)
+            {
+                Debug.LogWarning(
+                    "[Project J/Day139] 비어 있는 Bot Spawn Slot이 없어 다음 Roster Tick까지 Spawn을 보류합니다."
+                ); // 안전 Spawn Slot 대기 출력
+
+                return; // 겹친 위치 강제 Spawn 차단
+            }
 
             Vector3 spawnPosition =
-                spawnPoint != null
-                    ? spawnPoint.position
-                    : transform.position; // Spawn 위치 선택
+                spawnPoint.position; // 안전 Spawn 위치 적용
 
             Quaternion spawnRotation =
-                spawnPoint != null
-                    ? spawnPoint.rotation
-                    : Quaternion.identity; // Spawn 회전 선택
+                spawnPoint.rotation; // 안전 Spawn 회전 적용
 
             NetworkObject spawnedBot =
                 runner.Spawn(
@@ -461,6 +473,14 @@ namespace ProjectJ.Networking.Fusion
                 spawnedBot.GetComponent<ProjectJNetworkPlayer>()
             ); // Spawn 직후 Route 목록 갱신
 
+            controller.ConfigureStartDelay(
+                ProjectJBotSpawnPolicy.ResolveStartDelaySeconds(
+                    bots.Count,
+                    BotStartDelayIntervalSeconds,
+                    BotStartDelayMaximumSeconds
+                )
+            ); // Bot별 경기 시작 순차 출발 지연 적용
+
             botNameSequence++; // Bot 이름 일련번호 증가
 
             spawnedBot.name =
@@ -500,28 +520,122 @@ namespace ProjectJ.Networking.Fusion
             ); // Human 증가로 초과 Bot 제거
         }
 
-        private Transform ResolveBotSpawnPoint(
-            int existingBotCount
-        )
+        private Transform ResolveBotSpawnPoint()
         {
-            if (spawnPoints.Count == 0)
+            Transform bestSpawnPoint =
+                null; // 현재 가장 안전한 Spawn Point 초기화
+
+            float bestNearestDistance =
+                -1f; // 가장 가까운 참가자 거리 최대값 초기화
+
+            for (
+                int index = spawnPoints.Count - 1;
+                index >= 0;
+                index--
+            )
             {
-                return null; // Spawn Point 없음 처리
+                Transform candidate =
+                    spawnPoints[index]; // 현재 Spawn Point 후보 조회
+
+                if (candidate == null)
+                {
+                    continue; // 누락 Spawn Point 제외
+                }
+
+                float nearestDistance =
+                    ResolveNearestParticipantHorizontalDistance(
+                        candidate.position
+                    ); // 기존 Human·Bot과 최근접 수평 거리 계산
+
+                if (
+                    !ProjectJBotSpawnPolicy.IsSpawnSlotClear(
+                        nearestDistance,
+                        BotSpawnParticipantClearance
+                    )
+                )
+                {
+                    continue; // 참가자와 겹치는 Spawn Point 제외
+                }
+
+                if (
+                    bestSpawnPoint != null &&
+                    nearestDistance <=
+                    bestNearestDistance
+                )
+                {
+                    continue; // 더 가까운 Spawn Point 제외
+                }
+
+                bestSpawnPoint =
+                    candidate; // 가장 안전한 Spawn Point 갱신
+
+                bestNearestDistance =
+                    nearestDistance; // 최근접 거리 기준 갱신
             }
 
-            int spawnIndex =
-                spawnPoints.Count -
-                1 -
-                existingBotCount; // 후방 Spawn Slot부터 Bot 배치
+            return bestSpawnPoint; // 점유되지 않은 최적 Spawn Point 반환
+        }
 
-            spawnIndex =
-                Mathf.Clamp(
-                    spawnIndex,
-                    0,
-                    spawnPoints.Count - 1
-                ); // Spawn Index 범위 보정
+        private float ResolveNearestParticipantHorizontalDistance(
+            Vector3 spawnPosition
+        )
+        {
+            float nearestDistance =
+                float.PositiveInfinity; // 주변 참가자 없음 기본 거리
 
-            return spawnPoints[spawnIndex]; // Bot Spawn Point 반환
+            for (
+                int index = 0;
+                index < humans.Count;
+                index++
+            )
+            {
+                nearestDistance =
+                    ResolveParticipantDistance(
+                        humans[index],
+                        spawnPosition,
+                        nearestDistance
+                    ); // Human과 최근접 거리 갱신
+            }
+
+            for (
+                int index = 0;
+                index < bots.Count;
+                index++
+            )
+            {
+                nearestDistance =
+                    ResolveParticipantDistance(
+                        bots[index],
+                        spawnPosition,
+                        nearestDistance
+                    ); // 기존 Bot과 최근접 거리 갱신
+            }
+
+            return nearestDistance; // Spawn Point 최근접 참가자 거리 반환
+        }
+
+        private static float ResolveParticipantDistance(
+            ProjectJNetworkPlayer participant,
+            Vector3 spawnPosition,
+            float currentNearestDistance
+        )
+        {
+            if (participant == null)
+            {
+                return currentNearestDistance; // 누락 참가자 제외
+            }
+
+            Vector3 delta =
+                participant.CurrentPosition -
+                spawnPosition; // Spawn Point 기준 참가자 위치 차이 계산
+
+            delta.y =
+                0f; // 수평 간격만 Spawn 점유 판정에 사용
+
+            return Mathf.Min(
+                currentNearestDistance,
+                delta.magnitude
+            ); // 최근접 참가자 거리 갱신
         }
 
         private void CollectSpawnPoints(

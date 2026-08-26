@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3906069821237763979}
   - component: {fileID: 2149668819859989555}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: AuthorityCameraMarker
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -98,7 +98,7 @@ GameObject:
   - component: {fileID: 8910137771346665917}
   - component: {fileID: 1159234304074514054}
   - component: {fileID: 3684692878518363326}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: ProjectJNetworkPlayer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -255,7 +255,7 @@ GameObject:
   - component: {fileID: 5667685159932790843}
   - component: {fileID: 4721180452946842776}
   - component: {fileID: 6445419745269231070}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Visual
   m_TagString: Untagged
   m_Icon: {fileID: 0}

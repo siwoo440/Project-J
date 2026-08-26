@@ -37,7 +37,7 @@ namespace ProjectJ.Networking.Fusion
             "Game";
 
         private const int MinimumReadyPlayers =
-            2;
+            1;
 
         private const float SpawnSpacing =
             3f;

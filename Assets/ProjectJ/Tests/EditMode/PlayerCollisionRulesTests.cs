@@ -212,5 +212,16 @@ namespace ProjectJ.Tests.EditMode
                 );
             }
         }
+
+        [Test] // Player 이동 Query Layer 제외 검증
+        public void ExcludePlayerLayer_RemovesOnlyPlayerLayer() // Player Layer만 제외하는 동작 검증
+        {
+            int worldLayer = LayerMask.NameToLayer("World"); // World Layer 번호 조회
+            int sourceMask = (1 << playerLayer) | (1 << worldLayer); // Player와 World 포함 Mask 생성
+            int result = PlayerCollisionRules.ExcludePlayerLayer(sourceMask); // Player 제외 Mask 계산
+
+            Assert.That(result & (1 << playerLayer), Is.EqualTo(0)); // Player Layer 제외 검증
+            Assert.That(result & (1 << worldLayer), Is.Not.EqualTo(0)); // World Layer 유지 검증
+        }
     }
 }

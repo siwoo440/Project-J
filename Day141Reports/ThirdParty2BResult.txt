@@ -1,0 +1,74 @@
+Project J Day141 ThirdParty 2B Result
+Generated: 2026-08-26 17:40:36
+
+MOVED: 0
+DELETED: 0
+BLOCKED/SKIPPED: 58
+FAILED: 0
+
+=== MOVED ===
+
+=== DELETED ===
+
+=== BLOCKED/SKIPPED ===
+MOVE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Blue 2 Base.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+MOVE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Grey 1 Dark.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+MOVE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Grey 2 Base.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+MOVE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Pink 2 Base.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+MOVE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Purple 1 Dark.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+MOVE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Turquoise 2 Base.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+MOVE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Yellow 1 Dark.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+MOVE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/ColorPalette.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+MOVE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/ColorPalette.png <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+MOVE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face Images/face 1.png <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+MOVE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face Images/face 2.png <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+MOVE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face/face 1.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+MOVE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face/face 2.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+MOVE SKIP - 원본 없음: Assets/ProjectJ/ThirdParty/Standard Assets/PhysicsMaterials/Rubber.physicmaterial
+MOVE SKIP - 원본 없음: Assets/ProjectJ/ThirdParty/ToyBox/Scripts/AniActivate.cs
+MOVE SKIP - 원본 없음: Assets/ProjectJ/ThirdParty/ToyBox/Scripts/FlipPad.cs
+MOVE SKIP - 원본 없음: Assets/ProjectJ/ThirdParty/ToyBox/Scripts/MovingPlatform.cs
+MOVE SKIP - 원본 없음: Assets/ProjectJ/ThirdParty/ToyBox/Scripts/Rotate.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Icons/lock_off.png <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Icons/lock_on.png <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Icons/promo_image.png <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Icons/reset_cam.png <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Blue 1 Dark.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Blue 3 Light.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Brown 1 Dark.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Brown 2 Base.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Brown 3 Light.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Cream 1 Dark.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Cream 2 Base.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Cream 3 Light.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Cyan 1 Dark.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Cyan 2 Base.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Cyan 3 Light.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Green 1 Dark.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Green 2 Base.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Green 3 Light.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Grey 3 Light.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Orange 1 Dark.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Orange 2 Base.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Orange 3 Light.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Pink 1 Dark.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Pink 3 Light.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Purple 2 Base.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Purple 3 Light.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Red 1 Dark.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Red 2 Base.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Red 3 Light.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Turquoise 1 Dark.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Turquoise 3 Light.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Yellow 2 Base.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Yellow 3 Light.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face Images/face 3.png <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face/face 3.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Ground.mat <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Prefabs/character_default.prefab <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Prefabs/Hats/chef hat.prefab <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Prefabs/Hats/orange fedora.prefab <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+DELETE BLOCKED - Resources.Load 가능성: Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Prefabs/Hats/party hat.prefab <- Assets/ProjectJ/Editor/ProjectJDay141ThirdPartyReviewResolver.cs
+
+=== FAILED ===
+

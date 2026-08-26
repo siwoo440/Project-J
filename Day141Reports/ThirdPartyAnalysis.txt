@@ -1,0 +1,282 @@
+Project J Day141 ThirdParty Analysis
+Generated: 2026-08-26 17:20:19
+
+PROMOTE: 0
+DISCARD: 5
+REVIEW : 68
+
+[Review] [UI] Assets/ProjectJ/ThirdParty/300Mind/2D Game UI Kit/Sprite Source File/UI pack_Source.ai
+  Reason: 알 수 없는 확장자 '.ai' 수동 확인 필요
+
+[Review] [UI] Assets/ProjectJ/ThirdParty/300Mind/2D Game UI Kit/Sprite Source File/UI pack_Source_1.ai
+  Reason: 알 수 없는 확장자 '.ai' 수동 확인 필요
+
+[Discard] [Props] Assets/ProjectJ/ThirdParty/300Mind/Help.pdf
+  Reason: 문서/패키지 미사용 파일
+
+[Discard] [UI] Assets/ProjectJ/ThirdParty/Colorful_UI/colorful/font/Digitalt_spec.pdf
+  Reason: 문서/패키지 미사용 파일
+
+[Review] [UI] Assets/ProjectJ/ThirdParty/Colorful_UI/colorful/font/OFL_License.txt
+  Reason: 알 수 없는 확장자 '.txt' 수동 확인 필요
+
+[Discard] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/FreeCustomizationWindow_Documentation.pdf
+  Reason: 문서/패키지 미사용 파일
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/PartyCharactersScene.unity
+  Reason: Scene 사용 여부 수동 확인 필요
+
+[Review] [UI] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Icons/lock_off.png
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [UI] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Icons/lock_on.png
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [UI] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Icons/promo_image.png
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [UI] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Icons/reset_cam.png
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Blue 1 Dark.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Blue 2 Base.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_040ae0.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_cbb54a.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_0413da.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_4c4e64.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_6dd688.prefab
+  <- Assets/ProjectJ/Art/Characters/Meshes/Imported/party_character.fbx
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_8d9656.prefab
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Blue 3 Light.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Brown 1 Dark.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Brown 2 Base.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Brown 3 Light.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Cream 1 Dark.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Cream 2 Base.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Cream 3 Light.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Cyan 1 Dark.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Cyan 2 Base.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Cyan 3 Light.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Green 1 Dark.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Green 2 Base.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Green 3 Light.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Grey 1 Dark.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_4c4e64.prefab
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Grey 2 Base.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_040ae0.prefab
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Grey 3 Light.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Orange 1 Dark.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Orange 2 Base.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Orange 3 Light.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Pink 1 Dark.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Pink 2 Base.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_cbb54a.prefab
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Pink 3 Light.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Purple 1 Dark.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_6dd688.prefab
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Purple 2 Base.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Purple 3 Light.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Red 1 Dark.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Red 2 Base.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Red 3 Light.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Turquoise 1 Dark.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Turquoise 2 Base.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_8d9656.prefab
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Turquoise 3 Light.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Yellow 1 Dark.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_0413da.prefab
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Yellow 2 Base.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Yellow 3 Light.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/ColorPalette.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_040ae0.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_cbb54a.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_0413da.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_4c4e64.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_6dd688.prefab
+  <- Assets/ProjectJ/Art/Characters/Meshes/Imported/customize_objects.fbx
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_8d9656.prefab
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/ColorPalette.png
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_040ae0.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_cbb54a.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_0413da.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_4c4e64.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_6dd688.prefab
+  <- Assets/ProjectJ/Art/Characters/Meshes/Imported/customize_objects.fbx
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_8d9656.prefab
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face Images/face 1.png
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_040ae0.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_cbb54a.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_0413da.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_4c4e64.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_6dd688.prefab
+  <- Assets/ProjectJ/Art/Characters/Meshes/Imported/party_character.fbx
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_8d9656.prefab
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face Images/face 2.png
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_4c4e64.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_8d9656.prefab
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face Images/face 3.png
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face/face 1.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_040ae0.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_cbb54a.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_0413da.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_4c4e64.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_6dd688.prefab
+  <- Assets/ProjectJ/Art/Characters/Meshes/Imported/party_character.fbx
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_8d9656.prefab
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face/face 2.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_4c4e64.prefab
+  <- Assets/ProjectJ/Prefabs/Player/Imported/Character_8d9656.prefab
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face/face 3.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Ground.mat
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Prefabs/character_default.prefab
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Prefabs/Hats/chef hat.prefab
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Prefabs/Hats/orange fedora.prefab
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [Characters] Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Prefabs/Hats/party hat.prefab
+  Reason: Resources/StreamingAssets/Editor 경로 수동 검토 필요
+
+[Review] [UI] Assets/ProjectJ/ThirdParty/GameInputControllerIconsFree/game-input-controller-icons-free-scene.unity
+  Reason: Scene 사용 여부 수동 확인 필요
+
+[Discard] [UI] Assets/ProjectJ/ThirdParty/GameInputControllerIconsFree/readme.pdf
+  Reason: Demo/Sample/문서/README/LICENSE 미사용 파일
+
+[Review] [Environment] Assets/ProjectJ/ThirdParty/POLY STYLE - Platformer Starter Pack/Platformer Starter Pack_URP/Scripts/SimpleCameraController.cs
+  Reason: Script/Assembly 코드 의존성 수동 확인 필요
+
+[Review] [Environment] Assets/ProjectJ/ThirdParty/POLY STYLE - Platformer Starter Pack/Platformer Starter Pack_URP/Settings/ForwardRenderer.asset
+  Reason: 데이터/경로 기반 로드 여부 수동 확인 필요
+
+[Review] [Environment] Assets/ProjectJ/ThirdParty/POLY STYLE - Platformer Starter Pack/Platformer Starter Pack_URP/Settings/UniversalRP-HighQuality.asset
+  Reason: 데이터/경로 기반 로드 여부 수동 확인 필요
+
+[Review] [Environment] Assets/ProjectJ/ThirdParty/POLY STYLE - Platformer Starter Pack/Platformer Starter Pack_URP/Settings/UniversalRP-LowQuality.asset
+  Reason: 데이터/경로 기반 로드 여부 수동 확인 필요
+
+[Review] [Environment] Assets/ProjectJ/ThirdParty/POLY STYLE - Platformer Starter Pack/Platformer Starter Pack_URP/Settings/UniversalRP-MediumQuality.asset
+  Reason: 데이터/경로 기반 로드 여부 수동 확인 필요
+
+[Discard] [Environment] Assets/ProjectJ/ThirdParty/POLY STYLE - Platformer Starter Pack/Readme.txt
+  Reason: Demo/Sample/문서/README/LICENSE 미사용 파일
+
+[Review] [Props] Assets/ProjectJ/ThirdParty/Standard Assets/PhysicsMaterials/Rubber.physicmaterial
+  Reason: 외부 참조 존재. 알 수 없는 확장자 '.physicmaterial' 수동 확인 필요
+  <- Assets/ProjectJ/Prefabs/Player/Imported/RollerBall.prefab
+
+[Review] [Props] Assets/ProjectJ/ThirdParty/ToyBox/Scripts/AniActivate.cs
+  Reason: 외부 참조 존재. Script/Assembly 코드 의존성 수동 확인 필요
+  <- Assets/ProjectJ/Prefabs/Props/Imported/Lever.prefab
+  <- Assets/ProjectJ/Prefabs/Props/Imported/Checkpoint.prefab
+
+[Review] [Props] Assets/ProjectJ/ThirdParty/ToyBox/Scripts/FlipPad.cs
+  Reason: 외부 참조 존재. Script/Assembly 코드 의존성 수동 확인 필요
+  <- Assets/ProjectJ/Prefabs/Props/Imported/FlipPad.prefab
+
+[Review] [Environment] Assets/ProjectJ/ThirdParty/ToyBox/Scripts/MovingPlatform.cs
+  Reason: 외부 참조 존재. Script/Assembly 코드 의존성 수동 확인 필요
+  <- Assets/ProjectJ/Prefabs/Props/Imported/MovingBlock.prefab
+  <- Assets/ProjectJ/Prefabs/Props/Imported/MovingBlock2.prefab
+
+[Review] [Props] Assets/ProjectJ/ThirdParty/ToyBox/Scripts/Rotate.cs
+  Reason: 외부 참조 존재. Script/Assembly 코드 의존성 수동 확인 필요
+  <- Assets/ProjectJ/Prefabs/Props/Imported/FireSpin.prefab
+  <- Assets/ProjectJ/Prefabs/Props/Imported/Fan.prefab
+  <- Assets/ProjectJ/Prefabs/Props/Imported/Collectible.prefab
+  <- Assets/ProjectJ/Prefabs/Props/Imported/SpinningStar.prefab
+  <- Assets/ProjectJ/Prefabs/Props/Imported/SpinningCyl.prefab
+

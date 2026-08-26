@@ -1,0 +1,77 @@
+Project J Day141 ThirdParty 2B Preview
+Generated: 2026-08-26 17:39:56
+
+MOVE RULES: 18
+DELETE CANDIDATES: 50
+
+=== MOVE ===
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Blue 2 Base.mat -> Assets/ProjectJ/Art/Characters/Materials/Imported/Blue 2 Base.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Grey 1 Dark.mat -> Assets/ProjectJ/Art/Characters/Materials/Imported/Grey 1 Dark.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Grey 2 Base.mat -> Assets/ProjectJ/Art/Characters/Materials/Imported/Grey 2 Base.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Pink 2 Base.mat -> Assets/ProjectJ/Art/Characters/Materials/Imported/Pink 2 Base.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Purple 1 Dark.mat -> Assets/ProjectJ/Art/Characters/Materials/Imported/Purple 1 Dark.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Turquoise 2 Base.mat -> Assets/ProjectJ/Art/Characters/Materials/Imported/Turquoise 2 Base.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Yellow 1 Dark.mat -> Assets/ProjectJ/Art/Characters/Materials/Imported/Yellow 1 Dark.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/ColorPalette.mat -> Assets/ProjectJ/Art/Characters/Materials/Imported/ColorPalette.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/ColorPalette.png -> Assets/ProjectJ/Art/Characters/Textures/Imported/ColorPalette.png
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face Images/face 1.png -> Assets/ProjectJ/Art/Characters/Textures/Imported/face 1.png
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face Images/face 2.png -> Assets/ProjectJ/Art/Characters/Textures/Imported/face 2.png
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face/face 1.mat -> Assets/ProjectJ/Art/Characters/Materials/Imported/face 1.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face/face 2.mat -> Assets/ProjectJ/Art/Characters/Materials/Imported/face 2.mat
+Assets/ProjectJ/ThirdParty/Standard Assets/PhysicsMaterials/Rubber.physicmaterial -> Assets/ProjectJ/Physics/Materials/Imported/Rubber.physicmaterial
+Assets/ProjectJ/ThirdParty/ToyBox/Scripts/AniActivate.cs -> Assets/ProjectJ/Runtime/Props/Imported/AniActivate.cs
+Assets/ProjectJ/ThirdParty/ToyBox/Scripts/FlipPad.cs -> Assets/ProjectJ/Runtime/Props/Imported/FlipPad.cs
+Assets/ProjectJ/ThirdParty/ToyBox/Scripts/MovingPlatform.cs -> Assets/ProjectJ/Runtime/Props/Imported/MovingPlatform.cs
+Assets/ProjectJ/ThirdParty/ToyBox/Scripts/Rotate.cs -> Assets/ProjectJ/Runtime/Props/Imported/Rotate.cs
+
+=== SAFE DELETE CANDIDATES ===
+Assets/ProjectJ/ThirdParty/300Mind/2D Game UI Kit/Sprite Source File/UI pack_Source.ai
+Assets/ProjectJ/ThirdParty/300Mind/2D Game UI Kit/Sprite Source File/UI pack_Source_1.ai
+Assets/ProjectJ/ThirdParty/Colorful_UI/colorful/font/OFL_License.txt
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/PartyCharactersScene.unity
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Icons/lock_off.png
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Icons/lock_on.png
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Icons/promo_image.png
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Icons/reset_cam.png
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Blue 1 Dark.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Blue 3 Light.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Brown 1 Dark.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Brown 2 Base.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Brown 3 Light.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Cream 1 Dark.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Cream 2 Base.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Cream 3 Light.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Cyan 1 Dark.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Cyan 2 Base.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Cyan 3 Light.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Green 1 Dark.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Green 2 Base.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Green 3 Light.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Grey 3 Light.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Orange 1 Dark.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Orange 2 Base.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Orange 3 Light.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Pink 1 Dark.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Pink 3 Light.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Purple 2 Base.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Purple 3 Light.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Red 1 Dark.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Red 2 Base.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Red 3 Light.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Turquoise 1 Dark.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Turquoise 3 Light.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Yellow 2 Base.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Body/Yellow 3 Light.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face Images/face 3.png
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face/face 3.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Ground.mat
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Prefabs/character_default.prefab
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Prefabs/Hats/chef hat.prefab
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Prefabs/Hats/orange fedora.prefab
+Assets/ProjectJ/ThirdParty/FREE/Pack_FREE_PartyCharacters/Resources/Prefabs/Hats/party hat.prefab
+Assets/ProjectJ/ThirdParty/GameInputControllerIconsFree/game-input-controller-icons-free-scene.unity
+Assets/ProjectJ/ThirdParty/POLY STYLE - Platformer Starter Pack/Platformer Starter Pack_URP/Scripts/SimpleCameraController.cs
+Assets/ProjectJ/ThirdParty/POLY STYLE - Platformer Starter Pack/Platformer Starter Pack_URP/Settings/ForwardRenderer.asset
+Assets/ProjectJ/ThirdParty/POLY STYLE - Platformer Starter Pack/Platformer Starter Pack_URP/Settings/UniversalRP-HighQuality.asset
+Assets/ProjectJ/ThirdParty/POLY STYLE - Platformer Starter Pack/Platformer Starter Pack_URP/Settings/UniversalRP-LowQuality.asset
+Assets/ProjectJ/ThirdParty/POLY STYLE - Platformer Starter Pack/Platformer Starter Pack_URP/Settings/UniversalRP-MediumQuality.asset

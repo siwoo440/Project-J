@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 07344f97637ff5740952c756d9dee7e6
+timeCreated: 1469476834
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Prefabs/Props/Checkpoint.prefab
+  uploadId: 129140

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 3e88e59b71315dd46a5b533b3cc177b8
+timeCreated: 1469473986
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Models/Materials/BounceBlockMat.mat
+  uploadId: 129140

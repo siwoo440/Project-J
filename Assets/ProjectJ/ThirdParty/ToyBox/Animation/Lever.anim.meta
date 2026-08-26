@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: efc27b8a18fd10e4484910c7e1e8ff8a
+timeCreated: 1469479359
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Animation/Lever.anim
+  uploadId: 129140

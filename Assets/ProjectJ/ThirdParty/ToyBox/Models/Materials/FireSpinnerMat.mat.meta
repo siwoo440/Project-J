@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 9afc06669eaa837409b69e5ffb3e2424
+timeCreated: 1469473985
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Models/Materials/FireSpinnerMat.mat
+  uploadId: 129140

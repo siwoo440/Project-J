@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 85036a4e32ed25449ba566127cacb5a4
+timeCreated: 1469477789
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Prefabs/Blocks/BasicBlock/WorkBlock2.prefab
+  uploadId: 129140

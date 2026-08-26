@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 8e9c9172ee6316c4d936a8e2d6f9edb3
+timeCreated: 1469473985
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Models/Materials/SpeedBlock.mat
+  uploadId: 129140

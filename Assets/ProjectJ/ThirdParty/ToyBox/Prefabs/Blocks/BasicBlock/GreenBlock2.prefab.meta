@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 22c6a8a4101aacb4fa2b6d067faf99b0
+timeCreated: 1469478546
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Prefabs/Blocks/BasicBlock/GreenBlock2.prefab
+  uploadId: 129140

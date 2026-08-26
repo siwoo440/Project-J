@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 0f17037e459525a43af9782b42524b10
+timeCreated: 1469475061
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Prefabs/Moving/SpinningCyl.prefab
+  uploadId: 129140

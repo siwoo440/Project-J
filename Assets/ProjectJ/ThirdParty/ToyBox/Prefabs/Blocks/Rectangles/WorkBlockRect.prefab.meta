@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: ba2a52dcf28d4f84a8ede8110f97709b
+timeCreated: 1469478261
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Prefabs/Blocks/Rectangles/WorkBlockRect.prefab
+  uploadId: 129140

@@ -100,6 +100,7 @@ GameObject:
   - component: {fileID: 3684692878518363326}
   - component: {fileID: 926277530282738942}
   - component: {fileID: 6733858323412138417}
+  - component: {fileID: 2134732329774352103}
   m_Layer: 0
   m_Name: ProjectJNetworkBot
   m_TagString: Untagged
@@ -270,6 +271,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 382a732e2b7841cca58748fb791e71e3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectJ.Networking.Fusion.ProjectJNetworkBotController
+--- !u!114 &2134732329774352103
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1237611306603437000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfb40a9e7e4849869a01e5b61fe81a8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ProjectJ.Networking.Fusion.ProjectJNetworkBotActionController
 --- !u!1 &9191234116761243835
 GameObject:
   m_ObjectHideFlags: 0

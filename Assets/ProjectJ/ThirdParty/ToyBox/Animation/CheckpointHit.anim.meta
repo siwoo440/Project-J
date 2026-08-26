@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f06b8bc7a30a9594c8f44efec6942d18
+timeCreated: 1469476880
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Animation/CheckpointHit.anim
+  uploadId: 129140

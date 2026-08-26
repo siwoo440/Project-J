@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d3d42b1caee70f645a023980c372fc15
+timeCreated: 1469479487
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Prefabs/Props/Lever.prefab
+  uploadId: 129140

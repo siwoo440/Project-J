@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 97c377d4ac892bc469f96306596aa8b2
+timeCreated: 1469475128
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Scripts/MovingPlatform.cs
+  uploadId: 129140

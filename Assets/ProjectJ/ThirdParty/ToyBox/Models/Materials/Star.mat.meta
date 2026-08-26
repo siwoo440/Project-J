@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 49db7b47959e03d468a375fa396d13b9
+timeCreated: 1469473984
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Models/Materials/Star.mat
+  uploadId: 129140

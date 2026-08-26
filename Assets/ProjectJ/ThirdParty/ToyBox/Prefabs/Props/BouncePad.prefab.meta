@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 4988462feaf56954f83668e48f7598ee
+timeCreated: 1469558856
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Prefabs/Props/BouncePad.prefab
+  uploadId: 129140

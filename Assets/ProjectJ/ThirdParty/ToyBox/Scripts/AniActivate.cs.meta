@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: f4eed02f76bfbf44ab1126a71c2b9743
+timeCreated: 1469477244
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Scripts/AniActivate.cs
+  uploadId: 129140

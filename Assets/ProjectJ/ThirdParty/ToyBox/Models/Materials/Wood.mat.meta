@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f10a44ee01d6fc5468b5d0dde374dfda
+timeCreated: 1469557451
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Models/Materials/Wood.mat
+  uploadId: 129140

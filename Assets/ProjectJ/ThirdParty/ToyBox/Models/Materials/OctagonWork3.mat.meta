@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: ae86fdc1ae01c834daaa232ad1663479
+timeCreated: 1469474175
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Models/Materials/OctagonWork3.mat
+  uploadId: 129140

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e02e73b452230e045b38cf8b2291b7b1
+timeCreated: 1469473986
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Models/Materials/Cylinder.mat
+  uploadId: 129140

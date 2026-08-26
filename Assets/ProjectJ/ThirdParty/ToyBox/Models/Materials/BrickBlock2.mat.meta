@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a7013bf7fb3e5a94592bb5b61dd60191
+timeCreated: 1469474131
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Models/Materials/BrickBlock2.mat
+  uploadId: 129140

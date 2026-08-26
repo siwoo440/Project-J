@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2ec1f88e2195abc488a34b7b9f6b48c0
+timeCreated: 1469479591
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Animation/FlipPad2.anim
+  uploadId: 129140

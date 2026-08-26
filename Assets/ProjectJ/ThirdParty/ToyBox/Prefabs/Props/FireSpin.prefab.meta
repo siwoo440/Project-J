@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2372a647d9eedf146b97ed027064c880
+timeCreated: 1469548726
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Prefabs/Props/FireSpin.prefab
+  uploadId: 129140

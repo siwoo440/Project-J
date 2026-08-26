@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d3ea5b3e929fd324f8a44c3d0ec27e83
+timeCreated: 1469474146
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Models/Materials/WorkBlock2.mat
+  uploadId: 129140

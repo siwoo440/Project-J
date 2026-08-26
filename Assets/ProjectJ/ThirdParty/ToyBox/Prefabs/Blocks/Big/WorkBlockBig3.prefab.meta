@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 43c7a565bc6c530469c1494d0039ccae
+timeCreated: 1469478049
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Prefabs/Blocks/Big/WorkBlockBig3.prefab
+  uploadId: 129140

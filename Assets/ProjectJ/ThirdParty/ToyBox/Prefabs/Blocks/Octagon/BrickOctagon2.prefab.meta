@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b9d9c0fffdc349844a19ec812891bdea
+timeCreated: 1469478095
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Prefabs/Blocks/Octagon/BrickOctagon2.prefab
+  uploadId: 129140

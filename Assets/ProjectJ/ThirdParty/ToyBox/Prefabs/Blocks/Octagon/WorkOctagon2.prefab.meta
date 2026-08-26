@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5fd1c141d1bf4224fb7cf2fe071ca7c3
+timeCreated: 1469478074
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Prefabs/Blocks/Octagon/WorkOctagon2.prefab
+  uploadId: 129140

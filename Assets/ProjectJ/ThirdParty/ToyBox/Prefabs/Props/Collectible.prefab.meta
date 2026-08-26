@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 0ed1ba3cd0b56ee49959d60fefbae6a5
+timeCreated: 1469475008
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Prefabs/Props/Collectible.prefab
+  uploadId: 129140

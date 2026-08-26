@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 8c205068c986d2c4fa0fff282d2f20ea
+timeCreated: 1469477796
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Prefabs/Blocks/BasicBlock/BrickBlock.prefab
+  uploadId: 129140

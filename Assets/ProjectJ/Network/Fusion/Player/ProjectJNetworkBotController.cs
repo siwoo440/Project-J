@@ -27,6 +27,7 @@ namespace ProjectJ.Networking.Fusion
             new List<int>(); // Checkpoint 최소 Route 계산용 순서 목록
 
         private ProjectJNetworkExternalGameplay externalGameplay; // Respawn 상태 조회 대상
+        private ProjectJNetworkBotActionController actionController; // Day138 Push·Item 판단 Controller
         private bool initialized; // Bot 내부 초기화 여부
         private int currentRouteIndex; // 현재 목표 Route Index
         private int observedRespawnCount; // 마지막 확인 Respawn 횟수
@@ -78,6 +79,14 @@ namespace ProjectJ.Networking.Fusion
             ObserveStuck(
                 player
             ); // 정체 상태 확인 및 Route 복구
+
+            if (actionController != null)
+            {
+                actionController.TickActions(
+                    player,
+                    externalGameplay
+                ); // State Authority Push·Item 경쟁 행동 갱신
+            }
 
             if (
                 currentRouteIndex < 0 ||
@@ -230,6 +239,9 @@ namespace ProjectJ.Networking.Fusion
 
             externalGameplay =
                 GetComponent<ProjectJNetworkExternalGameplay>(); // Respawn 상태 컴포넌트 조회
+
+            actionController =
+                GetComponent<ProjectJNetworkBotActionController>(); // Day138 경쟁 행동 컴포넌트 조회
 
             observedRespawnCount =
                 externalGameplay != null

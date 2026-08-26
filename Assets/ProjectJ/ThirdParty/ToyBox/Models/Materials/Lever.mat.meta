@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 77bbdd68389d436449e0a140c6c4c325
+timeCreated: 1469473985
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68107
+  packageName: Block World
+  packageVersion: 1.0
+  assetPath: Assets/ToyBox/Models/Materials/Lever.mat
+  uploadId: 129140

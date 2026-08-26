@@ -98,6 +98,7 @@ GameObject:
   - component: {fileID: 8910137771346665917}
   - component: {fileID: 1159234304074514054}
   - component: {fileID: 3684692878518363326}
+  - component: {fileID: 8168347958056648556}
   m_Layer: 8
   m_Name: ProjectJNetworkPlayer
   m_TagString: Untagged
@@ -118,8 +119,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 5667685159932790843}
   - {fileID: 3906069821237763979}
+  - {fileID: 2682479673827370329}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &4287995698400218493
@@ -244,7 +245,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f1d3dcbba43846219e31b3021d8c13e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectJ.Networking.Fusion.ProjectJNetworkItemInventory
---- !u!1 &9191234116761243835
+--- !u!114 &8168347958056648556
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1237611306603437000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ad21cbee3e74f6ea38a15dbf210eb77, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ProjectJ.Runtime::ProjectJ.Player.ProjectJPlayerVisualController
+  visualRoot: {fileID: 2682479673827370329}
+  visualPrefabs:
+  - {fileID: 2769507199256119399, guid: d01e46ed3905b6e4d96a6458d14fc726, type: 3}
+  - {fileID: 5090587081827196812, guid: 6285cf03d162d9b4d86e7376b1040cc8, type: 3}
+  - {fileID: 7742650942893025642, guid: b508ace33888d604dbf39f6e9cc9413a, type: 3}
+  - {fileID: 5803974896554436073, guid: 9656e14e56297ca4cad1e11d79a7a57e, type: 3}
+  - {fileID: 5818676082942201579, guid: 5ddb42764212839478d512c0afb12cfd, type: 3}
+  - {fileID: 3187384679435710046, guid: c1e7e3c9fe3257f4ea9f080e7208ec3b, type: 3}
+  defaultVisualName: Character_4c4e64
+  modelLocalPosition: {x: 0, y: -1, z: 0}
+  modelLocalEulerAngles: {x: 0, y: 0, z: 0}
+  modelLocalScale: {x: 1, y: 1, z: 1}
+  disableVisualColliders: 1
+--- !u!1 &6325241336054643508
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -252,49 +278,40 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 5667685159932790843}
-  - component: {fileID: 4721180452946842776}
-  - component: {fileID: 6445419745269231070}
+  - component: {fileID: 2682479673827370329}
+  - component: {fileID: 7073559944601369824}
   m_Layer: 8
-  m_Name: Visual
+  m_Name: VisualRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &5667685159932790843
+--- !u!4 &2682479673827370329
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9191234116761243835}
+  m_GameObject: {fileID: 6325241336054643508}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 1, z: 0}
-  m_LocalScale: {x: 0.8, y: 1, z: 0.8}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3796568419568959360}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &4721180452946842776
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9191234116761243835}
-  m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
---- !u!23 &6445419745269231070
+--- !u!23 &7073559944601369824
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9191234116761243835}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
+  m_GameObject: {fileID: 6325241336054643508}
+  m_Enabled: 0
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
@@ -319,7 +336,7 @@ MeshRenderer:
   m_LightProbeVolumeOverride: {fileID: 0}
   m_ScaleInLightmap: 1
   m_ReceiveGI: 1
-  m_PreserveUVs: 1
+  m_PreserveUVs: 0
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
   m_StitchLightmapSeams: 1
